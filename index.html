@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Rénovation de jantes à Lyon et Rhône-Alpes. Service mobile à domicile, réparation, soudure, personnalisation. Devis gratuit en 2 min. REYNOV, expert jantes premium." />
+  <meta name="keywords" content="rénovation jantes Lyon, réparation jante alu Lyon, soudure jante Lyon, dévoilage jante Rhône-Alpes, personnalisation jantes, service mobile jantes Lyon, jante abîmée Lyon" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://reynojantes.fr/" />
+  <title>Rénovation de Jantes à Lyon — REYNOV | Devis Gratuit en 2 min</title>
+
+  <!-- Open Graph / Réseaux sociaux -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Rénovation de Jantes à Lyon — REYNOV" />
+  <meta property="og:description" content="Service mobile à domicile, réparation, soudure, personnalisation de jantes premium. Devis gratuit en 2 min." />
+  <meta property="og:url" content="https://reynojantes.fr/" />
+  <meta property="og:image" content="https://reynojantes.fr/assets/images/og-image.jpg" />
+  <meta property="og:locale" content="fr_FR" />
+  <meta property="og:site_name" content="REYNOV" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Rénovation de Jantes à Lyon — REYNOV" />
+  <meta name="twitter:description" content="Service mobile, réparation, personnalisation de jantes. Devis gratuit." />
+  <meta name="twitter:image" content="https://reynojantes.fr/assets/images/og-image.jpg" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+
+  <!-- Schema.org — LocalBusiness -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": "REYNOV",
+    "description": "Rénovation, réparation et personnalisation de jantes premium à Lyon. Service mobile à domicile et en atelier.",
+    "url": "https://reynojantes.fr",
+    "telephone": "+33600000000",
+    "email": "contact@reynojantes.fr",
+    "image": "https://reynojantes.fr/assets/images/logo.png",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Lyon",
+      "addressRegion": "Auvergne-Rhône-Alpes",
+      "addressCountry": "FR"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": 45.764,
+      "longitude": 4.8357
+    },
+    "areaServed": {
+      "@type": "GeoCircle",
+      "geoMidpoint": { "@type": "GeoCoordinates", "latitude": 45.764, "longitude": 4.8357 },
+      "geoRadius": "50000"
+    },
+    "openingHoursSpecification": [
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+        "opens": "08:00",
+        "closes": "18:00"
+      },
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": "Saturday",
+        "opens": "09:00",
+        "closes": "17:00"
+      }
+    ],
+    "priceRange": "$$",
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.9",
+      "reviewCount": "120"
+    },
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "Prestations REYNOV",
+      "itemListElement": [
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Rénovation de jantes", "url": "https://reynojantes.fr/prestations/renovation.html" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Soudure de jantes", "url": "https://reynojantes.fr/prestations/soudure.html" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Dévoilage de jantes", "url": "https://reynojantes.fr/prestations/devoilage.html" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Personnalisation de jantes", "url": "https://reynojantes.fr/prestations/personnalisation.html" } }
+      ]
+    }
+  }
+  </script>
+</head>
+<body class="loading">
+
+<!-- ── Loader premium ─────────────────────────────────────── -->
+<div id="reynov-loader" role="status" aria-label="Chargement REYNOV">
+  <div class="loader__inner">
+    <img
+      class="loader__logo"
+      src="assets/images/logo.png"
+      alt="REYNOV"
+      onerror="this.style.display='none';document.querySelector('.loader__logo-fallback').style.display='block'"
+    />
+    <span class="loader__logo-fallback">REYNOV</span>
+    <p class="loader__name">Rénovation de jantes</p>
+    <div class="loader__bar-wrap">
+      <div class="loader__bar" id="loader-bar"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Navigation ─────────────────────────────────────────── -->
+<nav class="nav" role="navigation" aria-label="Navigation principale">
+  <div class="nav__inner">
+    <a href="index.html" class="nav__logo" aria-label="REYNOV — Accueil">
+      <img src="assets/images/logo.png" alt="REYNOV" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" />
+      <span class="nav__logo-text" style="display:none">REYNOV</span>
+    </a>
+    <div class="nav__links">
+      <div class="nav__item">
+        <a href="prestations/index.html" class="nav__link">Prestations</a>
+        <div class="nav__dropdown">
+          <a href="prestations/renovation.html" class="nav__dropdown-link">Rénovation de jantes</a>
+          <a href="prestations/soudure.html" class="nav__dropdown-link">Soudure</a>
+          <a href="prestations/devoilage.html" class="nav__dropdown-link">Dévoilage</a>
+          <a href="prestations/personnalisation.html" class="nav__dropdown-link">Personnalisation</a>
+          <a href="prestations/retour-leasing.html" class="nav__dropdown-link">Retour de leasing</a>
+          <a href="prestations/preparation-vente.html" class="nav__dropdown-link">Préparation à la vente</a>
+        </div>
+      </div>
+      <a href="service-mobile.html" class="nav__link">Service mobile</a>
+      <a href="professionnels.html" class="nav__link">Professionnels</a>
+      <a href="realisations.html" class="nav__link">Réalisations</a>
+      <a href="a-propos.html" class="nav__link">À propos</a>
+      <a href="blog/index.html" class="nav__link">Blog</a>
+    </div>
+    <a href="devis.html" class="nav__cta">Devis gratuit</a>
+    <button class="nav__burger" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile menu -->
+<div class="nav__mobile" role="dialog" aria-modal="true" aria-label="Menu mobile">
+  <a href="prestations/index.html" class="nav__mobile-link">Prestations</a>
+  <a href="service-mobile.html" class="nav__mobile-link">Service mobile</a>
+  <a href="realisations.html" class="nav__mobile-link">Réalisations</a>
+  <a href="professionnels.html" class="nav__mobile-link">Professionnels</a>
+  <a href="blog/index.html" class="nav__mobile-link">Blog</a>
+  <a href="a-propos.html" class="nav__mobile-link">À propos</a>
+  <a href="devis.html" class="nav__mobile-link">Devis gratuit</a>
+</div>
+
+<!-- ① HERO ─────────────────────────────────────────────── -->
+<section class="hero" aria-label="Accueil REYNOV">
+  <div class="hero__video-wrap">
+    <video class="hero__video" autoplay muted loop playsinline>
+      <source src="assets/videos/hero.mp4" type="video/mp4" />
+    </video>
+  </div>
+  <div class="hero__overlay"></div>
+  <div class="hero__content">
+    <p class="hero__eyebrow label">Rénovation · Réparation · Personnalisation</p>
+    <h1 class="hero__title">Vos jantes,<br /><em>comme neuves</em></h1>
+    <p class="hero__subtitle">Service mobile à domicile et atelier spécialisé.<br />Particuliers et professionnels, région lyonnaise.</p>
+    <div class="hero__actions">
+      <a href="devis.html" class="btn btn-primary btn-lg">
+        <span>Devis gratuit</span>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+      </a>
+      <a href="realisations.html" class="btn btn-outline btn-lg">
+        <span>Nos réalisations</span>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+      </a>
+    </div>
+  </div>
+  <div class="hero__scroll" aria-hidden="true">
+    <div class="hero__scroll-line"></div>
+    <span>Scroll</span>
+  </div>
+</section>
+
+<!-- ② DIFFÉRENCIATION ───────────────────────────────────── -->
+<section class="values-strip border-bottom">
+  <div class="values-strip__item" data-reveal>
+    <div class="values-strip__icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25"><path d="M3 12h18M3 12l4-4M3 12l4 4"/><circle cx="19" cy="12" r="2"/></svg>
+    </div>
+    <div>
+      <p class="values-strip__title">À domicile</p>
+      <p class="values-strip__sub">On se déplace chez vous</p>
+    </div>
+  </div>
+  <div class="values-strip__sep" aria-hidden="true"></div>
+  <div class="values-strip__item" data-reveal data-reveal-delay="1">
+    <div class="values-strip__icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M9 9h6M9 12h6M9 15h4"/></svg>
+    </div>
+    <div>
+      <p class="values-strip__title">Équipements pro</p>
+      <p class="values-strip__sub">Matériel haute précision</p>
+    </div>
+  </div>
+  <div class="values-strip__sep" aria-hidden="true"></div>
+  <div class="values-strip__item" data-reveal data-reveal-delay="2">
+    <div class="values-strip__icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    </div>
+    <div>
+      <p class="values-strip__title">Réponse sous 24h</p>
+      <p class="values-strip__sub">Devis gratuit et rapide</p>
+    </div>
+  </div>
+  <div class="values-strip__sep" aria-hidden="true"></div>
+  <div class="values-strip__item" data-reveal data-reveal-delay="3">
+    <div class="values-strip__icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </div>
+    <div>
+      <p class="values-strip__title">Particuliers &amp; pros</p>
+      <p class="values-strip__sub">Tarifs adaptés à chaque profil</p>
+    </div>
+  </div>
+</section>
+
+<!-- ③ PRESTATIONS ───────────────────────────────────────── -->
+<section class="section border-bottom">
+  <div class="container">
+    <div class="section-intro" data-reveal>
+      <p class="label mb-2">Nos prestations</p>
+      <h2 class="h2">Ce que nous faisons</h2>
+    </div>
+  </div>
+  <div class="services-grid">
+    <div class="service-card" data-reveal>
+      <span class="service-card__num">01</span>
+      <div class="service-card__img-wrap">
+        <img src="assets/images/renovation.png" alt="Rénovation de jantes" class="service-card__img" style="height:260px;object-fit:cover;" />
+      </div>
+      <h3 class="service-card__title">Rénovation</h3>
+      <p class="service-card__text">Décapage, traitement, peinture, vernis. Résultat comme neuf — ou mieux.</p>
+      <a href="prestations/renovation.html" class="service-card__link">
+        En savoir plus <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+      </a>
+    </div>
+    <div class="service-card" data-reveal data-reveal-delay="1">
+      <span class="service-card__num">02</span>
+      <div class="service-card__img-wrap">
+        <img src="assets/images/soudure.png" alt="Soudure de jantes" class="service-card__img" style="height:260px;object-fit:cover;" />
+      </div>
+      <h3 class="service-card__title">Soudure</h3>
+      <p class="service-card__text">Fissures, éclats, cassures. Soudure TIG aluminium pour retrouver l'intégrité structurelle.</p>
+      <a href="prestations/soudure.html" class="service-card__link">
+        En savoir plus <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+      </a>
+    </div>
+    <div class="service-card" data-reveal data-reveal-delay="2">
+      <span class="service-card__num">03</span>
+      <div class="service-card__img-wrap">
+        <img src="assets/images/devoilage.png" alt="Dévoilage de jantes" class="service-card__img" style="height:260px;object-fit:cover;" />
+      </div>
+      <h3 class="service-card__title">Dévoilage</h3>
+      <p class="service-card__text">Vibrations, voile, débalancement. Redressage millimétrique sur machine spécialisée.</p>
+      <a href="prestations/devoilage.html" class="service-card__link">
+        En savoir plus <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+      </a>
+    </div>
+    <div class="service-card" data-reveal data-reveal-delay="3">
+      <span class="service-card__num">04</span>
+      <div class="service-card__img-wrap">
+        <img src="assets/images/personnalisation.png" alt="Personnalisation de jantes" class="service-card__img" style="height:260px;object-fit:cover;" />
+      </div>
+      <h3 class="service-card__title">Personnali&shy;sation</h3>
+      <p class="service-card__text">Couleur, bi-ton, brossé, diamanté. Rendez vos jantes uniques.</p>
+      <a href="prestations/personnalisation.html" class="service-card__link">
+        En savoir plus <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ④ AVANT / APRÈS ─────────────────────────────────────── -->
+<style>
+  /* ── Showcase avant/après ── */
+  .ba-section { padding-block: 0; border-bottom: 1px solid rgba(255,255,255,0.07); }
+  .ba-header { display:flex; align-items:flex-end; justify-content:space-between; padding: clamp(2.5rem,5vw,4rem) clamp(1.5rem,5vw,4rem) clamp(1.5rem,3vw,2.5rem); }
+  .ba-header__left { display:flex; flex-direction:column; gap:0.4rem; }
+
+  /* Slides */
+  .ba-showcase { position:relative; }
+  .ba-slides { position:relative; width:100%; aspect-ratio:16/9; overflow:hidden; background:var(--grey-900); }
+  @media(max-width:768px) { .ba-slides { aspect-ratio:4/3; } }
+  .ba-slide { position:absolute; inset:0; opacity:0; transition:opacity 0.7s cubic-bezier(0.32,0.72,0,1); pointer-events:none; }
+  .ba-slide.active { opacity:1; pointer-events:auto; }
+
+  /* Compare slider */
+  .cs { position:relative; width:100%; height:100%; cursor:col-resize; user-select:none; -webkit-user-select:none; touch-action:none; }
+  .cs-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; }
+  .cs-img--after { clip-path:inset(0 50% 0 0); transition:clip-path 0s; }
+  .cs-line { position:absolute; top:0; bottom:0; left:50%; width:1.5px; background:#fff; transform:translateX(-50%); pointer-events:none; }
+  .cs-knob {
+    position:absolute; top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    width:46px; height:46px; border-radius:50%;
+    background:#fff;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 4px 24px rgba(0,0,0,0.5);
+  }
+  .cs-knob svg { color:#000; flex-shrink:0; }
+  .cs-label {
+    position:absolute; bottom:1.75rem;
+    padding:0.3rem 0.9rem;
+    font-size:0.58rem; font-weight:600; letter-spacing:0.2em; text-transform:uppercase;
+    background:rgba(6,6,6,0.55); backdrop-filter:blur(10px) saturate(1.5);
+    color:rgba(255,255,255,0.75); pointer-events:none;
+  }
+  .cs-label--avant { left:1.75rem; }
+  .cs-label--apres { right:1.75rem; }
+  @media(max-width:480px) { .cs-label { bottom:1rem; } .cs-label--avant { left:1rem; } .cs-label--apres { right:1rem; } }
+
+  /* Bottom bar */
+  .ba-bar {
+    display:flex; align-items:center; justify-content:space-between;
+    padding: clamp(1.2rem,3vw,2rem) clamp(1.5rem,5vw,4rem);
+    border-top:1px solid rgba(255,255,255,0.07);
+  }
+  .ba-bar__info { display:flex; flex-direction:column; gap:0.3rem; }
+  .ba-bar__cat { font-size:0.58rem; font-weight:600; letter-spacing:0.2em; text-transform:uppercase; color:rgba(255,255,255,0.28); }
+  .ba-bar__title { font-family:var(--font-display); font-size:clamp(1.4rem,3vw,2.2rem); font-weight:300; line-height:1; }
+  .ba-bar__sub { font-size:0.72rem; color:rgba(255,255,255,0.3); letter-spacing:0.06em; margin-top:0.1rem; }
+  .ba-bar__right { display:flex; align-items:center; gap:1.25rem; }
+  .ba-count { font-size:0.7rem; letter-spacing:0.1em; color:rgba(255,255,255,0.25); min-width:3rem; text-align:center; }
+  .ba-count strong { color:rgba(255,255,255,0.75); font-weight:400; }
+  .ba-arrow {
+    width:42px; height:42px;
+    border:1px solid rgba(255,255,255,0.13);
+    background:transparent; color:rgba(255,255,255,0.6);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    transition:border-color .2s, color .2s, background .2s;
+  }
+  .ba-arrow:hover { border-color:rgba(255,255,255,0.45); color:#fff; background:rgba(255,255,255,0.04); }
+  @media(max-width:600px) { .ba-bar { gap:1rem; } .ba-bar__sub { display:none; } }
+</style>
+
+<section class="ba-section">
+  <div class="ba-header" data-reveal>
+    <div class="ba-header__left">
+      <p class="label">Le résultat parle</p>
+      <h2 class="h2" style="margin:0;">Avant / <em>Après</em></h2>
+    </div>
+    <a href="realisations.html" class="btn btn-outline">
+      <span>Toutes les réalisations</span>
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+    </a>
+  </div>
+
+  <div class="ba-showcase" id="ba-showcase">
+    <div class="ba-slides">
+
+      <!-- Slide 1 — Porsche Macan -->
+      <div class="ba-slide active">
+        <div class="cs" data-compare>
+          <img class="cs-img cs-img--before" src="assets/images/macan-avant.jpg" alt="Avant — Porsche Macan" />
+          <img class="cs-img cs-img--after"  src="assets/images/macan-apres.jpg"  alt="Après — Porsche Macan" />
+          <div class="cs-line">
+            <div class="cs-knob">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg>
+            </div>
+          </div>
+          <span class="cs-label cs-label--avant">Avant</span>
+          <span class="cs-label cs-label--apres">Après</span>
+        </div>
+      </div>
+
+      <!-- Slide 2 — Kia Picanto -->
+      <div class="ba-slide">
+        <div class="cs" data-compare>
+          <img class="cs-img cs-img--before" src="assets/images/picanto-avant.jpg" alt="Avant — Kia Picanto" />
+          <img class="cs-img cs-img--after"  src="assets/images/picanto-apres.jpg"  alt="Après — Kia Picanto" />
+          <div class="cs-line">
+            <div class="cs-knob">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg>
+            </div>
+          </div>
+          <span class="cs-label cs-label--avant">Avant</span>
+          <span class="cs-label cs-label--apres">Après</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Barre de navigation -->
+    <div class="ba-bar">
+      <div class="ba-bar__info">
+        <p class="ba-bar__cat" id="ba-cat">Rénovation</p>
+        <p class="ba-bar__title" id="ba-title">Porsche Macan</p>
+        <p class="ba-bar__sub" id="ba-sub">20"</p>
+      </div>
+      <div class="ba-bar__right">
+        <button class="ba-arrow" id="ba-prev" aria-label="Précédent">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <span class="ba-count"><strong id="ba-cur">01</strong> / <span id="ba-tot">02</span></span>
+        <button class="ba-arrow" id="ba-next" aria-label="Suivant">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ⑤ SERVICE MOBILE ────────────────────────────────────── -->
+<section class="section border-bottom">
+  <div class="container">
+    <div class="mobile-feature" data-reveal>
+      <div class="mobile-feature__img">
+        <img src="assets/images/service-mobile-1.png" alt="Service mobile REYNOV" style="width:100%;height:100%;min-height:520px;object-fit:cover;object-position:center;" />
+      </div>
+      <div class="mobile-feature__content">
+        <div>
+          <p class="label mb-2">Notre atout</p>
+          <h2 class="h2">Le service<br /><em>mobile</em></h2>
+        </div>
+        <p class="body-lg">Notre atelier vient à vous. Aucun déplacement de votre côté.</p>
+        <div class="mobile-feature__points">
+          <div class="mobile-feature__point">
+            <div class="mobile-feature__point-dot"></div>
+            <span>Rayon d'intervention : 50 km</span>
+          </div>
+          <div class="mobile-feature__point">
+            <div class="mobile-feature__point-dot"></div>
+            <span>Matériel professionnel embarqué</span>
+          </div>
+          <div class="mobile-feature__point">
+            <div class="mobile-feature__point-dot"></div>
+            <span>Domicile, concession, parking</span>
+          </div>
+        </div>
+        <a href="service-mobile.html" class="btn btn-outline">
+          <span>En savoir plus</span>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ⑥ PROCESS ───────────────────────────────────────────── -->
+<section class="section border-bottom" id="process">
+  <div class="container">
+    <div class="process-header" data-reveal>
+      <div>
+        <p class="label mb-2">Simple &amp; rapide</p>
+        <h2 class="h2">Comment ça marche</h2>
+      </div>
+      <a href="devis.html" class="btn btn-outline">
+        <span>Démarrer</span>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+      </a>
+    </div>
+    <div class="process-grid">
+      <div class="process-step" data-reveal>
+        <div class="process-step__top">
+          <span class="process-step__num">01</span>
+          <div class="process-step__icon" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M4 4h16v2.5L12 13 4 6.5V4z"/><path d="M4 6.5V19a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V6.5"/></svg>
+          </div>
+        </div>
+        <div class="process-step__content">
+          <h3 class="process-step__title">Envoi<br />des photos</h3>
+          <p class="process-step__text">Via notre formulaire. Réponse sous 24h.</p>
+        </div>
+      </div>
+      <div class="process-step" data-reveal data-reveal-delay="1">
+        <div class="process-step__top">
+          <span class="process-step__num">02</span>
+          <div class="process-step__icon" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          </div>
+        </div>
+        <div class="process-step__content">
+          <h3 class="process-step__title">Devis<br />clair</h3>
+          <p class="process-step__text">Transparent, sans surprise. Validé ensemble.</p>
+        </div>
+      </div>
+      <div class="process-step" data-reveal data-reveal-delay="2">
+        <div class="process-step__top">
+          <span class="process-step__num">03</span>
+          <div class="process-step__icon" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+          </div>
+        </div>
+        <div class="process-step__content">
+          <h3 class="process-step__title">Inter&shy;vention</h3>
+          <p class="process-step__text">Chez vous ou en atelier. Délai tenu.</p>
+        </div>
+      </div>
+      <div class="process-step" data-reveal data-reveal-delay="3">
+        <div class="process-step__top">
+          <span class="process-step__num">04</span>
+          <div class="process-step__icon" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+        </div>
+        <div class="process-step__content">
+          <h3 class="process-step__title">Livraison<br />&amp; contrôle</h3>
+          <p class="process-step__text">Inspection finale. Satisfait ou on corrige.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ⑦ PARTICULIERS / PROS ───────────────────────────────── -->
+<section class="section border-bottom">
+  <div class="container">
+    <div class="grid-2" style="background:rgba(255,255,255,0.05);gap:1px;">
+      <div class="audience-card" data-reveal>
+        <p class="label mb-2">Particuliers</p>
+        <h3 class="h3">Votre véhicule<br /><em>mérite mieux</em></h3>
+        <p class="audience-card__text">Jante rayée, abîmée, ou envie de changer de look — on intervient directement chez vous.</p>
+        <a href="devis.html" class="btn btn-outline">
+          <span>Obtenir un devis</span>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+        </a>
+      </div>
+      <div class="audience-card audience-card--dark" data-reveal data-reveal-delay="2">
+        <p class="label mb-2">Professionnels</p>
+        <h3 class="h3">Partenaire<br /><em>de confiance</em></h3>
+        <p class="audience-card__text">Concessions, loueurs, flottes — tarifs adaptés, intervention sur site, délais garantis.</p>
+        <a href="professionnels.html" class="btn btn-outline">
+          <span>Espace professionnels</span>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ⑧ CTA FINAL ─────────────────────────────────────────── -->
+<section class="cta-band" data-reveal>
+  <div class="container-narrow">
+    <p class="label" style="margin-bottom:1.2rem;">Devis gratuit · Réponse sous 24h</p>
+    <h2 class="cta-band__title">Prêt à redonner<br /><em>vie à vos jantes ?</em></h2>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:3rem;">
+      <a href="devis.html" class="btn btn-primary btn-lg">
+        <span>Demander un devis</span>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+      </a>
+      <a href="contact.html" class="btn btn-outline btn-lg">
+        <span>Nous contacter</span>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ─────────────────────────────────────────────── -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer__top">
+      <div class="footer__brand">
+        <div class="footer__logo">
+          <img src="assets/images/logo.png" alt="REYNOV" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" />
+          <div class="footer__logo-text" style="display:none">REYNOV</div>
+        </div>
+        <p class="footer__tagline">Rénovation, réparation et personnalisation de jantes premium à Lyon et en Rhône-Alpes. Service mobile à domicile et chez les professionnels.</p>
+      </div>
+      <div>
+        <p class="footer__col-title">Prestations</p>
+        <div class="footer__links">
+          <a href="prestations/renovation.html" class="footer__link">Rénovation de jantes</a>
+          <a href="prestations/soudure.html" class="footer__link">Soudure</a>
+          <a href="prestations/devoilage.html" class="footer__link">Dévoilage</a>
+          <a href="prestations/personnalisation.html" class="footer__link">Personnalisation</a>
+          <a href="prestations/retour-leasing.html" class="footer__link">Retour de leasing</a>
+          <a href="prestations/preparation-vente.html" class="footer__link">Préparation à la vente</a>
+        </div>
+      </div>
+      <div>
+        <p class="footer__col-title">Navigation</p>
+        <div class="footer__links">
+          <a href="service-mobile.html" class="footer__link">Service mobile</a>
+          <a href="professionnels.html" class="footer__link">Professionnels</a>
+          <a href="realisations.html" class="footer__link">Réalisations</a>
+          <a href="devis.html" class="footer__link">Devis gratuit</a>
+          <a href="faq.html" class="footer__link">FAQ</a>
+          <a href="a-propos.html" class="footer__link">À propos</a>
+        </div>
+      </div>
+      <div>
+        <p class="footer__col-title">Contact</p>
+        <div class="footer__links">
+          <span class="footer__link">📍 Lyon &amp; Rhône-Alpes (rayon 50 km)</span>
+          <a href="tel:+33600000000" class="footer__link">+33 6 00 00 00 00</a>
+          <a href="mailto:contact@reynojantes.fr" class="footer__link">contact@reynojantes.fr</a>
+          <a href="contact.html" class="footer__link">Formulaire de contact</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <p class="footer__copy">© 2026 REYNOV — Lyon &amp; Rhône-Alpes. Tous droits réservés.</p>
+      <div class="footer__legal">
+        <a href="#">Mentions légales</a>
+        <a href="#">Politique de confidentialité</a>
+        <a href="#">CGV</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/js/main.js"></script>
+
+<script>
+  (function () {
+    const loader   = document.getElementById('reynov-loader');
+    const bar      = document.getElementById('loader-bar');
+    const DURATION = 2200; // durée totale en ms (ajustable)
+    const EASE_END = 400;  // durée du fade-out final
+
+    let start      = null;
+    let done       = false;
+
+    // ── Barre de progression fluide ──────────────────────────
+    function animateBar(ts) {
+      if (!start) start = ts;
+      const elapsed  = ts - start;
+      const progress = Math.min(elapsed / DURATION, 1);
+
+      // Courbe ease-out : accélère puis ralentit vers 95%,
+      // le dernier 5% est réservé au moment où la page est prête.
+      const eased = progress < 1
+        ? 1 - Math.pow(1 - progress, 2.5)
+        : 1;
+
+      bar.style.width = (eased * 95) + '%'; // plafond à 95% tant que la page n'est pas chargée
+
+      if (progress < 1) {
+        requestAnimationFrame(animateBar);
+      } else {
+        // Animation terminée, on attend que la page soit prête
+        completeIfReady();
+      }
+    }
+
+    // ── Fin du chargement ─────────────────────────────────────
+    function dismiss() {
+      if (done) return;
+      done = true;
+
+      // Remplir la barre à 100%
+      bar.style.transition = 'width 0.25s ease';
+      bar.style.width = '100%';
+
+      // Fade-out du loader après le remplissage
+      setTimeout(() => {
+        loader.classList.add('hidden');
+        document.body.classList.remove('loading');
+      }, 280);
+    }
+
+    let pageReady  = false;
+    let barDone    = false;
+
+    function completeIfReady() {
+      barDone = true;
+      if (pageReady) dismiss();
+    }
+
+    // ── Page prête ────────────────────────────────────────────
+    function onPageReady() {
+      pageReady = true;
+      if (barDone) dismiss();
+    }
+
+    // Démarre l'animation immédiatement (après un bref délai pour que le fade-in soit visible)
+    setTimeout(() => requestAnimationFrame(animateBar), 50);
+
+    // Écoute la fin du chargement de la page
+    if (document.readyState === 'complete') {
+      // Page déjà chargée (cache)
+      setTimeout(onPageReady, 300);
+    } else {
+      window.addEventListener('load', () => setTimeout(onPageReady, 200));
+    }
+
+    // Sécurité : forcer la disparition après 5s max
+    setTimeout(dismiss, 5000);
+  })();
+
+  // ── Showcase Avant/Après ─────────────────────────────────
+  (function () {
+    const showcase = document.getElementById('ba-showcase');
+    if (!showcase) return;
+
+    const slides  = Array.from(showcase.querySelectorAll('.ba-slide'));
+    const elCat   = document.getElementById('ba-cat');
+    const elTitle = document.getElementById('ba-title');
+    const elSub   = document.getElementById('ba-sub');
+    const elCur   = document.getElementById('ba-cur');
+    const elTot   = document.getElementById('ba-tot');
+
+    const DATA = [
+      { cat:'Rénovation', title:'Porsche Macan', sub:'20"' },
+      { cat:'Rénovation', title:'Kia Picanto',   sub:'15"' },
+    ];
+
+    let cur = 0;
+    if (elTot) elTot.textContent = String(DATA.length).padStart(2,'0');
+
+    function goTo(n) {
+      slides[cur].classList.remove('active');
+      cur = (n + slides.length) % slides.length;
+      slides[cur].classList.add('active');
+      const d = DATA[cur];
+      if (elCat)   elCat.textContent   = d.cat;
+      if (elTitle) elTitle.textContent = d.title;
+      if (elSub)   elSub.textContent   = d.sub;
+      if (elCur)   elCur.textContent   = String(cur + 1).padStart(2,'0');
+      // Reset compare handle to center on slide change
+      const cs = slides[cur].querySelector('[data-compare]');
+      if (cs) resetCompare(cs);
+    }
+
+    document.getElementById('ba-prev')?.addEventListener('click', () => goTo(cur - 1));
+    document.getElementById('ba-next')?.addEventListener('click', () => goTo(cur + 1));
+
+    // ── Compare drag (Pointer Events) ──
+    function initCompare(cs) {
+      const afterImg = cs.querySelector('.cs-img--after');
+      const line     = cs.querySelector('.cs-line');
+
+      const setPos = (x) => {
+        const rect = cs.getBoundingClientRect();
+        const pct  = Math.min(Math.max((x - rect.left) / rect.width * 100, 1), 99);
+        afterImg.style.clipPath = `inset(0 ${100 - pct}% 0 0)`;
+        line.style.left = pct + '%';
+      };
+
+      cs.addEventListener('pointerdown', e => {
+        cs.setPointerCapture(e.pointerId);
+        setPos(e.clientX);
+        e.preventDefault();
+      });
+      cs.addEventListener('pointermove', e => {
+        if (!cs.hasPointerCapture(e.pointerId)) return;
+        setPos(e.clientX);
+      });
+    }
+
+    function resetCompare(cs) {
+      const afterImg = cs.querySelector('.cs-img--after');
+      const line     = cs.querySelector('.cs-line');
+      if (afterImg) afterImg.style.clipPath = 'inset(0 50% 0 0)';
+      if (line)     line.style.left = '50%';
+    }
+
+    slides.forEach(slide => {
+      const cs = slide.querySelector('[data-compare]');
+      if (cs) { resetCompare(cs); initCompare(cs); }
+    });
+  })();
+</script>
+</body>
+</html>

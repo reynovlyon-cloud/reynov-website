@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://reynojantes.fr/sitemap.xml
+
+# Dossiers à ne pas indexer
+Disallow: /assets/js/
+Disallow: /assets/css/
