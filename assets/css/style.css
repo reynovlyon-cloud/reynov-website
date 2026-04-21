@@ -303,22 +303,20 @@ h4, .h4 { font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; l
 
 .nav__actions {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.8rem;
+  gap: 0.2rem;
 }
 
 .nav__phone {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.72rem;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  color: rgba(255,255,255,0.65);
+  font-size: 0.65rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.45);
   transition: color 0.2s;
   white-space: nowrap;
 }
-.nav__phone:hover { color: var(--white); }
+.nav__phone:hover { color: rgba(255,255,255,0.75); }
 
 /* Burger */
 .nav__burger {
