@@ -28,11 +28,7 @@ const transporter = nodemailer.createTransport({
   auth: { user: GMAIL_USER, pass: GMAIL_PASS },
 });
 
-// Vérifie la connexion SMTP au démarrage
-transporter.verify((err) => {
-  if (err) console.error('❌ Connexion Gmail échouée:', err.message);
-  else     console.log('✅ Gmail SMTP connecté');
-});
+// Connexion SMTP vérifiée à la première utilisation
 
 // ── Email : owner ─────────────────────────────────────────────
 function ownerEmail(d) {
@@ -205,6 +201,9 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'index.html'));
 });
 
+process.on('uncaughtException',  err => console.error('💥 uncaughtException:', err.message));
+process.on('unhandledRejection', err => console.error('💥 unhandledRejection:', err));
+
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 REYNOV server démarré sur le port ${PORT} (process.env.PORT=${process.env.PORT})`);
+  console.log(`🚀 REYNOV server démarré sur le port ${PORT}`);
 });
