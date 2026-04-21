@@ -219,8 +219,8 @@ app.post('/api/devis', upload.array('photos', 20), async (req, res) => {
     res.json({ ok: true });
 
   } catch (err) {
-    console.error('❌ Erreur envoi mail:', err.message);
-    res.status(500).json({ ok: false, error: err.message });
+    console.error('❌ Erreur envoi mail:', err.message, JSON.stringify(err.response?.data || ''));
+    res.status(500).json({ ok: false, error: err.message, detail: err.response?.data });
   }
 });
 
