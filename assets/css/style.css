@@ -302,6 +302,9 @@ h4, .h4 { font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; l
 .nav__cta:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.5); }
 
 .nav__phone {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   font-size: 0.72rem;
   font-weight: 500;
   letter-spacing: 0.08em;
