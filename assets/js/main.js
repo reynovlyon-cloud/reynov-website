@@ -255,7 +255,60 @@ function updateUploadLabel(input) {
 function submitForm() {
   const form = document.querySelector('.devis-form');
   if (!form) return;
-  const success = form.querySelector('.devis-success');
-  form.querySelectorAll('.devis-step').forEach(s => s.classList.remove('current'));
-  if (success) success.style.display = 'block';
+
+  // Collect choice buttons
+  const groups = {};
+  form.querySelectorAll('.choice-btn.selected').forEach(btn => {
+    const g = btn.dataset.group;
+    const v = btn.textContent.trim();
+    if (!groups[g]) groups[g] = [];
+    groups[g].push(v);
+  });
+
+  const fd = new FormData();
+  fd.append('prestation',    (groups.raison   || []).join(', '));
+  fd.append('problemes',     (groups.probleme || []).join(', '));
+  fd.append('nb_jantes',     (groups.nb       || []).join(''));
+  fd.append('mode',          (groups.mode     || []).join(''));
+  fd.append('delai',         (groups.delai    || []).join(''));
+
+  ['taille','marque','modele','finition','adresse','prenom','nom','email','tel','description'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) fd.append(id, el.value);
+  });
+
+  const adresseClient = document.getElementById('adresse-client');
+  if (adresseClient) fd.append('adresse_client', adresseClient.value);
+
+  const photosInput = document.getElementById('photos');
+  if (photosInput && photosInput.files) {
+    Array.from(photosInput.files).forEach(f => fd.append('photos', f));
+  }
+
+  const submitBtn = form.querySelector('[data-next]');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    const span = submitBtn.querySelector('span');
+    if (span) span.textContent = 'Envoi en cours…';
+  }
+
+  fetch('/api/devis', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok) {
+        form.querySelectorAll('.devis-step').forEach(s => s.classList.remove('current'));
+        const success = form.querySelector('.devis-success');
+        if (success) success.style.display = 'block';
+      } else {
+        throw new Error(data.error || 'Erreur');
+      }
+    })
+    .catch(() => {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        const span = submitBtn.querySelector('span');
+        if (span) span.textContent = 'Envoyer ma demande';
+      }
+      alert('Une erreur est survenue. Veuillez réessayer ou nous appeler directement au 06 61 45 35 27.');
+    });
 }
