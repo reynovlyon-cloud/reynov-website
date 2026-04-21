@@ -5,7 +5,7 @@ const path       = require('path');
 
 const app    = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
-const PORT   = process.env.PORT || 3000;
+const PORT   = parseInt(process.env.PORT) || 3000;
 
 // ── Static site ───────────────────────────────────────────────
 app.use(express.static(path.join(__dirname, '..')));
@@ -207,5 +207,5 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 REYNOV server démarré sur le port ${PORT}`);
+  console.log(`🚀 REYNOV server démarré sur le port ${PORT} (process.env.PORT=${process.env.PORT})`);
 });
