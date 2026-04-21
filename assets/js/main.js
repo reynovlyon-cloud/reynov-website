@@ -166,11 +166,6 @@ function initDevisForm(form) {
       const input = form.querySelector('input[name="photos"]');
       const error = document.getElementById('photos-error');
       const drop  = document.getElementById('upload-drop');
-      if (!input || !input.files.length) {
-        if (error) error.style.display = 'block';
-        if (drop)  drop.style.borderColor = 'rgba(255,100,100,0.45)';
-        return false;
-      }
       if (error) error.style.display = 'none';
       if (drop)  drop.style.borderColor = '';
     }
