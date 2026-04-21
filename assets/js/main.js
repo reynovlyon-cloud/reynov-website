@@ -127,9 +127,19 @@ function initDevisForm(form) {
   form.querySelectorAll('.choice-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const group = btn.dataset.group;
-      if (group) form.querySelectorAll(`[data-group="${group}"]`).forEach(b => b.classList.remove('selected'));
-      btn.classList.toggle('selected', !btn.classList.contains('selected') || btn.dataset.multi !== undefined);
-      if (!btn.dataset.multi) btn.classList.add('selected');
+      if (btn.dataset.multi) {
+        const isSelected = btn.classList.contains('selected');
+        if (!isSelected) {
+          const maxReached = group === 'probleme' &&
+            form.querySelectorAll(`[data-group="probleme"].selected`).length >= 3;
+          if (!maxReached) btn.classList.add('selected');
+        } else {
+          btn.classList.remove('selected');
+        }
+      } else {
+        if (group) form.querySelectorAll(`[data-group="${group}"]`).forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+      }
       // Intervention info toggle
       if (btn.dataset.mode) {
         const domicileInfo = document.getElementById('domicile-info');
