@@ -146,6 +146,13 @@ function initDevisForm(form) {
         const atelierInfo  = document.getElementById('atelier-info');
         if (domicileInfo) domicileInfo.classList.toggle('visible', btn.dataset.mode === 'domicile');
         if (atelierInfo)  atelierInfo.classList.toggle('visible',  btn.dataset.mode === 'atelier');
+        const adresseRow   = document.getElementById('adresse-row');
+        const adresseInput = document.getElementById('adresse-client');
+        if (adresseRow && adresseInput) {
+          const isDomicile = btn.dataset.mode === 'domicile';
+          adresseRow.style.display  = isDomicile ? '' : 'none';
+          adresseInput.required     = isDomicile;
+        }
       }
       // Auto-advance if single choice group and not multi
       if (btn.dataset.autoAdvance && !btn.dataset.multi) {
