@@ -14,18 +14,20 @@ app.use(express.static(path.join(__dirname, '..')));
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
 // ── Mailer ────────────────────────────────────────────────────
-const GMAIL_USER = process.env.GMAIL_USER;
-const GMAIL_PASS = process.env.GMAIL_PASS;
-
-if (!GMAIL_USER || !GMAIL_PASS) {
-  console.error('⚠️  GMAIL_USER ou GMAIL_PASS manquant dans les variables d\'environnement');
-}
+const GMAIL_USER            = process.env.GMAIL_USER;
+const GMAIL_CLIENT_ID       = process.env.GMAIL_CLIENT_ID;
+const GMAIL_CLIENT_SECRET   = process.env.GMAIL_CLIENT_SECRET;
+const GMAIL_REFRESH_TOKEN   = process.env.GMAIL_REFRESH_TOKEN;
 
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
-  auth: { user: GMAIL_USER, pass: GMAIL_PASS },
+  service: 'gmail',
+  auth: {
+    type:         'OAuth2',
+    user:         GMAIL_USER,
+    clientId:     GMAIL_CLIENT_ID,
+    clientSecret: GMAIL_CLIENT_SECRET,
+    refreshToken: GMAIL_REFRESH_TOKEN,
+  },
 });
 
 // Connexion SMTP vérifiée à la première utilisation
