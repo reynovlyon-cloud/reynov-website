@@ -107,6 +107,8 @@ function animateCount(el) {
 
 // ── Multi-step devis form logic ────────────────────────────
 function initDevisForm(form) {
+  form.addEventListener('submit', e => e.preventDefault());
+
   let currentStep = 1;
   const steps = form.querySelectorAll('.devis-step');
   const progress = form.querySelectorAll('.devis-progress__step');
@@ -280,7 +282,8 @@ function submitForm() {
     Array.from(photosInput.files).forEach(f => fd.append('photos', f));
   }
 
-  const submitBtn = form.querySelector('[data-next]');
+  const allNextBtns = form.querySelectorAll('[data-next]');
+  const submitBtn = allNextBtns[allNextBtns.length - 1];
   if (submitBtn) {
     submitBtn.disabled = true;
     const span = submitBtn.querySelector('span');
@@ -308,6 +311,6 @@ function submitForm() {
         if (span) span.textContent = 'Envoyer ma demande';
       }
       console.error('Devis submit error:', err);
-      alert('Erreur : ' + (err && err.message ? err.message : 'inconnue'));
+      alert('Erreur lors de l\'envoi : ' + (err && err.message ? err.message : 'inconnue') + '\n\nContactez-nous directement : 06 61 45 35 27');
     });
 }
