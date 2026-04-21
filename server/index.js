@@ -1,7 +1,7 @@
 const express    = require('express');
 const multer     = require('multer');
-const nodemailer = require('nodemailer');
 const path       = require('path');
+const { google } = require('googleapis');
 
 const app    = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
@@ -13,24 +13,50 @@ app.use(express.static(path.join(__dirname, '..')));
 // ── Health check ──────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
-// ── Mailer ────────────────────────────────────────────────────
-const GMAIL_USER            = process.env.GMAIL_USER;
-const GMAIL_CLIENT_ID       = process.env.GMAIL_CLIENT_ID;
-const GMAIL_CLIENT_SECRET   = process.env.GMAIL_CLIENT_SECRET;
-const GMAIL_REFRESH_TOKEN   = process.env.GMAIL_REFRESH_TOKEN;
+// ── Gmail API ─────────────────────────────────────────────────
+const GMAIL_USER          = process.env.GMAIL_USER;
+const GMAIL_CLIENT_ID     = process.env.GMAIL_CLIENT_ID;
+const GMAIL_CLIENT_SECRET = process.env.GMAIL_CLIENT_SECRET;
+const GMAIL_REFRESH_TOKEN = process.env.GMAIL_REFRESH_TOKEN;
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    type:         'OAuth2',
-    user:         GMAIL_USER,
-    clientId:     GMAIL_CLIENT_ID,
-    clientSecret: GMAIL_CLIENT_SECRET,
-    refreshToken: GMAIL_REFRESH_TOKEN,
-  },
-});
+const oauth2Client = new google.auth.OAuth2(GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET);
+oauth2Client.setCredentials({ refresh_token: GMAIL_REFRESH_TOKEN });
+const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-// Connexion SMTP vérifiée à la première utilisation
+function buildRawEmail({ from, to, subject, html, attachments = [] }) {
+  const boundary = 'REYNOV_BOUNDARY_' + Date.now();
+  const hasAttachments = attachments.length > 0;
+  const contentType = hasAttachments
+    ? `multipart/mixed; boundary="${boundary}"`
+    : 'text/html; charset=UTF-8';
+
+  let raw = [
+    `From: ${from}`,
+    `To: ${to}`,
+    `Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`,
+    'MIME-Version: 1.0',
+    `Content-Type: ${contentType}`,
+    '',
+  ].join('\r\n');
+
+  if (hasAttachments) {
+    raw += `--${boundary}\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n${html}\r\n`;
+    for (const att of attachments) {
+      const b64 = att.content.toString('base64');
+      raw += `--${boundary}\r\nContent-Type: ${att.contentType}\r\nContent-Transfer-Encoding: base64\r\nContent-Disposition: attachment; filename="${att.filename}"\r\n\r\n${b64}\r\n`;
+    }
+    raw += `--${boundary}--`;
+  } else {
+    raw += html;
+  }
+
+  return Buffer.from(raw).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function sendEmail(opts) {
+  const rawMessage = buildRawEmail(opts);
+  await gmail.users.messages.send({ userId: 'me', requestBody: { raw: rawMessage } });
+}
 
 // ── Email : owner ─────────────────────────────────────────────
 function ownerEmail(d) {
@@ -173,16 +199,16 @@ app.post('/api/devis', upload.array('photos', 20), async (req, res) => {
 
     console.log(`📎 ${attachments.length} photo(s) jointe(s)`);
 
-    await transporter.sendMail({
-      from:    `"REYNOV Site" <${GMAIL_USER}>`,
-      to:      GMAIL_USER,
-      subject: `Nouveau devis - ${d.prenom} ${d.nom}`,
-      html:    ownerEmail(d),
+    await sendEmail({
+      from:        `"REYNOV Site" <${GMAIL_USER}>`,
+      to:          GMAIL_USER,
+      subject:     `Nouveau devis - ${d.prenom} ${d.nom}`,
+      html:        ownerEmail(d),
       attachments,
     });
     console.log('✅ Mail owner envoyé');
 
-    await transporter.sendMail({
+    await sendEmail({
       from:    `"REYNOV" <${GMAIL_USER}>`,
       to:      d.email,
       subject: 'Votre demande de devis REYNOV a bien été reçue',
