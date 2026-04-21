@@ -378,9 +378,26 @@ h4, .h4 { font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; l
   border-bottom: none;
   color: var(--white);
   font-style: italic;
-  margin-top: auto;
   background: rgba(255,255,255,0.03);
 }
+.nav__mobile-phone {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  padding: 1.2rem 1.5rem;
+  margin-top: auto;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  opacity: 0;
+  transform: translateX(28px);
+  transition: opacity 0.4s var(--ease-out), transform 0.4s var(--spring), color 0.2s;
+}
+.nav__mobile-phone:active { color: rgba(255,255,255,0.7); }
 .nav__mobile-link:active { color: var(--white); background: rgba(255,255,255,0.04); }
 
 /* Sous-liens prestations */
