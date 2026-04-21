@@ -288,14 +288,17 @@ function submitForm() {
   }
 
   fetch('/api/devis', { method: 'POST', body: fd })
-    .then(r => r.json())
+    .then(r => {
+      if (!r.ok && r.status !== 400 && r.status !== 500) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
     .then(data => {
       if (data.ok) {
         form.querySelectorAll('.devis-step').forEach(s => s.classList.remove('current'));
         const success = form.querySelector('.devis-success');
         if (success) success.style.display = 'block';
       } else {
-        throw new Error(data.error || 'Erreur');
+        throw new Error(data.error || JSON.stringify(data.detail) || 'Erreur serveur');
       }
     })
     .catch((err) => {
@@ -304,6 +307,7 @@ function submitForm() {
         const span = submitBtn.querySelector('span');
         if (span) span.textContent = 'Envoyer ma demande';
       }
+      console.error('Devis submit error:', err);
       alert('Erreur : ' + (err && err.message ? err.message : 'inconnue'));
     });
 }
