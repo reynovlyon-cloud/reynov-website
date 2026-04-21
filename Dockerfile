@@ -1,8 +1,5 @@
 FROM node:20-alpine
-WORKDIR /app/server
-COPY server/package*.json ./
-RUN npm install --production --no-audit
 WORKDIR /app
 COPY . .
-EXPOSE 3000
+RUN cd server && npm install --production
 CMD ["node", "server/index.js"]
