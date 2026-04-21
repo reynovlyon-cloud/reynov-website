@@ -23,10 +23,9 @@ if (!GMAIL_USER || !GMAIL_PASS) {
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
+  port: 465,
+  secure: true,
   auth: { user: GMAIL_USER, pass: GMAIL_PASS },
-  tls: { rejectUnauthorized: false },
 });
 
 // Vérifie la connexion SMTP au démarrage
