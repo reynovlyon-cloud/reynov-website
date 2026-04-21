@@ -301,6 +301,12 @@ h4, .h4 { font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; l
 }
 .nav__cta:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.5); }
 
+.nav__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
 .nav__phone {
   display: flex;
   align-items: center;
@@ -1069,7 +1075,7 @@ textarea.form-input { resize: vertical; min-height: 100px; border-radius: 12px; 
   .section-intro { margin-bottom: 2rem; }
 
   /* ─── Nav ─── */
-  .nav__links, .nav__cta, .nav__phone { display: none; }
+  .nav__links, .nav__actions { display: none; }
   .nav__burger { display: inline-flex; }
   .nav__mobile { display: flex; }
 
