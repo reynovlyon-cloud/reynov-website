@@ -303,12 +303,12 @@ function submitForm() {
         throw new Error(data.error || 'Erreur');
       }
     })
-    .catch(() => {
+    .catch((err) => {
       if (submitBtn) {
         submitBtn.disabled = false;
         const span = submitBtn.querySelector('span');
         if (span) span.textContent = 'Envoyer ma demande';
       }
-      alert('Une erreur est survenue. Veuillez réessayer ou nous appeler directement au 06 61 45 35 27.');
+      alert('Erreur : ' + (err && err.message ? err.message : 'inconnue'));
     });
 }
