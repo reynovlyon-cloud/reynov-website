@@ -52,10 +52,11 @@ function buildRawEmail({ from, to, subject, html, attachments = [] }) {
   ].join('\r\n');
 
   if (hasAttachments) {
-    raw += `--${boundary}\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n${html}\r\n`;
+    raw += `\r\n--${boundary}\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n${html}\r\n`;
     for (const att of attachments) {
-      const b64 = att.content.toString('base64');
-      raw += `--${boundary}\r\nContent-Type: ${att.contentType}\r\nContent-Transfer-Encoding: base64\r\nContent-Disposition: attachment; filename="${att.filename}"\r\n\r\n${b64}\r\n`;
+      const b64 = att.content.toString('base64').replace(/(.{76})/g, '$1\r\n');
+      const filename = Buffer.from(att.filename).toString('ascii').replace(/[^\x20-\x7E]/g, '_');
+      raw += `--${boundary}\r\nContent-Type: ${att.contentType}\r\nContent-Transfer-Encoding: base64\r\nContent-Disposition: attachment; filename="${filename}"\r\n\r\n${b64}\r\n`;
     }
     raw += `--${boundary}--`;
   } else {
