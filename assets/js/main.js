@@ -172,15 +172,30 @@ function initDevisForm(form) {
       if (drop)  drop.style.borderColor = '';
     }
     if (step === 6) {
-      const tel   = form.querySelector('input[name="tel"]');
-      const error = document.getElementById('tel-error');
-      if (!tel || !tel.value.trim()) {
-        if (error) error.style.display = 'block';
-        if (tel)  { tel.style.borderColor = 'rgba(255,100,100,0.45)'; tel.focus(); }
-        return false;
+      let ok = true;
+      const prenom = document.getElementById('prenom');
+      const email  = document.getElementById('email');
+      const tel    = document.getElementById('tel');
+      const emailErr = document.getElementById('email-error');
+      const telErr   = document.getElementById('tel-error');
+
+      if (!email || !email.value.trim()) {
+        if (emailErr) emailErr.style.display = 'block';
+        if (email) email.style.borderColor = 'rgba(255,100,100,0.45)';
+        ok = false;
+      } else {
+        if (emailErr) emailErr.style.display = 'none';
+        if (email) email.style.borderColor = '';
       }
-      if (error) error.style.display = 'none';
-      if (tel)   tel.style.borderColor = '';
+      if (!tel || !tel.value.trim()) {
+        if (telErr) telErr.style.display = 'block';
+        if (tel) { tel.style.borderColor = 'rgba(255,100,100,0.45)'; if (ok) tel.focus(); }
+        ok = false;
+      } else {
+        if (telErr) telErr.style.display = 'none';
+        if (tel) tel.style.borderColor = '';
+      }
+      if (!ok) return false;
     }
     return true;
   };
@@ -291,27 +306,36 @@ function submitForm() {
     if (span) span.textContent = 'Envoi en cours…';
   }
 
-  fetch('/api/devis', { method: 'POST', body: fd })
-    .then(r => {
-      if (!r.ok && r.status !== 400 && r.status !== 500) throw new Error('HTTP ' + r.status);
-      return r.json();
-    })
-    .then(data => {
+  const resetBtn = () => {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      const span = submitBtn.querySelector('span');
+      if (span) span.textContent = 'Envoyer ma demande';
+    }
+  };
+
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', '/api/devis');
+  xhr.onload = () => {
+    try {
+      const data = JSON.parse(xhr.responseText);
       if (data.ok) {
         form.querySelectorAll('.devis-step').forEach(s => s.classList.remove('current'));
         const success = form.querySelector('.devis-success');
         if (success) success.style.display = 'block';
       } else {
-        throw new Error(data.error || JSON.stringify(data.detail) || 'Erreur serveur');
+        resetBtn();
+        alert('Erreur : ' + (data.error || 'Erreur serveur'));
       }
-    })
-    .catch((err) => {
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        const span = submitBtn.querySelector('span');
-        if (span) span.textContent = 'Envoyer ma demande';
-      }
-      console.error('Devis submit error:', err);
-      alert('Erreur lors de l\'envoi : ' + (err && err.message ? err.message : 'inconnue') + '\n\nContactez-nous directement : 06 61 45 35 27');
-    });
+    } catch (e) {
+      resetBtn();
+      alert('Erreur inattendue. Contactez-nous : 06 61 45 35 27');
+    }
+  };
+  xhr.onerror = () => {
+    resetBtn();
+    console.error('XHR error status:', xhr.status);
+    alert('Erreur réseau. Vérifiez votre connexion et réessayez.');
+  };
+  xhr.send(fd);
 }

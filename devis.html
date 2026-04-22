@@ -266,7 +266,7 @@
   <!-- Formulaire multi-étapes -->
   <main class="devis-main">
     <div class="devis-form-wrap">
-      <form class="devis-form" novalidate>
+      <form class="devis-form" action="javascript:void(0)" novalidate>
 
         <!-- Progress bar -->
         <div class="devis-progress">
@@ -461,7 +461,7 @@
 
           <div class="upload-area" id="upload-area">
             <label class="upload-drop" for="photos" id="upload-drop">
-              <input type="file" id="photos" name="photos" accept="image/*,video/*" multiple required />
+              <input type="file" id="photos" name="photos" accept="image/*,video/*" multiple />
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
               <strong id="upload-label-text">Ajouter des photos *</strong>
               <span>Appuyez ou glissez vos fichiers ici</span>
@@ -494,31 +494,26 @@
           <div class="form-grid">
             <div class="form-row">
               <label class="form-label" for="prenom">Prénom *</label>
-              <input class="form-input" type="text" id="prenom" name="prenom" required placeholder="Votre prénom" />
+              <input class="form-input" type="text" id="prenom" name="prenom" placeholder="Votre prénom" />
             </div>
             <div class="form-row">
               <label class="form-label" for="nom">Nom *</label>
-              <input class="form-input" type="text" id="nom" name="nom" required placeholder="Votre nom" />
+              <input class="form-input" type="text" id="nom" name="nom" placeholder="Votre nom" />
             </div>
           </div>
           <div class="form-row">
             <label class="form-label" for="email">Email *</label>
-            <input class="form-input" type="email" id="email" name="email" required placeholder="votre@email.fr" />
+            <input class="form-input" type="text" id="email" name="email" placeholder="votre@email.fr" />
+            <p id="email-error" style="display:none;font-size:0.78rem;color:rgba(255,100,100,0.85);margin-top:0.5rem;">Un email valide est requis.</p>
           </div>
           <div class="form-row">
             <label class="form-label" for="tel">Téléphone *</label>
-            <input class="form-input" type="tel" id="tel" name="tel" required placeholder="06 61 45 35 27" />
+            <input class="form-input" type="text" id="tel" name="tel" placeholder="06 61 45 35 27" />
             <p id="tel-error" style="display:none;font-size:0.78rem;color:rgba(255,100,100,0.85);margin-top:0.5rem;">Un numéro de téléphone est requis.</p>
           </div>
           <div class="form-row" id="adresse-row" style="display:none">
             <label class="form-label" for="adresse-client">Adresse d'intervention *</label>
             <input class="form-input" type="text" id="adresse-client" name="adresse" placeholder="Ex: 12 rue de la Paix, 69003 Lyon" />
-          </div>
-          <div class="form-row">
-            <label style="display:flex;align-items:flex-start;gap:0.75rem;cursor:pointer;">
-              <input type="checkbox" style="margin-top:3px;accent-color:var(--white);" required />
-              <span style="font-size:0.8rem;color:var(--grey-400);line-height:1.6;">J'accepte que mes données soient utilisées dans le cadre de ce devis. Aucun démarchage commercial.</span>
-            </label>
           </div>
 
           <div class="devis-nav">
@@ -543,6 +538,6 @@
   </main>
 </div>
 
-<script src="assets/js/main.js?v=4"></script>
+<script src="assets/js/main.js?v=5"></script>
 </body>
 </html>
