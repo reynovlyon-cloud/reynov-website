@@ -250,6 +250,7 @@ function updateUploadLabel(input) {
 }
 
 function submitForm() {
+  console.log('[REYNOV] submitForm called');
   const form = document.querySelector('.devis-form');
   if (!form) return;
 

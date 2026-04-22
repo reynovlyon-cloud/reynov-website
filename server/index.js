@@ -8,7 +8,13 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 
 const PORT   = parseInt(process.env.PORT) || 3000;
 
 // ── Static site ───────────────────────────────────────────────
-app.use(express.static(path.join(__dirname, '..')));
+app.use(express.static(path.join(__dirname, '..'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+  }
+}));
 
 // ── Health check ──────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ ok: true }));
@@ -167,7 +173,12 @@ function clientEmail(d) {
 }
 
 // ── POST /api/devis ───────────────────────────────────────────
-app.post('/api/devis', upload.array('photos', 20), async (req, res) => {
+app.post('/api/devis', (req, res, next) => {
+  upload.array('photos', 20)(req, res, (err) => {
+    if (err) return res.status(400).json({ ok: false, error: err.message });
+    next();
+  });
+}, async (req, res) => {
   try {
     console.log('📩 Devis reçu depuis', req.ip);
     const b = req.body;
