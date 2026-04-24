@@ -53,6 +53,8 @@
   }
   </script>
   <style>
+    .nav { background: rgba(6,6,6,0.55); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+
     .devis-layout { display: grid; grid-template-columns: 1fr 1fr; min-height: 100svh; }
     .devis-aside {
       position: sticky; top: 0;
@@ -255,9 +257,7 @@
         <div style="display:flex;gap:1rem;align-items:center;font-size:0.85rem;color:rgba(255,255,255,0.55);">
           <span style="color:var(--white);">✓</span> Aucun engagement
         </div>
-        <div style="display:flex;gap:1rem;align-items:center;font-size:0.85rem;color:rgba(255,255,255,0.55);">
-          <span style="color:var(--white);">✓</span> Tarif transparent, pas de surprise
-        </div>
+
         <div style="display:flex;gap:1rem;align-items:center;font-size:0.85rem;color:rgba(255,255,255,0.55);">
           <span style="color:var(--white);">✓</span> Intervention possible à domicile
         </div>
@@ -491,7 +491,7 @@
         <div class="devis-step" data-step="6">
           <p class="devis-step__count">Étape 6 / 6</p>
           <h2 class="devis-step__title">Vos<br /><em>coordonnées</em></h2>
-          <p class="devis-step__sub">Pour vous envoyer votre devis. Aucun démarchage, promis.</p>
+          <p class="devis-step__sub">Pour vous envoyer votre devis.</p>
 
           <div class="form-grid">
             <div class="form-row">
