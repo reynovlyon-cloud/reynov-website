@@ -1,9 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /node_modules/
 
-# Sitemap
-Sitemap: https://reynojantes.fr/sitemap.xml
-
-# Dossiers à ne pas indexer
-Disallow: /assets/js/
-Disallow: /assets/css/
+Sitemap: https://reynovjantes.fr/sitemap.xml
