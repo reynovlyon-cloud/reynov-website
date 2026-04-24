@@ -361,7 +361,8 @@ h4, .h4 { font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; l
 .nav__mobile-link {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  text-align: left;
   font-family: var(--font-body);
   font-size: clamp(1rem, 4vw, 1.2rem);
   font-weight: 400;
