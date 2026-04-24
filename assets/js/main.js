@@ -130,14 +130,7 @@ function initDevisForm(form) {
     btn.addEventListener('click', () => {
       const group = btn.dataset.group;
       if (btn.dataset.multi) {
-        const isSelected = btn.classList.contains('selected');
-        if (!isSelected) {
-          const maxReached = group === 'probleme' &&
-            form.querySelectorAll(`[data-group="probleme"].selected`).length >= 3;
-          if (!maxReached) btn.classList.add('selected');
-        } else {
-          btn.classList.remove('selected');
-        }
+        btn.classList.toggle('selected');
       } else {
         if (group) form.querySelectorAll(`[data-group="${group}"]`).forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
