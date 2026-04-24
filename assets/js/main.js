@@ -130,6 +130,7 @@ function initDevisForm(form) {
     btn.addEventListener('click', () => {
       const group = btn.dataset.group;
       if (btn.hasAttribute('data-multi')) {
+        if (!btn.classList.contains('selected') && form.querySelectorAll(`[data-group="${group}"].selected`).length >= 3) return;
         btn.classList.toggle('selected');
       } else {
         if (group) form.querySelectorAll(`[data-group="${group}"]`).forEach(b => b.classList.remove('selected'));
