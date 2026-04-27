@@ -1096,6 +1096,10 @@ textarea.form-input { resize: vertical; min-height: 100px; border-radius: 12px; 
   .nav__links, .nav__actions { display: none; }
   .nav__burger { display: inline-flex; }
   .nav__mobile { display: flex; }
+  .nav__inner {
+    grid-template-columns: 1fr auto;
+    justify-content: space-between;
+  }
 
   /* ─── Hero ─── */
   /* Meilleur cadrage vidéo sur format portrait */
