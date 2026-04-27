@@ -1,15 +1,54 @@
 const express     = require('express');
 const compression = require('compression');
+const helmet      = require('helmet');
+const rateLimit   = require('express-rate-limit');
 const multer      = require('multer');
 const path        = require('path');
 const { google }  = require('googleapis');
 
 const app    = express();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
 const PORT   = parseInt(process.env.PORT) || 3000;
 
 // ── Gzip compression ──────────────────────────────────────────
 app.use(compression({ level: 6 }));
+
+// ── Security headers (helmet) ─────────────────────────────────
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc:  ["'self'"],
+      scriptSrc:   ["'self'", "'unsafe-inline'"],       // inline scripts dans les HTML
+      styleSrc:    ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc:     ["'self'", 'https://fonts.gstatic.com'],
+      imgSrc:      ["'self'", 'data:', 'https:'],
+      mediaSrc:    ["'self'"],
+      connectSrc:  ["'self'"],
+      frameSrc:    ["'none'"],
+      objectSrc:   ["'none'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+  crossOriginEmbedderPolicy: false,   // évite de casser les fonts
+}));
+
+// ── Rate limiting — formulaire devis ─────────────────────────
+const devisLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,   // 1 heure
+  max: 5,                      // max 5 soumissions par IP par heure
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, error: 'Trop de demandes. Réessayez dans une heure ou appelez le 06 61 45 35 27.' },
+});
+
+// ── Multer — images uniquement, 10 MB max par fichier ────────
+const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']);
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024, files: 10 },
+  fileFilter: (_req, file, cb) => {
+    cb(null, ALLOWED_MIME.has(file.mimetype));
+  },
+});
 
 // ── Static site ───────────────────────────────────────────────
 const ONE_YEAR = 365 * 24 * 60 * 60;
@@ -20,7 +59,7 @@ app.use(express.static(path.join(__dirname, '..'), {
     } else if (/\.(jpg|jpeg|png|gif|webp|svg|ico|woff2?|ttf)$/i.test(filePath)) {
       res.setHeader('Cache-Control', `public, max-age=${ONE_YEAR}, immutable`);
     } else if (/\.(css|js)$/i.test(filePath)) {
-      res.setHeader('Cache-Control', 'public, max-age=604800'); // 1 week
+      res.setHeader('Cache-Control', 'public, max-age=604800');
     }
   }
 }));
@@ -43,6 +82,17 @@ const oauth2Client = new google.auth.OAuth2(
 );
 oauth2Client.setCredentials({ refresh_token: GMAIL_REFRESH_TOKEN });
 const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+
+// ── Sanitisation — supprime les balises HTML des champs texte ─
+function sanitize(str) {
+  if (typeof str !== 'string') return '';
+  return str
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .slice(0, 500);   // longueur max par champ
+}
 
 function buildRawEmail({ from, to, subject, html, attachments = [] }) {
   const boundary = 'REYNOV_BOUNDARY_' + Date.now();
@@ -183,9 +233,9 @@ function clientEmail(d) {
 }
 
 // ── POST /api/devis ───────────────────────────────────────────
-app.post('/api/devis', (req, res, next) => {
-  upload.array('photos', 20)(req, res, (err) => {
-    if (err) return res.status(400).json({ ok: false, error: err.message });
+app.post('/api/devis', devisLimiter, (req, res, next) => {
+  upload.array('photos', 10)(req, res, (err) => {
+    if (err) return res.status(400).json({ ok: false, error: 'Fichier invalide (images uniquement, 10 MB max).' });
     next();
   });
 }, async (req, res) => {
@@ -193,30 +243,36 @@ app.post('/api/devis', (req, res, next) => {
     console.log('📩 Devis reçu depuis', req.ip);
     const b = req.body;
 
+    // Validation email basique
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!b.email || !emailRe.test(b.email)) {
+      return res.status(400).json({ ok: false, error: 'Adresse email invalide.' });
+    }
+    if (!b.prenom || !b.tel) {
+      return res.status(400).json({ ok: false, error: 'Prénom et téléphone requis.' });
+    }
+
+    // Sanitisation de tous les champs texte
     const d = {
-      prestation:     b.prestation     || '',
-      problemes:      b.problemes      || '',
-      nb_jantes:      b.nb_jantes      || '',
-      taille:         b.taille         || '',
-      marque:         b.marque         || '',
-      modele:         b.modele         || '',
-      finition:       b.finition       || '',
-      mode:           b.mode           || '',
-      delai:          b.delai          || '',
-      adresse:        b.adresse        || '',
-      adresse_client: b.adresse_client || '',
-      description:    b.description    || '',
-      prenom:         b.prenom         || '',
-      nom:            b.nom            || '',
-      email:          b.email          || '',
-      tel:            b.tel            || '',
+      prestation:     sanitize(b.prestation),
+      problemes:      sanitize(b.problemes),
+      nb_jantes:      sanitize(b.nb_jantes),
+      taille:         sanitize(b.taille),
+      marque:         sanitize(b.marque),
+      modele:         sanitize(b.modele),
+      finition:       sanitize(b.finition),
+      mode:           sanitize(b.mode),
+      delai:          sanitize(b.delai),
+      adresse:        sanitize(b.adresse),
+      adresse_client: sanitize(b.adresse_client),
+      description:    sanitize(b.description),
+      prenom:         sanitize(b.prenom),
+      nom:            sanitize(b.nom),
+      email:          b.email.trim().slice(0, 200),
+      tel:            sanitize(b.tel),
     };
 
     console.log('Client:', d.prenom, d.nom, d.email);
-
-    if (!d.email || !d.prenom) {
-      return res.status(400).json({ ok: false, error: 'Prénom et email requis' });
-    }
 
     const attachments = (req.files || []).map(f => ({
       filename:    f.originalname,
@@ -247,7 +303,7 @@ app.post('/api/devis', (req, res, next) => {
 
   } catch (err) {
     console.error('❌ Erreur envoi mail:', err.message, JSON.stringify(err.response?.data || ''));
-    res.status(500).json({ ok: false, error: err.message, detail: err.response?.data });
+    res.status(500).json({ ok: false, error: 'Erreur serveur. Appelez le 06 61 45 35 27.' });
   }
 });
 
