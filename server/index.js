@@ -1,17 +1,26 @@
-const express    = require('express');
-const multer     = require('multer');
-const path       = require('path');
-const { google } = require('googleapis');
+const express     = require('express');
+const compression = require('compression');
+const multer      = require('multer');
+const path        = require('path');
+const { google }  = require('googleapis');
 
 const app    = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
 const PORT   = parseInt(process.env.PORT) || 3000;
 
+// ── Gzip compression ──────────────────────────────────────────
+app.use(compression({ level: 6 }));
+
 // ── Static site ───────────────────────────────────────────────
+const ONE_YEAR = 365 * 24 * 60 * 60;
 app.use(express.static(path.join(__dirname, '..'), {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.html')) {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    } else if (/\.(jpg|jpeg|png|gif|webp|svg|ico|woff2?|ttf)$/i.test(filePath)) {
+      res.setHeader('Cache-Control', `public, max-age=${ONE_YEAR}, immutable`);
+    } else if (/\.(css|js)$/i.test(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=604800'); // 1 week
     }
   }
 }));
