@@ -265,31 +265,48 @@
 </section>
 
 <!-- ③ SERVICE MOBILE ────────────────────────────────────── -->
-<section class="section border-bottom">
-  <div class="container">
-    <div class="mobile-feature" data-reveal>
-      <div class="mobile-feature__img">
-        <picture><source srcset="assets/images/service-mobile-1.webp" type="image/webp"><img src="assets/images/service-mobile-1.jpg" alt="Service mobile REYNOV" style="width:100%;height:100%;min-height:520px;object-fit:cover;object-position:center;" loading="lazy"/></picture>
+<section class="border-bottom" data-reveal>
+
+  <!-- Photos pleine largeur -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(255,255,255,0.06);">
+    <div style="position:relative;overflow:hidden;">
+      <picture>
+        <source srcset="assets/images/camion-exterieur.webp" type="image/webp">
+        <img src="assets/images/camion-exterieur.jpg" alt="Camion atelier mobile REYNOV" style="width:100%;height:500px;object-fit:cover;object-position:center;display:block;transition:transform 0.6s ease;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'" loading="lazy">
+      </picture>
+      <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.7) 0%,rgba(0,0,0,0.1) 50%,transparent 100%);pointer-events:none;"></div>
+      <div style="position:absolute;bottom:2rem;left:2rem;">
+        <p style="margin:0;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.5);">L'atelier</p>
+        <p style="margin:0.3rem 0 0;font-size:1.15rem;font-weight:500;color:#fff;">Le camion REYNOV</p>
       </div>
-      <div class="mobile-feature__content">
-        <div>
-          <p class="label mb-2">Notre atout</p>
-          <h2 class="h2">Le service<br /><em>mobile</em></h2>
-        </div>
-        <p class="body-lg">Notre atelier vient à vous. Aucun déplacement de votre côté.</p>
-        <div class="mobile-feature__points">
-          <div class="mobile-feature__point">
-            <div class="mobile-feature__point-dot"></div>
-            <span>Zones : dép. 69, 38, 42 et 74</span>
-          </div>
-          <div class="mobile-feature__point">
-            <div class="mobile-feature__point-dot"></div>
-            <span>Matériel professionnel embarqué</span>
-          </div>
-          <div class="mobile-feature__point">
-            <div class="mobile-feature__point-dot"></div>
-            <span>Domicile, concession, parking</span>
-          </div>
+    </div>
+    <div style="position:relative;overflow:hidden;">
+      <picture>
+        <source srcset="assets/images/atelier-mobile.webp" type="image/webp">
+        <img src="assets/images/atelier-mobile.jpg" alt="Intérieur atelier mobile REYNOV — équipements professionnels" style="width:100%;height:500px;object-fit:cover;object-position:center;display:block;transition:transform 0.6s ease;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'" loading="lazy">
+      </picture>
+      <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.7) 0%,rgba(0,0,0,0.1) 50%,transparent 100%);pointer-events:none;"></div>
+      <div style="position:absolute;bottom:2rem;left:2rem;">
+        <p style="margin:0;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.5);">L'équipement</p>
+        <p style="margin:0.3rem 0 0;font-size:1.15rem;font-weight:500;color:#fff;">Matériel professionnel embarqué</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenu -->
+  <div style="background:var(--black);padding:clamp(3rem,6vw,5rem) clamp(1.5rem,5vw,5rem);">
+    <div style="max-width:var(--max-w,1280px);margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:clamp(3rem,7vw,7rem);align-items:center;">
+      <div>
+        <p class="label mb-2">Notre atout</p>
+        <h2 class="h2">Le service<br /><em>mobile</em></h2>
+        <p class="body-lg" style="margin-top:1.5rem;">Notre atelier vient à vous. Aucun déplacement de votre côté — on arrive équipé, on repart quand c'est parfait.</p>
+      </div>
+      <div>
+        <div class="mobile-feature__points" style="margin-bottom:2rem;">
+          <div class="mobile-feature__point"><div class="mobile-feature__point-dot"></div><span>Zones : dép. 69, 38, 42 et 74</span></div>
+          <div class="mobile-feature__point"><div class="mobile-feature__point-dot"></div><span>Matériel professionnel embarqué</span></div>
+          <div class="mobile-feature__point"><div class="mobile-feature__point-dot"></div><span>Domicile, concession, parking</span></div>
+          <div class="mobile-feature__point"><div class="mobile-feature__point-dot"></div><span>Zéro contrainte, zéro déplacement</span></div>
         </div>
         <a href="service-mobile.html" class="btn btn-outline">
           <span>En savoir plus</span>
@@ -298,6 +315,7 @@
       </div>
     </div>
   </div>
+
 </section>
 
 <!-- ④ PRESTATIONS ───────────────────────────────────────── -->
