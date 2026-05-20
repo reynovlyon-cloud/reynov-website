@@ -1164,6 +1164,20 @@ textarea.form-input { resize: vertical; min-height: 100px; border-radius: 12px; 
   .testimonials-grid, .before-after-grid, .grid-3 { grid-template-columns: 1fr; }
   .audience-grid { grid-template-columns: 1fr; }
 
+  /* ─── Grilles inline 2 colonnes → 1 colonne ─── */
+  [style*="grid-template-columns:1fr 1fr"],
+  [style*="grid-template-columns: 1fr 1fr"],
+  [style*="grid-template-columns:repeat(3,1fr)"],
+  [style*="grid-template-columns: repeat(3, 1fr)"] {
+    grid-template-columns: 1fr !important;
+  }
+  /* Photos côte à côte → empilées avec hauteur réduite */
+  [style*="grid-template-columns:1fr 1fr"] img,
+  [style*="grid-template-columns: 1fr 1fr"] img {
+    height: 280px !important;
+    min-height: unset !important;
+  }
+
   /* ─── Avant/Après : ratio plus court sur mobile ─── */
   .ba-item { aspect-ratio: 16/9; }
 

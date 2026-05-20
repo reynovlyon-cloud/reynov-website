@@ -15,6 +15,13 @@
   <link rel="preload" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" /></noscript>
   <link rel="stylesheet" href="assets/css/style.css" />
+  <style>
+    @media (max-width: 768px) {
+      .sm-grid-2 { grid-template-columns: 1fr !important; }
+      .sm-grid-photos { grid-template-columns: 1fr !important; }
+      .sm-grid-photos img { height: 260px !important; }
+    }
+  </style>
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Service Mobile Jantes Lyon — On Se Déplace Chez Vous | REYNOV" />
   <meta property="og:description" content="Service mobile de rénovation de jantes à Lyon et dans les départements 69, 38, 42 et 74. Intervention à domicile, en concession ou en entreprise. Devis gratuit, zéro contrainte." />
@@ -89,7 +96,7 @@
 <!-- Hero plein écran -->
 <section style="position:relative;height:100svh;min-height:600px;display:flex;align-items:flex-end;overflow:hidden;">
   <div style="position:absolute;inset:0;">
-    <picture><source srcset="assets/images/service-mobile-1.webp" type="image/webp"><img src="assets/images/service-mobile-1.jpg" alt="Service mobile REYNOV" style="width:100%;height:100%;object-fit:cover;object-position:center;"  loading="lazy"/></picture>
+    <picture><source srcset="assets/images/camion-exterieur.webp" type="image/webp"><img src="assets/images/camion-exterieur.jpg" alt="Camion atelier mobile REYNOV" style="width:100%;height:100%;object-fit:cover;object-position:center;" loading="lazy"/></picture>
     <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,0.2) 0%,rgba(0,0,0,0.85) 100%);"></div>
   </div>
   <div style="position:relative;z-index:2;width:100%;max-width:var(--max-w);margin-inline:auto;padding:clamp(1.5rem,4vw,4rem);padding-bottom:clamp(4rem,8vw,8rem);">
@@ -105,7 +112,7 @@
 <!-- Ce que contient le camion -->
 <section class="section border-bottom">
   <div class="container">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(3rem,7vw,7rem);align-items:center;">
+    <div class="sm-grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(3rem,7vw,7rem);align-items:center;">
       <div data-reveal>
         <p class="label mb-2">Le camion atelier</p>
         <h2 class="h2">Tout le matériel<br /><em>professionnel embarqué</em></h2>
@@ -123,8 +130,11 @@
           <p style="margin:0;font-size:0.82rem;color:var(--grey-300);line-height:1.6;">Le dévoilage, redressage et la soudure de jantes nécessitent des machines fixes et se réalisent <strong style="color:#fff;">exclusivement en atelier</strong>. Nous ne pouvons pas intervenir à domicile pour ces prestations.</p>
         </div>
       </div>
-      <div class="prestation-hero__img" data-reveal data-reveal-delay="2" style="min-height:500px;">
-        <div class="img-placeholder" style="width:100%;height:100%;min-height:500px">Intérieur camion atelier</div>
+      <div data-reveal data-reveal-delay="2" style="overflow:hidden;position:relative;min-height:500px;">
+        <picture>
+          <source srcset="assets/images/atelier-mobile.webp" type="image/webp">
+          <img src="assets/images/atelier-mobile.jpg" alt="Intérieur atelier mobile REYNOV" style="width:100%;height:100%;min-height:500px;object-fit:cover;object-position:center;display:block;" loading="lazy">
+        </picture>
       </div>
     </div>
   </div>
