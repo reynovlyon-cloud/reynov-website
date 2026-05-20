@@ -323,7 +323,7 @@ function submitForm() {
       }
     } catch (e) {
       resetBtn();
-      alert('Erreur inattendue. Contactez-nous : 06 61 45 35 27');
+      alert('Erreur inattendue. Contactez-nous : 07 63 00 43 85');
     }
   };
   xhr.onerror = () => {

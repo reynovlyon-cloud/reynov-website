@@ -37,7 +37,7 @@ const devisLimiter = rateLimit({
   max: 5,                      // max 5 soumissions par IP par heure
   standardHeaders: true,
   legacyHeaders: false,
-  message: { ok: false, error: 'Trop de demandes. Réessayez dans une heure ou appelez le 06 61 45 35 27.' },
+  message: { ok: false, error: 'Trop de demandes. Réessayez dans une heure ou appelez le 07 63 00 43 85.' },
 });
 
 // ── Multer — images uniquement, 10 MB max par fichier ────────
@@ -183,7 +183,7 @@ function ownerEmail(d) {
   </div>
 
   <div style="background:#f5f5f5;padding:16px 40px;font-size:11px;color:#aaa;">
-    REYNOV · reynov.lyon@gmail.com · 06 61 45 35 27
+    REYNOV · reynov.lyon@gmail.com · 07 63 00 43 85
   </div>
 </div>
 </body></html>`;
@@ -220,7 +220,7 @@ function clientEmail(d) {
       Une question ? Contactez-nous directement :
     </p>
     <p style="margin:0;">
-      <a href="tel:+33661453527" style="display:inline-block;padding:12px 24px;background:#060606;color:#fff;text-decoration:none;font-size:13px;font-weight:600;margin-right:12px;">06 61 45 35 27</a>
+      <a href="tel:+33763004385" style="display:inline-block;padding:12px 24px;background:#060606;color:#fff;text-decoration:none;font-size:13px;font-weight:600;margin-right:12px;">07 63 00 43 85</a>
       <a href="mailto:reynov.lyon@gmail.com" style="display:inline-block;padding:12px 24px;border:1px solid #ddd;color:#333;text-decoration:none;font-size:13px;">reynov.lyon@gmail.com</a>
     </p>
   </div>
@@ -303,7 +303,7 @@ app.post('/api/devis', devisLimiter, (req, res, next) => {
 
   } catch (err) {
     console.error('❌ Erreur envoi mail:', err.message, JSON.stringify(err.response?.data || ''));
-    res.status(500).json({ ok: false, error: 'Erreur serveur. Appelez le 06 61 45 35 27.' });
+    res.status(500).json({ ok: false, error: 'Erreur serveur. Appelez le 07 63 00 43 85.' });
   }
 });
 
