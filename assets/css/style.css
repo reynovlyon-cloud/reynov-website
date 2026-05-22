@@ -1276,3 +1276,171 @@ textarea.form-input { resize: vertical; min-height: 100px; border-radius: 12px; 
   /* ─── Avant/Après ─── */
   .ba-item__label { font-size: 0.58rem; padding: 1rem; }
 }
+
+/* ============================================================
+   WhatsApp Floating Button + Reviews Section
+   ============================================================ */
+
+/* ─── WhatsApp floating button ─── */
+.whatsapp-float {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 9000;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: #25D366;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(37, 211, 102, 0.45);
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  animation: whatsappPulse 3s ease-in-out infinite;
+}
+.whatsapp-float:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 28px rgba(37, 211, 102, 0.6);
+  animation: none;
+}
+.whatsapp-float svg { width: 30px; height: 30px; fill: #fff; }
+@keyframes whatsappPulse {
+  0%, 100% { box-shadow: 0 4px 20px rgba(37, 211, 102, 0.45); }
+  50%       { box-shadow: 0 4px 28px rgba(37, 211, 102, 0.75), 0 0 0 8px rgba(37, 211, 102, 0.12); }
+}
+.whatsapp-float__label {
+  position: absolute;
+  right: 68px;
+  background: #111;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 500;
+  white-space: nowrap;
+  padding: 0.45rem 0.9rem;
+  border-radius: 4px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.whatsapp-float:hover .whatsapp-float__label { opacity: 1; }
+
+/* ─── Reviews Section ─── */
+.reviews-section {
+  padding-block: clamp(4rem, 7vw, 7rem);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.reviews-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+.reviews-google-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 50px;
+  padding: 0.6rem 1.4rem;
+  margin-bottom: 1.5rem;
+}
+.reviews-google-badge svg { width: 20px; height: 20px; }
+.reviews-google-badge__stars {
+  display: flex;
+  gap: 2px;
+}
+.reviews-google-badge__stars span {
+  color: #FBBC04;
+  font-size: 1rem;
+}
+.reviews-google-badge__score {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--white);
+}
+.reviews-google-badge__count {
+  font-size: 0.8rem;
+  color: var(--grey-400);
+}
+.reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+.review-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 1.75rem;
+  transition: border-color 0.2s ease;
+}
+.review-card:hover { border-color: rgba(255,255,255,0.18); }
+.review-card__stars {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 1rem;
+}
+.review-card__stars span { color: #FBBC04; font-size: 0.9rem; }
+.review-card__text {
+  font-size: 0.9rem;
+  line-height: 1.75;
+  color: var(--grey-300);
+  margin-bottom: 1.25rem;
+  font-style: italic;
+}
+.review-card__author {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.review-card__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--white);
+  flex-shrink: 0;
+}
+.review-card__name {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--white);
+}
+.review-card__date {
+  font-size: 0.75rem;
+  color: var(--grey-500);
+}
+.reviews-cta {
+  text-align: center;
+}
+.btn-google {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  color: var(--white);
+  padding: 0.75rem 1.75rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+.btn-google:hover {
+  border-color: rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.04);
+}
+.btn-google svg { width: 18px; height: 18px; }
+
+@media (max-width: 768px) {
+  .reviews-grid { grid-template-columns: 1fr; gap: 1rem; }
+  .whatsapp-float { bottom: 1.25rem; right: 1.25rem; width: 52px; height: 52px; }
+  .whatsapp-float svg { width: 26px; height: 26px; }
+}
