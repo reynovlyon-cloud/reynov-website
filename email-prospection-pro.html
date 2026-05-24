@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>REYNOV — Partenariat Professionnel</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background-color: #0a0a0a;
+      font-family: 'Inter', Arial, sans-serif;
+      color: #f0f0ee;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .wrapper {
+      max-width: 620px;
+      margin: 0 auto;
+      background-color: #0d0d0d;
+    }
+
+    /* ── Header ── */
+    .header {
+      padding: 36px 48px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .header img {
+      height: 38px;
+      display: block;
+    }
+
+    /* ── Hero image ── */
+    .hero-img {
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* ── Body ── */
+    .body {
+      padding: 52px 48px 44px;
+    }
+
+    .label {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+      margin-bottom: 20px;
+      display: block;
+    }
+
+    .headline {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 40px;
+      font-weight: 600;
+      line-height: 1.1;
+      color: #f0f0ee;
+    }
+
+    .headline em {
+      font-style: italic;
+      font-weight: 400;
+    }
+
+    .intro {
+      font-size: 14px;
+      line-height: 1.8;
+      color: rgba(255,255,255,0.58);
+      margin-top: 28px;
+      margin-bottom: 36px;
+    }
+
+    .intro strong {
+      color: #f0f0ee;
+      font-weight: 500;
+    }
+
+    /* ── Divider ── */
+    .sep {
+      margin: 36px 0;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .sep span {
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.12);
+      display: inline-block;
+    }
+    .sep span:nth-child(2) { background: rgba(255,255,255,0.28); }
+
+    /* ── Services ── */
+    table.services-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 6px;
+      margin-bottom: 8px;
+    }
+
+    table.services-table td {
+      padding: 18px 20px;
+      border: 1px solid rgba(255,255,255,0.07);
+      vertical-align: top;
+      width: 50%;
+    }
+
+    .service-number {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 24px;
+      color: rgba(255,255,255,0.15);
+      font-weight: 600;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .service-name {
+      font-size: 11px;
+      font-weight: 500;
+      color: #f0f0ee;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    .service-desc {
+      font-size: 12px;
+      color: rgba(255,255,255,0.38);
+      line-height: 1.55;
+    }
+
+    /* ── Photos ── */
+    .photos-label {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.25);
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    table.photos-grid {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 5px;
+    }
+
+    table.photos-grid td { width: 50%; }
+
+    table.photos-grid img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* ── Offre pro ── */
+    .offre-pro {
+      border: 1px solid rgba(255,255,255,0.09);
+      padding: 30px 28px;
+      margin: 36px 0;
+      position: relative;
+    }
+
+    .offre-pro::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 2px; height: 100%;
+      background: rgba(255,255,255,0.45);
+    }
+
+    .offre-pro-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 22px;
+      font-weight: 600;
+      color: #f0f0ee;
+      margin-bottom: 14px;
+    }
+
+    .offre-pro p {
+      font-size: 13px;
+      color: rgba(255,255,255,0.52);
+      line-height: 1.75;
+    }
+
+    .offre-pro strong { color: #f0f0ee; }
+
+    /* ── CTA ── */
+    .cta-block {
+      text-align: center;
+      padding: 40px 0 12px;
+    }
+
+    .cta-btn {
+      display: inline-block;
+      padding: 15px 44px;
+      border: 1px solid rgba(255,255,255,0.75);
+      color: #f0f0ee;
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      text-decoration: none;
+      background: transparent;
+    }
+
+    .cta-sub {
+      margin-top: 14px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.25);
+    }
+
+    /* ── Footer ── */
+    .footer {
+      padding: 30px 48px 36px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .footer img {
+      height: 22px;
+      opacity: 0.35;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .footer-info {
+      font-size: 11px;
+      color: rgba(255,255,255,0.2);
+      line-height: 1.85;
+    }
+
+    .footer-info a {
+      color: rgba(255,255,255,0.3);
+      text-decoration: none;
+    }
+
+    .unsubscribe {
+      margin-top: 14px;
+      font-size: 10px;
+      color: rgba(255,255,255,0.12);
+    }
+
+    .unsubscribe a { color: rgba(255,255,255,0.18); }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Header -->
+  <div class="header">
+    <img src="assets/images/logo.png" alt="REYNOV" />
+  </div>
+
+  <!-- Titre accroche -->
+  <div style="padding: 44px 48px 0; background-color: #0d0d0d;">
+    <p style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:18px;font-family:'Inter',Arial,sans-serif;">Service mobile · 69 · 42 · 38 · 73 · 74 · 01</p>
+    <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:42px;font-weight:600;line-height:1.1;color:#f0f0ee;">
+      Réduisez vos coûts<br />de restitution.<br />
+      <em style="font-weight:400;font-style:italic;">Nous gérons vos jantes.</em>
+    </div>
+    <div style="width:32px;height:1px;background:rgba(255,255,255,0.2);margin:28px 0;"></div>
+  </div>
+
+  <!-- Duo photos : camion + atelier -->
+  <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+    <tr>
+      <td width="50%" style="padding:2px 1px 0 0;">
+        <img src="assets/images/camion-exterieur.jpg"
+             alt="Camion REYNOV"
+             width="100%"
+             style="display:block;height:180px;object-fit:cover;" />
+      </td>
+      <td width="50%" style="padding:2px 0 0 1px;">
+        <img src="assets/images/atelier-mobile.jpg"
+             alt="Atelier mobile REYNOV"
+             width="100%"
+             style="display:block;height:180px;object-fit:cover;" />
+      </td>
+    </tr>
+  </table>
+
+  <!-- Body -->
+  <div class="body">
+
+    <p class="intro">
+      Nous sommes <strong>REYNOV</strong>, spécialiste de la rénovation de jantes aluminium
+      intervenant auprès des concessions, clubs automobiles, sociétés de location et
+      gestionnaires de flotte en Auvergne-Rhône-Alpes.<br /><br />
+      Notre atelier mobile entièrement équipé — <strong>cabine de peinture, tour à jante,
+      machine de rajout de matière</strong> — nous permet d'intervenir directement dans vos locaux.
+      Zéro logistique pour vos équipes, résultat garanti conforme aux standards constructeurs.
+    </p>
+
+    <div class="sep"><span></span><span></span><span></span></div>
+
+    <!-- Services -->
+    <table class="services-table" cellpadding="0" cellspacing="0">
+      <tr>
+        <td>
+          <span class="service-number">01</span>
+          <span class="service-name">Cabine de peinture mobile</span>
+          <span class="service-desc">Peinture & vernis haute résistance réalisés directement chez vous — rendu identique à l'origine.</span>
+        </td>
+        <td>
+          <span class="service-number">02</span>
+          <span class="service-name">Tour à jante mobile</span>
+          <span class="service-desc">Usinage de précision sur site — correction des lèvres abîmées et finition parfaite.</span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <span class="service-number">03</span>
+          <span class="service-name">Rajout de matière</span>
+          <span class="service-desc">Reconstruction des zones manquantes — impacts, éclats, lèvres — résultat invisible.</span>
+        </td>
+        <td>
+          <span class="service-number">04</span>
+          <span class="service-name">Partenariat garage & concession</span>
+          <span class="service-desc">Tarifs volume, intervention sur site, délais prioritaires — un partenaire qui s'adapte à votre activité.</span>
+        </td>
+      </tr>
+    </table>
+
+    <div class="sep"><span></span><span></span><span></span></div>
+
+    <div class="sep"><span></span><span></span><span></span></div>
+
+    <!-- Offre pro -->
+    <div class="offre-pro">
+      <div class="offre-pro-title">Une offre taillée pour les professionnels</div>
+      <p>
+        Nous proposons à nos partenaires professionnels des <strong>tarifs préférentiels sur volume</strong>,
+        des <strong>délais d'intervention prioritaires</strong> et une totale flexibilité logistique
+        grâce à notre service mobile.<br /><br />
+        Que vous gériez 5 ou 500 véhicules par an, nous nous adaptons à votre rythme
+        et à vos contraintes opérationnelles. <strong>Devis gratuit sous 24h.</strong>
+      </p>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta-block">
+      <a href="https://reynovjantes.fr/realisations.html" style="display:inline-block;padding:12px 32px;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.5);font-family:'Inter',sans-serif;font-size:10px;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;text-decoration:none;margin-bottom:24px;">Voir nos réalisations</a>
+      <br />
+      <a href="tel:+33763004385" class="cta-btn">Nous appeler — 07 63 00 43 85</a>
+      <p class="cta-sub" style="margin-top:16px;">Ou par email : <a href="mailto:reynov.lyon@gmail.com" style="color:rgba(255,255,255,0.45);text-decoration:none;">reynov.lyon@gmail.com</a></p>
+      <div style="margin-top:28px;padding:20px 24px;border:1px solid rgba(255,255,255,0.07);text-align:left;">
+        <p style="font-size:11px;font-weight:500;color:#f0f0ee;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;">Grille tarifaire professionnelle</p>
+        <p style="font-size:12px;color:rgba(255,255,255,0.4);line-height:1.7;">Vous souhaitez connaître nos tarifs volume ? Contactez-nous directement et nous vous envoyons notre grille tarifaire professionnelle sous 24h.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <img src="assets/images/logo.png" alt="REYNOV" />
+    <div class="footer-info">
+      Lyon &amp; Rhône-Alpes &mdash; Service mobile disponible<br />
+      <a href="https://reynovjantes.fr">reynovjantes.fr</a> &mdash; reynov.lyon@gmail.com
+    </div>
+    <div class="unsubscribe">
+      Vous recevez cet email dans le cadre d'une démarche de prospection professionnelle B2B.<br />
+      <a href="#">Se désinscrire</a>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
