@@ -177,6 +177,21 @@
         </div>
       </div>
 
+      <!-- Slide 3 — Audi A3 retour leasing -->
+      <div class="ba-slide">
+        <div class="cs" data-compare>
+          <img class="cs-img cs-img--before" src="assets/images/audi-a3-avant.jpg" alt="Avant rénovation — Audi A3 retour leasing" loading="lazy" />
+          <img class="cs-img cs-img--after"  src="assets/images/audi-a3-apres.jpg"  alt="Après rénovation — Audi A3 retour leasing" loading="lazy" />
+          <div class="cs-line">
+            <div class="cs-knob">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg>
+            </div>
+          </div>
+          <span class="cs-label cs-label--avant">Avant</span>
+          <span class="cs-label cs-label--apres">Après</span>
+        </div>
+      </div>
+
     </div>
 
     <!-- Barre de navigation -->
@@ -260,10 +275,10 @@
         </div>
       </div>
       <div class="gallery-item">
-        <div class="img-placeholder" style="width:100%;height:100%">Renault Sport</div>
+        <img src="assets/images/audi-a3-apres.jpg" alt="Audi A3 — Jante rénovée retour leasing Lyon" style="width:100%;height:100%;object-fit:cover;" loading="lazy" />
         <div class="gallery-item__overlay">
-          <p class="gallery-item__title">Renault Sport</p>
-          <p class="gallery-item__meta">Retour leasing · 18"</p>
+          <p class="gallery-item__title">Audi A3</p>
+          <p class="gallery-item__meta">Retour leasing · Frottements réparés</p>
         </div>
       </div>
       <div class="gallery-item">
@@ -322,6 +337,7 @@
     const DATA = [
       { cat:'Rénovation', title:'Porsche Macan', sub:'20"' },
       { cat:'Rénovation', title:'Kia',   sub:'' },
+      { cat:'Retour leasing', title:'Audi A3', sub:'Frottements réparés — LOA' },
     ];
     let cur = 0;
     if (elTot) elTot.textContent = String(DATA.length).padStart(2,'0');
