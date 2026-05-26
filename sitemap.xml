@@ -1,30 +1,50 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Core -->
   <url><loc>https://reynovjantes.fr/</loc><priority>1.0</priority><changefreq>weekly</changefreq></url>
-  <url><loc>https://reynovjantes.fr/prestations/</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://reynovjantes.fr/prestations/renovation.html</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://reynovjantes.fr/prestations/personnalisation.html</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://reynovjantes.fr/prestations/soudure.html</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://reynovjantes.fr/prestations/devoilage.html</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://reynovjantes.fr/prestations/retour-leasing.html</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://reynovjantes.fr/prestations/preparation-vente.html</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
   <url><loc>https://reynovjantes.fr/devis.html</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://reynovjantes.fr/realisations.html</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
   <url><loc>https://reynovjantes.fr/service-mobile.html</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://reynovjantes.fr/professionnels.html</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/professionnels.html</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/realisations.html</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
   <url><loc>https://reynovjantes.fr/faq.html</loc><priority>0.6</priority><changefreq>monthly</changefreq></url>
   <url><loc>https://reynovjantes.fr/contact.html</loc><priority>0.6</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://reynovjantes.fr/zones/loire-42.html</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://reynovjantes.fr/zones/isere-38.html</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
+
+  <!-- Prestations -->
+  <url><loc>https://reynovjantes.fr/prestations/</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/prestations/renovation.html</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/prestations/retour-leasing.html</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/prestations/personnalisation.html</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/prestations/soudure.html</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/prestations/devoilage.html</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/prestations/preparation-vente.html</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
+
+  <!-- Zones — Ouest Lyonnais -->
+  <url><loc>https://reynovjantes.fr/zones/ecully.html</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/zones/dardilly.html</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/zones/limonest.html</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/zones/champagne-au-mont-dor.html</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/zones/techlid.html</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
+
+  <!-- Zones — Haute-Savoie / Rhône-Alpes -->
+  <url><loc>https://reynovjantes.fr/zones/annecy.html</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
   <url><loc>https://reynovjantes.fr/zones/haute-savoie-74.html</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/zones/isere-38.html</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/zones/loire-42.html</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
+
+  <!-- Zones — International -->
+  <url><loc>https://reynovjantes.fr/zones/geneve.html</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
+
+  <!-- Blog -->
   <url><loc>https://reynovjantes.fr/blog/</loc><priority>0.7</priority><changefreq>weekly</changefreq></url>
   <url><loc>https://reynovjantes.fr/blog/renovation-jantes-lyon.html</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://reynovjantes.fr/blog/prix-renovation-jante.html</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/blog/retour-leasing-ouest-lyonnais.html</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/blog/renovation-jantes-bmw-ouest-lyonnais.html</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/blog/retour-leasing-jantes.html</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
   <url><loc>https://reynovjantes.fr/blog/jante-rayee-que-faire.html</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/blog/prix-renovation-jante.html</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/blog/renovation-jantes-annecy.html</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/blog/renovation-jantes-saint-etienne.html</loc><priority>0.6</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/blog/renovation-jantes-grenoble.html</loc><priority>0.6</priority><changefreq>monthly</changefreq></url>
   <url><loc>https://reynovjantes.fr/blog/jante-voilee-symptomes.html</loc><priority>0.6</priority><changefreq>monthly</changefreq></url>
   <url><loc>https://reynovjantes.fr/blog/soudure-ou-remplacement-jante.html</loc><priority>0.6</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://reynovjantes.fr/blog/retour-leasing-jantes.html</loc><priority>0.6</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://reynovjantes.fr/blog/renovation-jantes-saint-etienne.html</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://reynovjantes.fr/blog/renovation-jantes-grenoble.html</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
-  <url><loc>https://reynovjantes.fr/blog/renovation-jantes-annecy.html</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
 </urlset>
