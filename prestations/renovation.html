@@ -40,15 +40,85 @@
       "telephone": "+33763004385",
       "address": {
         "@type": "PostalAddress",
-        "addressLocality": "Lyon",
+        "streetAddress": "47 chemin du Pras",
+        "addressLocality": "La Mulatière",
+        "postalCode": "69350",
         "addressRegion": "Auvergne-Rhône-Alpes",
         "addressCountry": "FR"
       }
     },
-    "areaServed": {
-      "@type": "City",
-      "name": "Lyon"
-    }
+    "areaServed": [
+      { "@type": "City", "name": "Lyon" },
+      { "@type": "City", "name": "Écully" },
+      { "@type": "City", "name": "Dardilly" },
+      { "@type": "City", "name": "Limonest" },
+      { "@type": "City", "name": "Champagne-au-Mont-d'Or" },
+      { "@type": "City", "name": "Saint-Didier-au-Mont-d'Or" },
+      { "@type": "City", "name": "Sainte-Foy-lès-Lyon" },
+      { "@type": "City", "name": "Tassin-la-Demi-Lune" },
+      { "@type": "City", "name": "Villeurbanne" },
+      { "@type": "City", "name": "Caluire-et-Cuire" },
+      { "@type": "City", "name": "Annecy" },
+      { "@type": "City", "name": "Grenoble" },
+      { "@type": "City", "name": "Saint-Étienne" },
+      { "@type": "City", "name": "Genève" }
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Combien de temps prend une rénovation de jantes ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "En atelier, comptez 24 à 48h par jante selon la complexité. Pour une intervention mobile, on réalise les traitements préparatoires sur place et les finitions en atelier si nécessaire."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Faut-il démonter les jantes du véhicule pour une rénovation ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Oui, pour une rénovation complète les jantes sont démontées. Nous gérons le démontage et le remontage complet, pneus inclus, dans notre atelier."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "La peinture de jantes rénovées résiste-t-elle dans le temps ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Nous utilisons des peintures professionnelles bi-composant avec vernis UV résistant. Avec un entretien normal, la finition tient plusieurs années sans décollement ni écaillement."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Peut-on rénover toutes les tailles de jantes ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Oui, de 15\" à 24\" et plus. Toutes marques, toutes tailles, toutes finitions — BMW, Porsche, Tesla, Audi, Mercedes, Range Rover."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Quel est le prix d'une rénovation de jante ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Le tarif dépend de la taille, de l'état et de la finition choisie. Comptez entre 80 et 200 € par jante pour une rénovation standard. Devis gratuit sous 24h sur envoi de photos."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Intervenez-vous à domicile pour la rénovation de jantes ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Oui, notre service mobile se déplace chez vous dans tout l'Ouest Lyonnais (Écully, Dardilly, Limonest, Champagne-au-Mont-d'Or, Saint-Didier, Sainte-Foy, Tassin) et dans l'agglomération lyonnaise."
+        }
+      }
+    ]
   }
   </script>
 </head>
@@ -192,15 +262,15 @@
   </div>
   <div class="before-after-grid">
     <div class="ba-item" data-reveal>
-      <div class="img-placeholder" style="width:100%;height:100%;min-height:380px">Avant</div>
+      <img src="../assets/images/macan-avant.jpg" alt="Jante Porsche Macan avant rénovation — rayures et oxydation" style="width:100%;height:100%;min-height:380px;object-fit:cover;" loading="lazy" />
       <div class="ba-item__badge">Avant</div>
     </div>
     <div class="ba-item" data-reveal data-reveal-delay="1">
-      <div class="img-placeholder" style="width:100%;height:100%;min-height:380px">Après</div>
+      <img src="../assets/images/macan-apres.jpg" alt="Jante Porsche Macan après rénovation REYNOV — finition parfaite" style="width:100%;height:100%;min-height:380px;object-fit:cover;" loading="lazy" />
       <div class="ba-item__badge">Après</div>
     </div>
     <div class="ba-item" data-reveal data-reveal-delay="2">
-      <div class="img-placeholder" style="width:100%;height:100%;min-height:380px">Résultat final</div>
+      <img src="../assets/images/jante-apres-monts-dor.jpg" alt="Résultat rénovation jante — intervention mobile Monts d'Or Lyon" style="width:100%;height:100%;min-height:380px;object-fit:cover;" loading="lazy" />
       <div class="ba-item__badge">Résultat</div>
     </div>
   </div>
@@ -276,8 +346,37 @@
         <button class="faq-question">Peut-on rénover toutes les tailles de jantes ?
           <div class="faq-icon"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 1v8M1 5h8"/></svg></div>
         </button>
-        <div class="faq-answer"><p class="faq-answer__inner">Oui, de 15" à 24" et plus. Toutes marques, toutes tailles, toutes finitions.</p></div>
+        <div class="faq-answer"><p class="faq-answer__inner">Oui, de 15" à 24" et plus. Toutes marques, toutes tailles, toutes finitions — BMW, Porsche, Tesla, Audi, Mercedes, Range Rover.</p></div>
       </div>
+      <div class="faq-item">
+        <button class="faq-question">Quel est le prix d'une rénovation de jante ?
+          <div class="faq-icon"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 1v8M1 5h8"/></svg></div>
+        </button>
+        <div class="faq-answer"><p class="faq-answer__inner">Le tarif dépend de la taille, de l'état et de la finition choisie. Comptez entre 80 et 200 € par jante pour une rénovation standard. Devis gratuit sous 24h sur envoi de photos.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question">Intervenez-vous à domicile pour la rénovation de jantes ?
+          <div class="faq-icon"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 1v8M1 5h8"/></svg></div>
+        </button>
+        <div class="faq-answer"><p class="faq-answer__inner">Oui, notre service mobile se déplace chez vous dans tout l'Ouest Lyonnais (Écully, Dardilly, Limonest, Champagne-au-Mont-d'Or, Saint-Didier, Sainte-Foy, Tassin) et dans l'agglomération lyonnaise.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Lien blog -->
+<section class="section border-bottom">
+  <div class="container-narrow">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:2rem;flex-wrap:wrap;" data-reveal>
+      <div>
+        <p class="label mb-1">Pour aller plus loin</p>
+        <h3 style="font-family:var(--font-display);font-size:clamp(1.2rem,2vw,1.6rem);font-weight:300;margin-bottom:0.5rem;">Guide complet : rénovation de jantes à Lyon</h3>
+        <p style="font-size:0.85rem;color:var(--grey-400);line-height:1.7;max-width:480px;">Quand rénover plutôt que remplacer, les finitions possibles, les prix réels — tout ce qu'il faut savoir avant de se lancer.</p>
+      </div>
+      <a href="../blog/renovation-jantes-lyon.html" class="btn btn-outline" style="white-space:nowrap;">
+        <span>Lire l'article</span>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+      </a>
     </div>
   </div>
 </section>
