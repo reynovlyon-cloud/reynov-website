@@ -1,3 +1,9 @@
 # Local Netlify folder
 .netlify
 node_modules/
+assets/images/*.MOV
+assets/images/*.mov
+assets/images/*.HEIC
+assets/images/*.MP4
+assets/images/IMG_*
+assets/images/*.PNG
