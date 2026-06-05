@@ -9,6 +9,10 @@
   <meta name="keywords" content="rénovation jantes Rhône-Alpes, réparation jante domicile Lyon, rénovation jantes Ain, rénovation jantes Haute-Savoie, rénovation jantes Annecy, rénovation jantes Pays de Gex, rénovation jantes Annemasse, rénovation jantes Bourg-en-Bresse, service mobile jantes, jante abîmée devis gratuit" />
   <meta name="robots" content="index, follow" />
   <link rel="canonical" href="https://reynovjantes.fr/" />
+  <meta name="geo.region" content="FR-ARA" />
+  <meta name="geo.placename" content="La Mulatière, Lyon, Rhône-Alpes" />
+  <meta name="geo.position" content="45.764;4.8357" />
+  <meta name="ICBM" content="45.764, 4.8357" />
   <link rel="preload" as="image" href="assets/images/macan-avant.webp" type="image/webp" />
   <link rel="preload" as="image" href="assets/images/macan-apres.webp" type="image/webp" />
   <link rel="preload" as="image" href="assets/images/hero-poster.webp" type="image/webp" />
@@ -39,13 +43,21 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "LocalBusiness",
+    "@type": ["LocalBusiness", "AutoRepair"],
     "name": "REYNOV",
     "description": "Rénovation, réparation et personnalisation de jantes premium en Rhône-Alpes. Service mobile à domicile : Lyon, Ain, Haute-Savoie, Pays de Gex, frontière suisse.",
     "url": "https://reynovjantes.fr",
     "telephone": "+33763004385",
     "email": "reynov.lyon@gmail.com",
-    "image": "https://reynovjantes.fr/assets/images/logo.png",
+    "image": "https://reynovjantes.fr/assets/images/og-image.jpg",
+    "logo": "https://reynovjantes.fr/assets/images/logo.png",
+    "priceRange": "€€",
+    "currenciesAccepted": "EUR",
+    "paymentAccepted": "Carte bancaire, Virement, Espèces",
+    "hasMap": "https://maps.google.com/?q=47+chemin+du+Pras,+69350+La+Mulatière",
+    "sameAs": [
+      "https://reynovjantes.fr"
+    ],
     "address": {
       "@type": "PostalAddress",
       "streetAddress": "47 chemin du Pras",
@@ -58,6 +70,15 @@
       "@type": "GeoCoordinates",
       "latitude": 45.764,
       "longitude": 4.8357
+    },
+    "serviceArea": {
+      "@type": "GeoCircle",
+      "geoMidpoint": {
+        "@type": "GeoCoordinates",
+        "latitude": 45.764,
+        "longitude": 4.8357
+      },
+      "geoRadius": "120000"
     },
     "areaServed": [
       { "@type": "City", "name": "Lyon" },
