@@ -28,6 +28,28 @@
   <url><loc>https://reynovjantes.fr/zones/tassin-la-demi-lune.html</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
   <url><loc>https://reynovjantes.fr/zones/techlid.html</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
 
+  <!-- Zones — Lyon arrondissements -->
+  <url><loc>https://reynovjantes.fr/zones/lyon-1.html</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/zones/lyon-2.html</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/zones/lyon-3.html</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/zones/lyon-4.html</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/zones/lyon-5.html</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/zones/lyon-6.html</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/zones/lyon-7.html</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/zones/lyon-8.html</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/zones/lyon-9.html</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
+
+  <!-- Zones — Oullins & Sud Lyon -->
+  <url><loc>https://reynovjantes.fr/zones/oullins.html</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/zones/pierre-benite.html</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/zones/saint-genis-laval.html</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/zones/irigny.html</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/zones/brignais.html</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://reynovjantes.fr/zones/givors.html</loc><priority>0.7</priority><changefreq>monthly</changefreq></url>
+
+  <!-- Zones — Monts d'Or -->
+  <url><loc>https://reynovjantes.fr/zones/monts-dor.html</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
+
   <!-- Zones — Haute-Savoie / Rhône-Alpes -->
   <url><loc>https://reynovjantes.fr/zones/annecy.html</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
   <url><loc>https://reynovjantes.fr/zones/haute-savoie-74.html</loc><priority>0.8</priority><changefreq>monthly</changefreq></url>
