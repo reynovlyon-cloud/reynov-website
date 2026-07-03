@@ -510,6 +510,7 @@ h4, .h4 { font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; l
   max-width: var(--max-w);
   margin-inline: auto;
   padding: clamp(1.5rem,4vw,4rem);
+  padding-top: calc(var(--nav-h) + clamp(2rem, 4vw, 4rem));
   padding-bottom: clamp(4rem, 9vw, 9rem);
 }
 .hero__eyebrow {
