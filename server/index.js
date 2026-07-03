@@ -76,12 +76,22 @@ app.get('/api/health', (req, res) => res.json({ ok: true }));
 
 // ── Gmail diagnostic (temporaire) ────────────────────────────
 app.get('/api/gmail-diag', async (req, res) => {
+  const results = {};
+  try {
+    const r = await fetch('https://oauth2.googleapis.com/tokeninfo?access_token=test');
+    results.googleapis_reachable = true;
+    results.googleapis_status = r.status;
+  } catch (e) {
+    results.googleapis_reachable = false;
+    results.googleapis_error = e.message;
+  }
   try {
     const tokenRes = await oauth2Client.getAccessToken();
-    res.json({ ok: true, token: !!tokenRes.token });
+    results.token_ok = !!tokenRes.token;
   } catch (err) {
-    res.json({ ok: false, error: err.message });
+    results.token_error = err.message;
   }
+  res.json(results);
 });
 
 // ── Gmail API (OAuth2 — HTTPS, pas SMTP) ─────────────────────
