@@ -139,7 +139,7 @@ async function sendEmail({ from, to, subject, html, attachments = [] }) {
     ];
   }
 
-  const raw = Buffer.from(rawParts.join('\n')).toString('base64url');
+  const raw = Buffer.from(rawParts.join('\r\n')).toString('base64url');
   const r = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/send`, {
     method: 'POST',
     headers: {
@@ -155,8 +155,24 @@ async function sendEmail({ from, to, subject, html, attachments = [] }) {
 // ── Gmail diagnostic (temporaire) ────────────────────────────
 app.get('/api/gmail-diag', async (req, res) => {
   try {
-    const token = await getAccessToken();
-    res.json({ ok: true, token: !!token });
+    const accessToken = await getAccessToken();
+    const rawParts = [
+      `From: ${GMAIL_USER}`,
+      `To: ${GMAIL_USER}`,
+      'Subject: Test REYNOV',
+      'MIME-Version: 1.0',
+      'Content-Type: text/plain; charset=UTF-8',
+      '',
+      'Test envoi depuis Railway',
+    ];
+    const raw = Buffer.from(rawParts.join('\r\n')).toString('base64url');
+    const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw }),
+    });
+    const result = await r.json();
+    res.json({ ok: r.ok, status: r.status, result });
   } catch (err) {
     res.json({ ok: false, error: err.message });
   }
