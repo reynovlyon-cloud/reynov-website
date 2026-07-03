@@ -753,15 +753,29 @@
 </section>
 
 <!-- ATELIER FIXE ─────────────────────────────────────────── -->
+<style>
+  .atelier-grid { display: grid; grid-template-columns: 1fr 1fr; }
+  .atelier-img { position: relative; overflow: hidden; min-height: 520px; }
+  .atelier-img img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+  .atelier-img__overlay { position: absolute; inset: 0; background: linear-gradient(to right, rgba(0,0,0,0) 60%, rgba(5,5,5,0.9) 100%); pointer-events: none; }
+  .atelier-text { background: var(--black); display: flex; align-items: center; padding: clamp(3rem,6vw,5rem) clamp(2rem,5vw,5rem); }
+  @media (max-width: 768px) {
+    .atelier-grid { grid-template-columns: 1fr; }
+    .atelier-img { min-height: 300px; }
+    .atelier-img img { height: 300px; object-position: center 30%; }
+    .atelier-img__overlay { background: linear-gradient(to bottom, rgba(0,0,0,0) 40%, rgba(5,5,5,0.7) 100%); }
+    .atelier-text { padding: 2.5rem 1.5rem; }
+  }
+</style>
 <section class="border-bottom">
-  <div style="display:grid;grid-template-columns:1fr 1fr;">
+  <div class="atelier-grid">
     <!-- Photo atelier -->
-    <div style="position:relative;overflow:hidden;min-height:520px;">
-      <img src="assets/images/atelier-fixe.jpg" alt="Atelier REYNOV Lyon — rénovation jante en atelier fixe La Mulatière" style="width:100%;height:100%;object-fit:cover;object-position:center;display:block;" loading="lazy">
-      <div style="position:absolute;inset:0;background:linear-gradient(to right,rgba(0,0,0,0) 60%,rgba(5,5,5,0.9) 100%);pointer-events:none;"></div>
+    <div class="atelier-img">
+      <img src="assets/images/atelier-fixe.jpg" alt="Atelier REYNOV Lyon — rénovation jante en atelier fixe La Mulatière" loading="lazy">
+      <div class="atelier-img__overlay"></div>
     </div>
     <!-- Texte -->
-    <div style="background:var(--black);display:flex;align-items:center;padding:clamp(3rem,6vw,5rem) clamp(2rem,5vw,5rem);" data-reveal>
+    <div class="atelier-text" data-reveal>
       <div>
         <p class="label mb-2">Atelier REYNOV</p>
         <h2 class="h2">Venez nous<br /><em>déposer votre véhicule</em></h2>
