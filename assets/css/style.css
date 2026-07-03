@@ -480,7 +480,7 @@ h4, .h4 { font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; l
   min-height: 100dvh;
   overflow: hidden;
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
 }
 .hero__video-wrap { position: absolute; inset: 0; }
 .hero__video { width: 100%; height: 100%; object-fit: cover; object-position: center; }
@@ -509,11 +509,13 @@ h4, .h4 { font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; l
   width: 100%;
   max-width: var(--max-w);
   margin-inline: auto;
+  margin-top: auto;          /* pousse le contenu en bas, laisse tout l'espace libre au-dessus */
   padding: clamp(1.5rem,4vw,4rem);
-  padding-bottom: clamp(4rem, 9vw, 9rem);
+  padding-top: clamp(3rem, 5vw, 5rem);   /* espace interne au-dessus de l'eyebrow */
+  padding-bottom: clamp(4rem, 7vw, 7rem);
 }
 .hero__eyebrow {
-  margin-bottom: clamp(2.5rem, 5vw, 5rem);
+  margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
 }
 .hero__eyebrow .label {
   color: #FBBC04;
