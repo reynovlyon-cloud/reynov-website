@@ -1410,7 +1410,7 @@ textarea.form-input { resize: vertical; min-height: 100px; border-radius: 12px; 
   gap: 2px;
 }
 .reviews-google-badge__stars span {
-  color: #FBBC04;
+  color: rgba(255,255,255,0.75);
   font-size: 1rem;
 }
 .reviews-google-badge__score {
@@ -1441,7 +1441,7 @@ textarea.form-input { resize: vertical; min-height: 100px; border-radius: 12px; 
   gap: 2px;
   margin-bottom: 1rem;
 }
-.review-card__stars span { color: #FBBC04; font-size: 0.9rem; }
+.review-card__stars span { color: rgba(255,255,255,0.75); font-size: 0.9rem; }
 .review-card__text {
   font-size: 0.9rem;
   line-height: 1.75;
