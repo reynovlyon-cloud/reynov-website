@@ -53,6 +53,278 @@
   <link rel="preload" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" /></noscript>
   <link rel="stylesheet" href="assets/css/style.css" />
+  <style>
+    /* ═══════════════════════════════════════════════════════════
+       HERO — améliorations conversion & premium
+    ═══════════════════════════════════════════════════════════ */
+
+    /* Renforcement overlay côté texte */
+    .hero__overlay::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(
+        100deg,
+        rgba(4,4,4,0.55) 0%,
+        rgba(4,4,4,0.2)  55%,
+        rgba(4,4,4,0.0)  100%
+      );
+    }
+
+    /* Trust badge */
+    .hero__trust {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+    .hero__trust-stars {
+      color: #f5c518;
+      font-size: 0.78rem;
+      letter-spacing: 0.1em;
+      line-height: 1;
+    }
+    .hero__trust-label {
+      font-size: 0.73rem;
+      color: rgba(255,255,255,0.52);
+      letter-spacing: 0.06em;
+      font-family: 'Inter', sans-serif;
+    }
+    .hero__trust-sep {
+      width: 1px;
+      height: 13px;
+      background: rgba(255,255,255,0.18);
+      flex-shrink: 0;
+    }
+
+    /* Chips modes d'intervention */
+    .hero__modes {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      margin-top: 2.5rem;
+      border: 1px solid rgba(255,255,255,0.1);
+      width: fit-content;
+      max-width: 100%;
+    }
+    .hero__mode {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      padding: 0.9rem 1.4rem;
+      text-decoration: none;
+      transition: background 0.2s ease;
+      min-width: 0;
+    }
+    .hero__mode:hover { background: rgba(255,255,255,0.06); }
+    .hero__mode-icon {
+      width: 30px;
+      height: 30px;
+      border: 1px solid rgba(201,169,110,0.35);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: #c9a96e;
+    }
+    .hero__mode-body { display: flex; flex-direction: column; gap: 0.15rem; }
+    .hero__mode-name {
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.85);
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      line-height: 1;
+    }
+    .hero__mode-sub {
+      font-size: 0.66rem;
+      color: rgba(255,255,255,0.32);
+      letter-spacing: 0.06em;
+      font-family: 'Inter', sans-serif;
+      line-height: 1;
+    }
+    .hero__mode-sep {
+      width: 1px;
+      background: rgba(255,255,255,0.1);
+      align-self: stretch;
+      flex-shrink: 0;
+    }
+    .hero__mode-arrow {
+      color: rgba(255,255,255,0.2);
+      margin-left: 0.5rem;
+      flex-shrink: 0;
+      transition: color 0.2s, transform 0.2s;
+    }
+    .hero__mode:hover .hero__mode-arrow { color: #c9a96e; transform: translateX(3px); }
+
+    /* Micro-animations d'entrée staggerées */
+    @keyframes heroFadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .hero__trust    { animation: heroFadeUp 0.65s cubic-bezier(0.22,1,0.36,1) 0.15s both; }
+    .hero__eyebrow  { animation: heroFadeUp 0.65s cubic-bezier(0.22,1,0.36,1) 0.30s both; }
+    .hero__title    { animation: heroFadeUp 0.80s cubic-bezier(0.22,1,0.36,1) 0.45s both; }
+    .hero__subtitle { animation: heroFadeUp 0.65s cubic-bezier(0.22,1,0.36,1) 0.62s both; }
+    .hero__actions  { animation: heroFadeUp 0.65s cubic-bezier(0.22,1,0.36,1) 0.78s both; }
+    .hero__modes    { animation: heroFadeUp 0.65s cubic-bezier(0.22,1,0.36,1) 0.92s both; }
+
+    /* ═══════════════════════════════════════════════════════════
+       STATS STRIP — remplace values-strip
+    ═══════════════════════════════════════════════════════════ */
+    .stats-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .stats-strip__item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      border-right: 1px solid rgba(255,255,255,0.07);
+      text-align: center;
+      gap: 0.4rem;
+    }
+    .stats-strip__item:last-child { border-right: none; }
+    .stats-strip__val {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(2rem, 3.2vw, 2.6rem);
+      font-weight: 300;
+      color: #fff;
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+    .stats-strip__val em {
+      font-style: normal;
+      color: #c9a96e;
+    }
+    .stats-strip__label {
+      font-size: 0.67rem;
+      color: rgba(255,255,255,0.32);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       DUAL MODE — deux cartes d'intervention côte à côte
+    ═══════════════════════════════════════════════════════════ */
+    .dual-mode {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: rgba(255,255,255,0.06);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .dual-mode__card {
+      position: relative;
+      padding: clamp(2.5rem, 5vw, 4.5rem) clamp(2rem, 5vw, 4.5rem);
+      background: #050505;
+      overflow: hidden;
+    }
+    .dual-mode__card--atelier { background: #0a0a0a; }
+
+    .dual-mode__card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 2px; height: 0;
+      background: #c9a96e;
+      transition: height 0.45s cubic-bezier(0.22,1,0.36,1);
+    }
+    .dual-mode__card:hover::after { height: 100%; }
+
+    .dual-mode__badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.62rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #c9a96e;
+      font-family: 'Inter', sans-serif;
+      margin-bottom: 1.8rem;
+    }
+    .dual-mode__badge-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: #c9a96e;
+      flex-shrink: 0;
+    }
+    .dual-mode__title {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(2rem, 3.5vw, 3rem);
+      font-weight: 300;
+      line-height: 1.05;
+      color: #fff;
+      margin: 0 0 1.5rem;
+      letter-spacing: -0.01em;
+    }
+    .dual-mode__title em {
+      font-style: italic;
+      color: rgba(255,255,255,0.6);
+    }
+    .dual-mode__desc {
+      font-size: 0.88rem;
+      color: rgba(255,255,255,0.4);
+      line-height: 1.8;
+      margin: 0 0 2rem;
+      max-width: 380px;
+    }
+    .dual-mode__list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 2.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+    .dual-mode__list li {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.5);
+      font-family: 'Inter', sans-serif;
+    }
+    .dual-mode__list li::before {
+      content: '';
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: rgba(201,169,110,0.6);
+      flex-shrink: 0;
+    }
+    .dual-mode__num {
+      position: absolute;
+      bottom: 2rem; right: 2.5rem;
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 7rem;
+      font-weight: 200;
+      color: rgba(255,255,255,0.03);
+      line-height: 1;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    /* Responsive */
+    @media (max-width: 860px) {
+      .dual-mode { grid-template-columns: 1fr; }
+      .stats-strip { grid-template-columns: 1fr 1fr; }
+      .stats-strip__item:nth-child(2) { border-right: none; }
+      .stats-strip__item:nth-child(3),
+      .stats-strip__item:nth-child(4) { border-top: 1px solid rgba(255,255,255,0.07); }
+      .hero__modes { flex-direction: column; width: 100%; }
+      .hero__mode-sep { width: 100%; height: 1px; align-self: auto; }
+    }
+    @media (max-width: 560px) {
+      .stats-strip { grid-template-columns: 1fr 1fr; }
+      .dual-mode__num { display: none; }
+      .hero__mode { padding: 0.8rem 1rem; }
+    }
+  </style>
 
   <!-- Schema.org — LocalBusiness -->
   <script type="application/ld+json">
@@ -277,9 +549,18 @@
   </div>
   <div class="hero__overlay"></div>
   <div class="hero__content">
+    <!-- Trust signal — visible dès le premier regard -->
+    <div class="hero__trust">
+      <span class="hero__trust-stars">★★★★★</span>
+      <span class="hero__trust-label">5,0 · 40 avis Google</span>
+      <span class="hero__trust-sep"></span>
+      <span class="hero__trust-label">+1 200 jantes rénovées</span>
+    </div>
+
     <p class="hero__eyebrow label">Lyon · Ain · Haute-Savoie · Pays de Gex</p>
-    <h1 class="hero__title">Rénovation et réparation<br /><em>de jantes à Lyon et Rhône-Alpes</em></h1>
-    <p class="hero__subtitle">Service mobile à domicile — on se déplace chez vous.<br />Diagnostic photo, devis personnalisé sous 24h.</p>
+    <h1 class="hero__title">Rénovation de jante<br /><em>à domicile ou en atelier</em></h1>
+    <p class="hero__subtitle">Notre camion atelier se déplace directement chez vous — ou amenez votre véhicule dans notre atelier à La Mulatière. Devis gratuit, réponse sous 24h.</p>
+
     <div class="hero__actions">
       <a href="devis.html" class="btn btn-primary btn-lg">
         <span>Devis gratuit</span>
@@ -290,6 +571,31 @@
         <span>06 61 45 35 27</span>
       </a>
     </div>
+
+    <!-- Sélecteur de mode — navigation rapide vers chaque option -->
+    <div class="hero__modes" role="group" aria-label="Modes d'intervention">
+      <a href="service-mobile.html" class="hero__mode" aria-label="Service mobile à domicile">
+        <span class="hero__mode-icon" aria-hidden="true">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        </span>
+        <div class="hero__mode-body">
+          <span class="hero__mode-name">Service mobile</span>
+          <span class="hero__mode-sub">On vient chez vous</span>
+        </div>
+        <svg class="hero__mode-arrow" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+      </a>
+      <span class="hero__mode-sep" aria-hidden="true"></span>
+      <a href="devis.html" class="hero__mode" aria-label="Intervention en atelier">
+        <span class="hero__mode-icon" aria-hidden="true">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </span>
+        <div class="hero__mode-body">
+          <span class="hero__mode-name">Atelier fixe</span>
+          <span class="hero__mode-sub">La Mulatière — 69350</span>
+        </div>
+        <svg class="hero__mode-arrow" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+      </a>
+    </div>
   </div>
   <div class="hero__scroll" aria-hidden="true">
     <div class="hero__scroll-line"></div>
@@ -297,47 +603,67 @@
   </div>
 </section>
 
-<!-- ② DIFFÉRENCIATION ───────────────────────────────────── -->
-<section class="values-strip border-bottom">
-  <div class="values-strip__item" data-reveal>
-    <div class="values-strip__icon">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25"><path d="M3 12h18M3 12l4-4M3 12l4 4"/><circle cx="19" cy="12" r="2"/></svg>
-    </div>
-    <div>
-      <p class="values-strip__title">À domicile</p>
-      <p class="values-strip__sub">On se déplace chez vous</p>
-    </div>
+<!-- ② STATS STRIP ───────────────────────────────────────── -->
+<section class="stats-strip border-bottom" aria-label="Chiffres clés REYNOV">
+  <div class="stats-strip__item" data-reveal>
+    <p class="stats-strip__val">+1&nbsp;200</p>
+    <p class="stats-strip__label">jantes rénovées</p>
   </div>
-  <div class="values-strip__sep" aria-hidden="true"></div>
-  <div class="values-strip__item" data-reveal data-reveal-delay="1">
-    <div class="values-strip__icon">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M9 9h6M9 12h6M9 15h4"/></svg>
-    </div>
-    <div>
-      <p class="values-strip__title">Équipements pro</p>
-      <p class="values-strip__sub">Matériel haute précision</p>
-    </div>
+  <div class="stats-strip__item" data-reveal data-reveal-delay="1">
+    <p class="stats-strip__val"><em>★</em>&nbsp;5,0</p>
+    <p class="stats-strip__label">40 avis Google vérifis</p>
   </div>
-  <div class="values-strip__sep" aria-hidden="true"></div>
-  <div class="values-strip__item" data-reveal data-reveal-delay="2">
-    <div class="values-strip__icon">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-    </div>
-    <div>
-      <p class="values-strip__title">Réponse sous 24h</p>
-      <p class="values-strip__sub">Devis gratuit et rapide</p>
-    </div>
+  <div class="stats-strip__item" data-reveal data-reveal-delay="2">
+    <p class="stats-strip__val">24h</p>
+    <p class="stats-strip__label">délai de réponse devis</p>
   </div>
-  <div class="values-strip__sep" aria-hidden="true"></div>
-  <div class="values-strip__item" data-reveal data-reveal-delay="3">
-    <div class="values-strip__icon">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-    </div>
-    <div>
-      <p class="values-strip__title">Particuliers &amp; pros</p>
-      <p class="values-strip__sub">Tarifs adaptés à chaque profil</p>
-    </div>
+  <div class="stats-strip__item" data-reveal data-reveal-delay="3">
+    <p class="stats-strip__val">30j</p>
+    <p class="stats-strip__label">garantie satisfaction</p>
   </div>
+</section>
+
+<!-- ② BIS — DUAL MODE ───────────────────────────────────── -->
+<section class="dual-mode" aria-label="Modes d'intervention REYNOV">
+  <!-- Carte A : Service mobile -->
+  <a href="service-mobile.html" class="dual-mode__card dual-mode__card--mobile" data-reveal>
+    <span class="dual-mode__num" aria-hidden="true">01</span>
+    <div class="dual-mode__badge">
+      <span class="dual-mode__badge-dot"></span>
+      Service mobile
+    </div>
+    <h2 class="dual-mode__title">On vient<br /><em>chez vous</em></h2>
+    <p class="dual-mode__desc">Notre camion atelier se déplace à votre adresse — résidence, entreprise, parking souterrain. Zéro contrainte.</p>
+    <ul class="dual-mode__list">
+      <li>Lyon, Rhône-Alpes, Pays de Gex, Genève</li>
+      <li>Intervention en 2 à 4 h sur place</li>
+      <li>Prise en charge complète du véhicule</li>
+    </ul>
+    <span class="dual-mode__cta">
+      Découvrir le service mobile
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+    </span>
+  </a>
+
+  <!-- Carte B : Atelier fixe -->
+  <a href="devis.html" class="dual-mode__card dual-mode__card--atelier" data-reveal data-reveal-delay="1">
+    <span class="dual-mode__num" aria-hidden="true">02</span>
+    <div class="dual-mode__badge">
+      <span class="dual-mode__badge-dot"></span>
+      Atelier fixe
+    </div>
+    <h2 class="dual-mode__title">Amenez votre<br /><em>véhicule</em></h2>
+    <p class="dual-mode__desc">Déposez votre voiture dans notre atelier à La Mulatière et repartez avec des jantes comme neuves dès le lendemain.</p>
+    <ul class="dual-mode__list">
+      <li>La Mulatière — 69350 (sud Lyon)</li>
+      <li>Restitution J+1 ou J+2 selon prestation</li>
+      <li>Accès garanti par rendez-vous</li>
+    </ul>
+    <span class="dual-mode__cta">
+      Demander un devis atelier
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+    </span>
+  </a>
 </section>
 
 <!-- ③ SERVICE MOBILE ────────────────────────────────────── -->
