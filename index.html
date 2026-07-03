@@ -72,30 +72,57 @@
       );
     }
 
-    /* Trust badge */
+    /* Trust badge — en haut comme service-mobile */
     .hero__trust {
       display: flex;
       align-items: center;
-      gap: 0.9rem;
-      margin-top: clamp(3.5rem, 7vw, 6rem);
+      gap: 0.75rem;
+      margin-bottom: 2rem;
       flex-wrap: wrap;
     }
     .hero__trust-stars {
       color: #FBBC04;
-      font-size: 0.78rem;
-      letter-spacing: 0.1em;
+      font-size: 0.85rem;
+      letter-spacing: 0.12em;
       line-height: 1;
     }
     .hero__trust-label {
-      font-size: 0.73rem;
-      color: rgba(255,255,255,0.52);
-      letter-spacing: 0.06em;
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.55);
+      letter-spacing: 0.07em;
       font-family: 'Inter', sans-serif;
     }
     .hero__trust-sep {
       width: 1px;
-      height: 13px;
-      background: rgba(255,255,255,0.18);
+      height: 14px;
+      background: rgba(255,255,255,0.2);
+      flex-shrink: 0;
+    }
+
+    /* Badges discrets en bas */
+    .hero__badges {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      margin-top: 2.8rem;
+    }
+    .hero__badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.38);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-family: 'Inter', sans-serif;
+    }
+    .hero__badge::before {
+      content: '';
+      display: block;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
       flex-shrink: 0;
     }
 
@@ -165,12 +192,12 @@
       from { opacity: 0; transform: translateY(18px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-    .hero__trust    { animation: heroFadeUp 0.65s cubic-bezier(0.22,1,0.36,1) 0.15s both; }
-    .hero__eyebrow  { animation: heroFadeUp 0.65s cubic-bezier(0.22,1,0.36,1) 0.30s both; }
-    .hero__title    { animation: heroFadeUp 0.80s cubic-bezier(0.22,1,0.36,1) 0.45s both; }
-    .hero__subtitle { animation: heroFadeUp 0.65s cubic-bezier(0.22,1,0.36,1) 0.62s both; }
-    .hero__actions  { animation: heroFadeUp 0.65s cubic-bezier(0.22,1,0.36,1) 0.78s both; }
-    .hero__modes    { animation: heroFadeUp 0.65s cubic-bezier(0.22,1,0.36,1) 0.92s both; }
+    .hero__trust    { animation: heroFadeUp 0.65s cubic-bezier(0.22,1,0.36,1) 0.10s both; }
+    .hero__eyebrow  { animation: heroFadeUp 0.65s cubic-bezier(0.22,1,0.36,1) 0.25s both; }
+    .hero__title    { animation: heroFadeUp 0.80s cubic-bezier(0.22,1,0.36,1) 0.40s both; }
+    .hero__subtitle { animation: heroFadeUp 0.65s cubic-bezier(0.22,1,0.36,1) 0.55s both; }
+    .hero__actions  { animation: heroFadeUp 0.65s cubic-bezier(0.22,1,0.36,1) 0.70s both; }
+    .hero__badges   { animation: heroFadeUp 0.65s cubic-bezier(0.22,1,0.36,1) 0.85s both; }
 
     /* ═══════════════════════════════════════════════════════════
        STATS STRIP — remplace values-strip
@@ -550,6 +577,14 @@
   </div>
   <div class="hero__overlay"></div>
   <div class="hero__content">
+    <!-- Trust — en haut comme service-mobile -->
+    <div class="hero__trust">
+      <span class="hero__trust-stars">★★★★★</span>
+      <span class="hero__trust-label">5,0 · 40 avis Google</span>
+      <span class="hero__trust-sep"></span>
+      <span class="hero__trust-label">+1 200 jantes rénovées</span>
+    </div>
+
     <p class="hero__eyebrow label">Lyon · 69 · 42 · 38 · 01 · 74</p>
     <h1 class="hero__title">Rénovation de jante<br /><em>à domicile ou en atelier</em></h1>
     <p class="hero__subtitle">Notre camion atelier se déplace directement chez vous — ou amenez votre véhicule à notre atelier à Lyon. Devis gratuit, réponse sous 24h.</p>
@@ -565,12 +600,12 @@
       </a>
     </div>
 
-    <!-- Trust signal — sous les CTAs -->
-    <div class="hero__trust">
-      <span class="hero__trust-stars">★★★★★</span>
-      <span class="hero__trust-label">5,0 · 40 avis Google</span>
-      <span class="hero__trust-sep"></span>
-      <span class="hero__trust-label">+1 200 jantes rénovées</span>
+    <!-- Badges discrets en bas — comme service-mobile -->
+    <div class="hero__badges">
+      <span class="hero__badge">Réponse sous 24h</span>
+      <span class="hero__badge">Résultat garanti</span>
+      <span class="hero__badge">Lyon &amp; Rhône-Alpes</span>
+      <span class="hero__badge">Service 7j/7</span>
     </div>
 
   </div>
