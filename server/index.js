@@ -381,7 +381,7 @@ app.post('/api/devis', devisLimiter, (req, res, next) => {
 
   } catch (err) {
     console.error('❌ Erreur envoi mail:', err.message, JSON.stringify(err.response?.data || ''));
-    res.status(500).json({ ok: false, error: 'Erreur serveur. Appelez le 07 63 00 43 85.' });
+    res.status(500).json({ ok: false, error: err.message });
   }
 });
 
