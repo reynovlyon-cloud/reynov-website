@@ -85,6 +85,14 @@ const transporter = nodemailer.createTransport({
   port: 587,
   secure: false,
   auth: { user: GMAIL_USER, pass: GMAIL_APP_PASS },
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 15000,
+});
+
+transporter.verify((err) => {
+  if (err) console.error('❌ SMTP verify:', err.message);
+  else console.log('✅ SMTP Gmail connecté');
 });
 
 // ── Sanitisation — supprime les balises HTML des champs texte ─
