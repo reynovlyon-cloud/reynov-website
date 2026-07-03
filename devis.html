@@ -542,6 +542,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <input class="form-input" type="text" id="adresse-client" name="adresse" placeholder="Ex: 12 rue de la Paix, 69003 Lyon" />
           </div>
 
+          <!-- Honeypot anti-spam — champ caché, ne pas remplir -->
+          <input type="text" name="website" style="display:none" tabindex="-1" autocomplete="off" aria-hidden="true" />
+
           <div class="devis-nav">
             <button type="button" class="btn btn-ghost" data-prev>← Retour</button>
             <button type="button" class="btn btn-primary btn-lg" data-next>

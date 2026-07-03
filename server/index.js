@@ -17,19 +17,26 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc:  ["'self'"],
-      scriptSrc:   ["'self'", "'unsafe-inline'"],       // inline scripts dans les HTML
+      scriptSrc:   ["'self'", "'unsafe-inline'", 'https://www.google-analytics.com', 'https://www.googletagmanager.com'],       // inline scripts dans les HTML
       styleSrc:    ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       fontSrc:     ["'self'", 'https://fonts.gstatic.com'],
       imgSrc:      ["'self'", 'data:', 'https:'],
       mediaSrc:    ["'self'"],
-      connectSrc:  ["'self'"],
+      connectSrc:  ["'self'", 'https://www.google-analytics.com', 'https://www.googletagmanager.com'],
       frameSrc:    ["'none'"],
       objectSrc:   ["'none'"],
       upgradeInsecureRequests: [],
     },
   },
   crossOriginEmbedderPolicy: false,   // évite de casser les fonts
+  permittedCrossDomainPolicies: false,
 }));
+
+// ── Permissions-Policy ────────────────────────────────────────
+app.use((_req, res, next) => {
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  next();
+});
 
 // ── Rate limiting — formulaire devis ─────────────────────────
 const devisLimiter = rateLimit({
@@ -226,7 +233,7 @@ function clientEmail(d) {
   </div>
 
   <div style="background:#f5f5f5;padding:16px 40px;font-size:11px;color:#aaa;">
-    REYNOV · 47 chemin du Pras, 69350 La Mulatière · <a href="https://reynovjantes.fr" style="color:#aaa;">reynovjantes.fr</a>
+    REYNOV · 47 chemin du Pras, 69350 Lyon · <a href="https://reynovjantes.fr" style="color:#aaa;">reynovjantes.fr</a>
   </div>
 </div>
 </body></html>`;
@@ -242,6 +249,11 @@ app.post('/api/devis', devisLimiter, (req, res, next) => {
   try {
     console.log('📩 Devis reçu depuis', req.ip);
     const b = req.body;
+
+    // Honeypot anti-spam
+    if (b.website) {
+      return res.status(400).json({ ok: false, error: 'Requête invalide.' });
+    }
 
     // Validation email basique
     const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
