@@ -3,7 +3,7 @@ const compression = require('compression');
 const helmet      = require('helmet');
 const rateLimit   = require('express-rate-limit');
 const multer      = require('multer');
-const nodemailer  = require('nodemailer');
+const { google }  = require('googleapis');
 const path        = require('path');
 
 const app    = express();
@@ -74,26 +74,69 @@ app.use(express.static(path.join(__dirname, '..'), {
 // ── Health check ──────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
-// ── Nodemailer SMTP (Gmail App Password) ──────────────────────
-const GMAIL_USER     = process.env.GMAIL_USER;
-const GMAIL_APP_PASS = process.env.GMAIL_APP_PASS;
+// ── Gmail API (OAuth2 — HTTPS, pas SMTP) ─────────────────────
+const GMAIL_USER          = process.env.GMAIL_USER;
+const GMAIL_CLIENT_ID     = process.env.GMAIL_CLIENT_ID;
+const GMAIL_CLIENT_SECRET = process.env.GMAIL_CLIENT_SECRET;
+const GMAIL_REFRESH_TOKEN = process.env.GMAIL_REFRESH_TOKEN;
 
-console.log('ENV CHECK — GMAIL_USER:', !!GMAIL_USER, '| GMAIL_APP_PASS:', !!GMAIL_APP_PASS);
+console.log('ENV CHECK — GMAIL_USER:', !!GMAIL_USER,
+  '| CLIENT_ID:', !!GMAIL_CLIENT_ID,
+  '| CLIENT_SECRET:', !!GMAIL_CLIENT_SECRET,
+  '| REFRESH_TOKEN:', !!GMAIL_REFRESH_TOKEN);
 
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  auth: { user: GMAIL_USER, pass: GMAIL_APP_PASS },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 15000,
-});
+const oauth2Client = new google.auth.OAuth2(
+  GMAIL_CLIENT_ID,
+  GMAIL_CLIENT_SECRET,
+  'https://developers.google.com/oauthplayground'
+);
+oauth2Client.setCredentials({ refresh_token: GMAIL_REFRESH_TOKEN });
 
-transporter.verify((err) => {
-  if (err) console.error('❌ SMTP verify:', err.message);
-  else console.log('✅ SMTP Gmail connecté');
-});
+const gmailApi = google.gmail({ version: 'v1', auth: oauth2Client });
+
+async function sendEmail({ from, to, subject, html, attachments = [] }) {
+  let rawParts;
+
+  if (attachments.length === 0) {
+    // Email simple
+    rawParts = [
+      `From: ${from}`,
+      `To: ${to}`,
+      `Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`,
+      'MIME-Version: 1.0',
+      'Content-Type: text/html; charset=UTF-8',
+      '',
+      html,
+    ];
+  } else {
+    // Email avec pièces jointes (multipart)
+    const boundary = `boundary_${Date.now()}`;
+    rawParts = [
+      `From: ${from}`,
+      `To: ${to}`,
+      `Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`,
+      'MIME-Version: 1.0',
+      `Content-Type: multipart/mixed; boundary="${boundary}"`,
+      '',
+      `--${boundary}`,
+      'Content-Type: text/html; charset=UTF-8',
+      '',
+      html,
+      ...attachments.flatMap(a => [
+        `--${boundary}`,
+        `Content-Type: ${a.contentType}`,
+        'Content-Transfer-Encoding: base64',
+        `Content-Disposition: attachment; filename="${a.filename}"`,
+        '',
+        a.content.toString('base64'),
+      ]),
+      `--${boundary}--`,
+    ];
+  }
+
+  const raw = Buffer.from(rawParts.join('\n')).toString('base64url');
+  await gmailApi.users.messages.send({ userId: 'me', requestBody: { raw } });
+}
 
 // ── Sanitisation — supprime les balises HTML des champs texte ─
 function sanitize(str) {
