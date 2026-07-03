@@ -152,31 +152,6 @@ async function sendEmail({ from, to, subject, html, attachments = [] }) {
   if (!r.ok) throw new Error(`Gmail send error: ${JSON.stringify(result)}`);
 }
 
-// ── Gmail diagnostic (temporaire) ────────────────────────────
-app.get('/api/gmail-diag', async (req, res) => {
-  try {
-    const accessToken = await getAccessToken();
-    const rawParts = [
-      `From: ${GMAIL_USER}`,
-      `To: ${GMAIL_USER}`,
-      'Subject: Test REYNOV',
-      'MIME-Version: 1.0',
-      'Content-Type: text/plain; charset=UTF-8',
-      '',
-      'Test envoi depuis Railway',
-    ];
-    const raw = Buffer.from(rawParts.join('\r\n')).toString('base64url');
-    const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ raw }),
-    });
-    const result = await r.json();
-    res.json({ ok: r.ok, status: r.status, result });
-  } catch (err) {
-    res.json({ ok: false, error: err.message });
-  }
-});
 
 // ── Sanitisation — supprime les balises HTML des champs texte ─
 function sanitize(str) {
@@ -367,7 +342,7 @@ app.post('/api/devis', devisLimiter, (req, res, next) => {
 
   } catch (err) {
     console.error('❌ Erreur envoi mail:', err.message, JSON.stringify(err.response?.data || ''));
-    res.status(500).json({ ok: false, error: err.message });
+    res.status(500).json({ ok: false, error: 'Erreur serveur. Appelez le 07 63 00 43 85.' });
   }
 });
 
