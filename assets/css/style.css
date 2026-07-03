@@ -513,7 +513,7 @@ h4, .h4 { font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; l
   padding-bottom: clamp(4rem, 9vw, 9rem);
 }
 .hero__eyebrow {
-  margin-bottom: 1.8rem;
+  margin-bottom: 2.4rem;
 }
 .hero__eyebrow .label {
   color: rgba(255,255,255,0.75);
@@ -525,7 +525,7 @@ h4, .h4 { font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; l
   font-weight: 400;
   line-height: 0.93;
   letter-spacing: -0.025em;
-  margin-bottom: 1.8rem;
+  margin-bottom: 2.4rem;
   max-width: 780px;
   color: #ffffff;
   text-shadow: 0 2px 24px rgba(0,0,0,0.35);
@@ -535,7 +535,7 @@ h4, .h4 { font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; l
   font-size: clamp(0.9rem, 1.3vw, 1rem);
   color: rgba(255,255,255,0.72);
   max-width: 420px;
-  margin-bottom: 3rem;
+  margin-bottom: 3.5rem;
   line-height: 1.75;
   font-weight: 300;
   text-shadow: 0 1px 8px rgba(0,0,0,0.4);
