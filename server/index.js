@@ -3,7 +3,6 @@ const compression = require('compression');
 const helmet      = require('helmet');
 const rateLimit   = require('express-rate-limit');
 const multer      = require('multer');
-const { google }  = require('googleapis');
 const path        = require('path');
 
 const app    = express();
@@ -74,27 +73,7 @@ app.use(express.static(path.join(__dirname, '..'), {
 // ── Health check ──────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
-// ── Gmail diagnostic (temporaire) ────────────────────────────
-app.get('/api/gmail-diag', async (req, res) => {
-  const results = {};
-  try {
-    const r = await fetch('https://oauth2.googleapis.com/tokeninfo?access_token=test');
-    results.googleapis_reachable = true;
-    results.googleapis_status = r.status;
-  } catch (e) {
-    results.googleapis_reachable = false;
-    results.googleapis_error = e.message;
-  }
-  try {
-    const tokenRes = await oauth2Client.getAccessToken();
-    results.token_ok = !!tokenRes.token;
-  } catch (err) {
-    results.token_error = err.message;
-  }
-  res.json(results);
-});
-
-// ── Gmail API (OAuth2 — HTTPS, pas SMTP) ─────────────────────
+// ── Gmail API (OAuth2 via fetch natif — bypass gaxios) ───────
 const GMAIL_USER          = process.env.GMAIL_USER;
 const GMAIL_CLIENT_ID     = process.env.GMAIL_CLIENT_ID;
 const GMAIL_CLIENT_SECRET = process.env.GMAIL_CLIENT_SECRET;
@@ -105,20 +84,27 @@ console.log('ENV CHECK — GMAIL_USER:', !!GMAIL_USER,
   '| CLIENT_SECRET:', !!GMAIL_CLIENT_SECRET,
   '| REFRESH_TOKEN:', !!GMAIL_REFRESH_TOKEN);
 
-const oauth2Client = new google.auth.OAuth2(
-  GMAIL_CLIENT_ID,
-  GMAIL_CLIENT_SECRET,
-  'https://developers.google.com/oauthplayground'
-);
-oauth2Client.setCredentials({ refresh_token: GMAIL_REFRESH_TOKEN });
-
-const gmailApi = google.gmail({ version: 'v1', auth: oauth2Client });
+async function getAccessToken() {
+  const r = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id:     GMAIL_CLIENT_ID,
+      client_secret: GMAIL_CLIENT_SECRET,
+      refresh_token: GMAIL_REFRESH_TOKEN,
+      grant_type:    'refresh_token',
+    }),
+  });
+  const data = await r.json();
+  if (!data.access_token) throw new Error(`Token error: ${JSON.stringify(data)}`);
+  return data.access_token;
+}
 
 async function sendEmail({ from, to, subject, html, attachments = [] }) {
-  let rawParts;
+  const accessToken = await getAccessToken();
 
+  let rawParts;
   if (attachments.length === 0) {
-    // Email simple
     rawParts = [
       `From: ${from}`,
       `To: ${to}`,
@@ -129,7 +115,6 @@ async function sendEmail({ from, to, subject, html, attachments = [] }) {
       html,
     ];
   } else {
-    // Email avec pièces jointes (multipart)
     const boundary = `boundary_${Date.now()}`;
     rawParts = [
       `From: ${from}`,
@@ -155,8 +140,27 @@ async function sendEmail({ from, to, subject, html, attachments = [] }) {
   }
 
   const raw = Buffer.from(rawParts.join('\n')).toString('base64url');
-  await gmailApi.users.messages.send({ userId: 'me', requestBody: { raw } });
+  const r = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/send`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ raw }),
+  });
+  const result = await r.json();
+  if (!r.ok) throw new Error(`Gmail send error: ${JSON.stringify(result)}`);
 }
+
+// ── Gmail diagnostic (temporaire) ────────────────────────────
+app.get('/api/gmail-diag', async (req, res) => {
+  try {
+    const token = await getAccessToken();
+    res.json({ ok: true, token: !!token });
+  } catch (err) {
+    res.json({ ok: false, error: err.message });
+  }
+});
 
 // ── Sanitisation — supprime les balises HTML des champs texte ─
 function sanitize(str) {
