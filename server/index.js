@@ -189,20 +189,6 @@ function sanitize(str) {
     .slice(0, 500);   // longueur max par champ
 }
 
-async function sendEmail({ from, to, subject, html, attachments = [] }) {
-  await transporter.sendMail({
-    from,
-    to,
-    subject,
-    html,
-    attachments: attachments.map(a => ({
-      filename:    a.filename,
-      content:     a.content,
-      contentType: a.contentType,
-    })),
-  });
-}
-
 // ── Email : owner ─────────────────────────────────────────────
 function ownerEmail(d) {
   const row = (label, val) => val
