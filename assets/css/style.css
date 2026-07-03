@@ -514,7 +514,7 @@ h4, .h4 { font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; l
   padding-bottom: clamp(4rem, 9vw, 9rem);
 }
 .hero__eyebrow {
-  margin-bottom: 2.4rem;
+  margin-bottom: clamp(2.5rem, 5vw, 5rem);
 }
 .hero__eyebrow .label {
   color: #FBBC04;
