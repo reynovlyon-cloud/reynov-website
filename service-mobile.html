@@ -156,34 +156,62 @@
     }
 
     /* ── Stats strip ──────────────────────────────────────────── */
+    @keyframes smStatFadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes smLineExpand {
+      from { width: 0; }
+      to   { width: 40%; }
+    }
     .sm-stats {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      background: rgba(255,255,255,0.04);
+      grid-template-columns: repeat(3, 1fr);
       border-bottom: 1px solid rgba(255,255,255,0.07);
     }
     .sm-stat {
-      padding: 2.2rem 2rem;
+      padding: 2.5rem 1rem;
       border-right: 1px solid rgba(255,255,255,0.07);
       text-align: center;
+      position: relative;
+      transition: background 0.3s ease;
+      gap: 0.6rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
     .sm-stat:last-child { border-right: none; }
+    .sm-stat:hover { background: rgba(255,255,255,0.03); }
+    .sm-stat.is-visible {
+      animation: smStatFadeUp 0.7s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .sm-stat.is-visible::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 50%;
+      transform: translateX(-50%);
+      height: 1px;
+      background: rgba(255,255,255,0.2);
+      animation: smLineExpand 0.6s cubic-bezier(0.22,1,0.36,1) 0.5s both;
+    }
     .sm-stat__val {
       font-family: 'Cormorant Garamond', Georgia, serif;
-      font-size: clamp(2rem, 3.5vw, 2.8rem);
+      font-size: clamp(2.2rem, 3.5vw, 3rem);
       font-weight: 300;
       color: #fff;
       line-height: 1;
-      margin-bottom: 0.5rem;
       letter-spacing: -0.02em;
     }
-    .sm-stat__val em { color: rgba(255,255,255,0.7); font-style: normal; }
+    .sm-stat__val em { color: rgba(255,255,255,0.6); font-style: normal; }
     .sm-stat__label {
-      font-size: 0.7rem;
-      color: rgba(255,255,255,0.35);
-      letter-spacing: 0.13em;
+      font-size: 0.67rem;
+      color: rgba(255,255,255,0.32);
+      letter-spacing: 0.14em;
       text-transform: uppercase;
       font-family: 'Inter', sans-serif;
+      max-width: 140px;
+      line-height: 1.5;
     }
 
     /* ── Process steps ────────────────────────────────────────── */
@@ -382,10 +410,7 @@
 
     /* ── Responsive ───────────────────────────────────────────── */
     @media (max-width: 900px) {
-      .sm-stats { grid-template-columns: repeat(2, 1fr); }
-      .sm-stats .sm-stat:nth-child(2) { border-right: none; }
-      .sm-stats .sm-stat:nth-child(3) { border-top: 1px solid rgba(255,255,255,0.07); }
-      .sm-stats .sm-stat:nth-child(4) { border-top: 1px solid rgba(255,255,255,0.07); }
+      .sm-stats { grid-template-columns: repeat(3, 1fr); }
       .sm-steps { grid-template-columns: 1fr; }
       .sm-testimonials { grid-template-columns: 1fr; }
       .sm-zone-grid { grid-template-columns: 1fr 1fr; }
@@ -400,7 +425,7 @@
       .sm-grid-2col { grid-template-columns: 1fr !important; }
       .sm-zone-grid { grid-template-columns: 1fr; }
       .sm-stat { border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.07); }
-      .sm-stats { grid-template-columns: 1fr 1fr; }
+      .sm-stats { grid-template-columns: 1fr; }
     }
   </style>
   <script type="application/ld+json">
@@ -539,11 +564,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </section>
 
 <!-- ② STATS STRIP ───────────────────────────────────────────── -->
-<div class="sm-stats" aria-label="Chiffres clés REYNOV" data-reveal>
-  <div class="sm-stat">
-    <div class="sm-stat__val">+1<em> 200</em></div>
-    <div class="sm-stat__label">Jantes rénovées</div>
-  </div>
+<div class="sm-stats" aria-label="Chiffres clés REYNOV">
   <div class="sm-stat">
     <div class="sm-stat__val">5<em>,0</em></div>
     <div class="sm-stat__label">Note Google · 40 avis</div>
@@ -557,6 +578,22 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <div class="sm-stat__label">Départements couverts</div>
   </div>
 </div>
+<script>
+(function() {
+  var items = document.querySelectorAll('.sm-stat');
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (!entry.isIntersecting) return;
+      var el = entry.target;
+      var idx = Array.from(items).indexOf(el);
+      el.style.animationDelay = (idx * 0.12) + 's';
+      el.classList.add('is-visible');
+      observer.unobserve(el);
+    });
+  }, { threshold: 0.15 });
+  items.forEach(function(el) { observer.observe(el); });
+})();
+</script>
 
 <!-- ③ COMMENT ÇA MARCHE ──────────────────────────────────────── -->
 <section class="section border-bottom">
