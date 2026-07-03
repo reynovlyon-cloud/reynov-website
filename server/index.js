@@ -3,8 +3,8 @@ const compression = require('compression');
 const helmet      = require('helmet');
 const rateLimit   = require('express-rate-limit');
 const multer      = require('multer');
+const nodemailer  = require('nodemailer');
 const path        = require('path');
-const { google }  = require('googleapis');
 
 const app    = express();
 const PORT   = parseInt(process.env.PORT) || 3000;
@@ -74,31 +74,16 @@ app.use(express.static(path.join(__dirname, '..'), {
 // ── Health check ──────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
-// ── Gmail diagnostic (temporaire) ────────────────────────────
-app.get('/api/gmail-test', async (req, res) => {
-  try {
-    const token = await oauth2Client.getAccessToken();
-    res.json({ ok: true, token_type: typeof token.token, has_token: !!token.token });
-  } catch (err) {
-    res.json({ ok: false, error: err.message, code: err.code, status: err.status });
-  }
+// ── Nodemailer SMTP (Gmail App Password) ──────────────────────
+const GMAIL_USER     = process.env.GMAIL_USER;
+const GMAIL_APP_PASS = process.env.GMAIL_APP_PASS;
+
+console.log('ENV CHECK — GMAIL_USER:', !!GMAIL_USER, '| GMAIL_APP_PASS:', !!GMAIL_APP_PASS);
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: { user: GMAIL_USER, pass: GMAIL_APP_PASS },
 });
-
-// ── Gmail API ─────────────────────────────────────────────────
-const GMAIL_USER          = process.env.GMAIL_USER;
-const GMAIL_CLIENT_ID     = process.env.GMAIL_CLIENT_ID;
-const GMAIL_CLIENT_SECRET = process.env.GMAIL_CLIENT_SECRET;
-const GMAIL_REFRESH_TOKEN = process.env.GMAIL_REFRESH_TOKEN;
-
-console.log('ENV CHECK — GMAIL_USER:', !!GMAIL_USER, '| CLIENT_ID:', !!GMAIL_CLIENT_ID, '| CLIENT_SECRET:', !!GMAIL_CLIENT_SECRET, '| REFRESH_TOKEN:', !!GMAIL_REFRESH_TOKEN);
-
-const oauth2Client = new google.auth.OAuth2(
-  GMAIL_CLIENT_ID,
-  GMAIL_CLIENT_SECRET,
-  'https://developers.google.com/oauthplayground'
-);
-oauth2Client.setCredentials({ refresh_token: GMAIL_REFRESH_TOKEN });
-const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
 // ── Sanitisation — supprime les balises HTML des champs texte ─
 function sanitize(str) {
@@ -111,40 +96,18 @@ function sanitize(str) {
     .slice(0, 500);   // longueur max par champ
 }
 
-function buildRawEmail({ from, to, subject, html, attachments = [] }) {
-  const boundary = 'REYNOV_BOUNDARY_' + Date.now();
-  const hasAttachments = attachments.length > 0;
-  const contentType = hasAttachments
-    ? `multipart/mixed; boundary="${boundary}"`
-    : 'text/html; charset=UTF-8';
-
-  let raw = [
-    `From: ${from}`,
-    `To: ${to}`,
-    `Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`,
-    'MIME-Version: 1.0',
-    `Content-Type: ${contentType}`,
-    '',
-  ].join('\r\n');
-
-  if (hasAttachments) {
-    raw += `\r\n--${boundary}\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n${html}\r\n`;
-    for (const att of attachments) {
-      const b64 = att.content.toString('base64').replace(/(.{76})/g, '$1\r\n');
-      const filename = Buffer.from(att.filename).toString('ascii').replace(/[^\x20-\x7E]/g, '_');
-      raw += `--${boundary}\r\nContent-Type: ${att.contentType}\r\nContent-Transfer-Encoding: base64\r\nContent-Disposition: attachment; filename="${filename}"\r\n\r\n${b64}\r\n`;
-    }
-    raw += `--${boundary}--`;
-  } else {
-    raw += html;
-  }
-
-  return Buffer.from(raw).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-async function sendEmail(opts) {
-  const rawMessage = buildRawEmail(opts);
-  await gmail.users.messages.send({ userId: 'me', requestBody: { raw: rawMessage } });
+async function sendEmail({ from, to, subject, html, attachments = [] }) {
+  await transporter.sendMail({
+    from,
+    to,
+    subject,
+    html,
+    attachments: attachments.map(a => ({
+      filename:    a.filename,
+      content:     a.content,
+      contentType: a.contentType,
+    })),
+  });
 }
 
 // ── Email : owner ─────────────────────────────────────────────
