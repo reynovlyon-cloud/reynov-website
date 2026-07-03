@@ -226,6 +226,14 @@
     /* ═══════════════════════════════════════════════════════════
        STATS STRIP — remplace values-strip
     ═══════════════════════════════════════════════════════════ */
+    @keyframes statFadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes lineExpand {
+      from { width: 0; }
+      to   { width: 40%; }
+    }
     .stats-strip {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -241,27 +249,22 @@
       text-align: center;
       gap: 0.6rem;
       position: relative;
-      overflow: hidden;
-      opacity: 0;
-      transform: translateY(24px);
-      transition: opacity 0.7s cubic-bezier(0.22,1,0.36,1), transform 0.7s cubic-bezier(0.22,1,0.36,1), background 0.3s ease;
+      transition: background 0.3s ease;
     }
     .stats-strip__item:last-child { border-right: none; }
-    .stats-strip__item.is-visible { opacity: 1; transform: translateY(0); }
     .stats-strip__item:hover { background: rgba(255,255,255,0.03); }
-
-    /* Ligne décorative qui s'étend */
-    .stats-strip__item::after {
+    .stats-strip__item.is-visible {
+      animation: statFadeUp 0.7s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .stats-strip__item.is-visible::after {
       content: '';
       position: absolute;
       bottom: 0; left: 50%;
       transform: translateX(-50%);
-      width: 0; height: 1px;
-      background: rgba(255,255,255,0.25);
-      transition: width 0.6s cubic-bezier(0.22,1,0.36,1) 0.4s;
+      height: 1px;
+      background: rgba(255,255,255,0.2);
+      animation: lineExpand 0.6s cubic-bezier(0.22,1,0.36,1) 0.5s both;
     }
-    .stats-strip__item.is-visible::after { width: 40%; }
-
     .stats-strip__val {
       font-family: 'Cormorant Garamond', Georgia, serif;
       font-size: clamp(2.2rem, 3.5vw, 3rem);
@@ -272,12 +275,12 @@
     }
     .stats-strip__val em {
       font-style: normal;
-      color: rgba(255,255,255,0.55);
+      color: rgba(255,255,255,0.6);
     }
     .stats-strip__label {
-      font-size: 0.63rem;
-      color: rgba(255,255,255,0.28);
-      letter-spacing: 0.16em;
+      font-size: 0.67rem;
+      color: rgba(255,255,255,0.32);
+      letter-spacing: 0.14em;
       text-transform: uppercase;
       font-family: 'Inter', sans-serif;
       max-width: 140px;
@@ -660,20 +663,20 @@
 
 <!-- ② STATS STRIP ───────────────────────────────────────── -->
 <section class="stats-strip border-bottom" aria-label="Chiffres clés REYNOV">
-  <div class="stats-strip__item" data-count="1200" data-prefix="+" data-suffix="" data-sep="&nbsp;">
-    <p class="stats-strip__val"><span class="stats-count">+1&nbsp;200</span></p>
+  <div class="stats-strip__item">
+    <p class="stats-strip__val">+1&nbsp;200</p>
     <p class="stats-strip__label">Jantes rénovées</p>
   </div>
-  <div class="stats-strip__item" data-count="5" data-prefix="" data-suffix="+">
-    <p class="stats-strip__val"><span class="stats-count">5</span><em>+</em></p>
+  <div class="stats-strip__item">
+    <p class="stats-strip__val">5<em>+</em></p>
     <p class="stats-strip__label">Ans d'expertise</p>
   </div>
-  <div class="stats-strip__item" data-count="24" data-prefix="" data-suffix="h">
-    <p class="stats-strip__val"><span class="stats-count">24</span><em>h</em></p>
+  <div class="stats-strip__item">
+    <p class="stats-strip__val">24<em>h</em></p>
     <p class="stats-strip__label">Délai de réponse devis</p>
   </div>
-  <div class="stats-strip__item" data-count="30" data-prefix="" data-suffix="j">
-    <p class="stats-strip__val"><span class="stats-count">30</span><em>j</em></p>
+  <div class="stats-strip__item">
+    <p class="stats-strip__val">30<em>j</em></p>
     <p class="stats-strip__label">Garantie satisfaction</p>
   </div>
 </section>
@@ -681,44 +684,16 @@
 <script>
 (function() {
   const items = document.querySelectorAll('.stats-strip__item');
-
-  function easeOutExpo(t) {
-    return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
-  }
-
-  function animateCount(el, target, duration) {
-    const span = el.querySelector('.stats-count');
-    if (!span) return;
-    const prefix = el.dataset.prefix || '';
-    const suffix = el.dataset.suffix || '';
-    const sep = el.dataset.sep || '';
-    const start = performance.now();
-
-    function tick(now) {
-      const elapsed = now - start;
-      const progress = Math.min(elapsed / duration, 1);
-      const value = Math.round(easeOutExpo(progress) * target);
-      const formatted = sep ? value.toLocaleString('fr-FR').replace(/\s/g, sep) : String(value);
-      span.textContent = prefix + formatted;
-      if (progress < 1) requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
-  }
-
   const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry, i) => {
+    entries.forEach(entry => {
       if (!entry.isIntersecting) return;
       const el = entry.target;
-      const delay = Array.from(items).indexOf(el) * 120;
-      setTimeout(() => {
-        el.classList.add('is-visible');
-        const target = parseInt(el.dataset.count, 10);
-        if (target) animateCount(el, target, 1400);
-      }, delay);
+      const idx = Array.from(items).indexOf(el);
+      el.style.animationDelay = (idx * 0.12) + 's';
+      el.classList.add('is-visible');
       observer.unobserve(el);
     });
-  }, { threshold: 0.3 });
-
+  }, { threshold: 0.15 });
   items.forEach(el => observer.observe(el));
 })();
 </script>
