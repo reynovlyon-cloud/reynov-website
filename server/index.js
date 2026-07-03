@@ -74,6 +74,16 @@ app.use(express.static(path.join(__dirname, '..'), {
 // ── Health check ──────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
+// ── Gmail diagnostic (temporaire) ────────────────────────────
+app.get('/api/gmail-diag', async (req, res) => {
+  try {
+    const tokenRes = await oauth2Client.getAccessToken();
+    res.json({ ok: true, token: !!tokenRes.token });
+  } catch (err) {
+    res.json({ ok: false, error: err.message });
+  }
+});
+
 // ── Gmail API (OAuth2 — HTTPS, pas SMTP) ─────────────────────
 const GMAIL_USER          = process.env.GMAIL_USER;
 const GMAIL_CLIENT_ID     = process.env.GMAIL_CLIENT_ID;
