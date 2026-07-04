@@ -1161,13 +1161,13 @@ textarea.form-input { resize: vertical; min-height: 100px; border-radius: 12px; 
   /* Meilleur cadrage vidéo sur format portrait */
   .hero__video { object-position: center 30%; }
   /* Overlay plus sombre pour lisibilité mobile */
-  .hero__overlay { background: rgba(6,6,6,0.15); }
+  .hero__overlay { background: rgba(6,6,6,0.08); }
   .hero__overlay::after {
     background: linear-gradient(
       to top,
-      rgba(6,6,6,0.55) 0%,
-      rgba(6,6,6,0.2) 40%,
-      transparent 70%
+      rgba(6,6,6,0.35) 0%,
+      rgba(6,6,6,0.1) 35%,
+      transparent 55%
     );
   }
   .hero__content {
