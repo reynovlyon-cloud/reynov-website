@@ -211,31 +211,6 @@
     }
     .hero__mode:hover .hero__mode-arrow { color: rgba(255,255,255,0.9); transform: translateX(3px); }
 
-    /* ── Mobile hero — vidéo visible, contenu en bas ── */
-    @media (max-width: 768px) {
-      .hero { justify-content: flex-end; align-items: flex-start; }
-      .hero__content { padding: 0 1.5rem 3rem; }
-      /* Supprime le gradient latéral — inutile sur mobile */
-      .hero__overlay::before { display: none; }
-      /* Base overlay quasi transparent pour laisser voir la vidéo */
-      .hero__overlay { background: rgba(6,6,6,0.08) !important; }
-      /* Dégradé uniquement en bas pour lisibilité du texte */
-      .hero__overlay::after {
-        background: linear-gradient(
-          to top,
-          rgba(6,6,6,0.95) 0%,
-          rgba(6,6,6,0.7)  30%,
-          rgba(6,6,6,0.15) 60%,
-          transparent      100%
-        ) !important;
-      }
-      /* Cache le sous-titre — trop chargé sur mobile */
-      .hero__subtitle { display: none; }
-      .hero__title { font-size: 2.2rem; margin-bottom: 1.2rem; }
-      .hero__trust { margin-bottom: 1.2rem; }
-      .hero__badges { margin-top: 1.5rem; gap: 0.8rem; }
-    }
-
     /* Micro-animations d'entrée staggerées */
     @keyframes heroFadeUp {
       from { opacity: 0; transform: translateY(18px); }
