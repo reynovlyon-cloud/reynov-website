@@ -1,119 +1,130 @@
-const Database = require('better-sqlite3');
-const path     = require('path');
-const fs       = require('fs');
+const fs   = require('fs');
+const path = require('path');
 
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
-const db = new Database(path.join(DATA_DIR, 'crm.db'));
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+const DB_FILE = path.join(DATA_DIR, 'crm.json');
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS clients (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    prenom     TEXT NOT NULL DEFAULT '',
-    nom        TEXT DEFAULT '',
-    email      TEXT DEFAULT '',
-    tel        TEXT DEFAULT '',
-    adresse    TEXT DEFAULT '',
-    ville      TEXT DEFAULT '',
-    notes      TEXT DEFAULT '',
-    created_at TEXT DEFAULT (datetime('now'))
-  );
+let _db = { clients: [], interventions: [], _cid: 1, _iid: 1 };
 
-  CREATE TABLE IF NOT EXISTS interventions (
-    id                   INTEGER PRIMARY KEY AUTOINCREMENT,
-    client_id            INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
-    prestation           TEXT DEFAULT '',
-    problemes            TEXT DEFAULT '',
-    nb_jantes            TEXT DEFAULT '',
-    taille               TEXT DEFAULT '',
-    marque               TEXT DEFAULT '',
-    modele               TEXT DEFAULT '',
-    finition             TEXT DEFAULT '',
-    mode                 TEXT DEFAULT '',
-    adresse_intervention TEXT DEFAULT '',
-    statut               TEXT DEFAULT 'nouveau',
-    montant              REAL,
-    notes                TEXT DEFAULT '',
-    created_at           TEXT DEFAULT (datetime('now')),
-    updated_at           TEXT DEFAULT (datetime('now'))
-  );
+if (fs.existsSync(DB_FILE)) {
+  try { _db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); }
+  catch(e) { console.error('CRM load error:', e.message); }
+}
 
-  CREATE INDEX IF NOT EXISTS idx_inter_client ON interventions(client_id);
-  CREATE INDEX IF NOT EXISTS idx_inter_statut  ON interventions(statut);
-  CREATE INDEX IF NOT EXISTS idx_clients_email ON clients(email);
-`);
+function save() {
+  fs.writeFileSync(DB_FILE, JSON.stringify(_db));
+}
 
-const q = {
-  stats: db.prepare(`
-    SELECT
-      (SELECT COUNT(*) FROM clients)                                                              AS total_clients,
-      (SELECT COUNT(*) FROM interventions)                                                        AS total_interventions,
-      (SELECT COUNT(*) FROM interventions WHERE statut NOT IN ('termine','paye','annule'))        AS en_cours,
-      (SELECT COUNT(*) FROM interventions WHERE statut = 'nouveau')                              AS nouveaux,
-      (SELECT COALESCE(SUM(montant),0) FROM interventions WHERE statut = 'paye')                 AS ca_total,
-      (SELECT COALESCE(SUM(montant),0) FROM interventions WHERE statut = 'paye'
-         AND strftime('%Y-%m', created_at) = strftime('%Y-%m','now'))                            AS ca_mois
-  `),
+function now() { return new Date().toISOString(); }
 
-  clientsList: db.prepare(`
-    SELECT c.*,
-           COUNT(i.id)    AS nb_interventions,
-           MAX(i.created_at) AS derniere_intervention,
-           (SELECT statut FROM interventions WHERE client_id = c.id ORDER BY created_at DESC LIMIT 1) AS dernier_statut
-    FROM clients c
-    LEFT JOIN interventions i ON i.client_id = c.id
-    WHERE c.prenom LIKE @q OR c.nom LIKE @q OR c.email LIKE @q OR c.tel LIKE @q OR c.ville LIKE @q
-    GROUP BY c.id
-    ORDER BY MAX(COALESCE(i.created_at, c.created_at)) DESC
-  `),
+// ── Clients ───────────────────────────────────────────────────
+function clientsList(search) {
+  const s = (search || '').toLowerCase();
+  return _db.clients
+    .filter(c => !s || [c.prenom, c.nom, c.email, c.tel, c.ville]
+      .some(v => v && v.toLowerCase().includes(s)))
+    .map(c => {
+      const inters = _db.interventions.filter(i => i.client_id === c.id);
+      const last   = inters.sort((a,b) => b.created_at.localeCompare(a.created_at))[0];
+      return {
+        ...c,
+        nb_interventions:      inters.length,
+        derniere_intervention: last ? last.created_at : null,
+        dernier_statut:        last ? last.statut : null,
+      };
+    })
+    .sort((a,b) => {
+      const ta = a.derniere_intervention || a.created_at;
+      const tb = b.derniere_intervention || b.created_at;
+      return tb.localeCompare(ta);
+    });
+}
 
-  clientById: db.prepare(`SELECT * FROM clients WHERE id = ?`),
+function clientById(id) {
+  const c = _db.clients.find(c => c.id === Number(id));
+  if (!c) return null;
+  return {
+    ...c,
+    interventions: _db.interventions
+      .filter(i => i.client_id === c.id)
+      .sort((a,b) => b.created_at.localeCompare(a.created_at)),
+  };
+}
 
-  clientInterventions: db.prepare(`
-    SELECT * FROM interventions WHERE client_id = ? ORDER BY created_at DESC
-  `),
+function findByEmail(email) {
+  return _db.clients.find(c => c.email && c.email.toLowerCase() === email.toLowerCase()) || null;
+}
 
-  findByEmail: db.prepare(`SELECT * FROM clients WHERE LOWER(email) = LOWER(?) LIMIT 1`),
+function createClient(data) {
+  const id = _db._cid++;
+  const client = { id, created_at: now(), notes: '', ...data };
+  _db.clients.push(client);
+  save();
+  return id;
+}
 
-  createClient: db.prepare(`
-    INSERT INTO clients (prenom, nom, email, tel, adresse, ville, notes)
-    VALUES (@prenom, @nom, @email, @tel, @adresse, @ville, @notes)
-  `),
+function updateClient(id, data) {
+  const i = _db.clients.findIndex(c => c.id === Number(id));
+  if (i === -1) return;
+  _db.clients[i] = { ..._db.clients[i], ...data };
+  save();
+}
 
-  updateClient: db.prepare(`
-    UPDATE clients SET prenom=@prenom, nom=@nom, email=@email,
-    tel=@tel, adresse=@adresse, ville=@ville, notes=@notes WHERE id=@id
-  `),
+function deleteClient(id) {
+  _db.clients        = _db.clients.filter(c => c.id !== Number(id));
+  _db.interventions  = _db.interventions.filter(i => i.client_id !== Number(id));
+  save();
+}
 
-  deleteClient: db.prepare(`DELETE FROM clients WHERE id = ?`),
+// ── Interventions ─────────────────────────────────────────────
+function allInterventions() {
+  return _db.interventions
+    .sort((a,b) => b.created_at.localeCompare(a.created_at))
+    .slice(0, 200)
+    .map(i => {
+      const c = _db.clients.find(c => c.id === i.client_id) || {};
+      return { ...i, prenom: c.prenom || '', nom: c.nom || '', email: c.email || '', tel: c.tel || '' };
+    });
+}
 
-  createIntervention: db.prepare(`
-    INSERT INTO interventions
-      (client_id, prestation, problemes, nb_jantes, taille, marque, modele,
-       finition, mode, adresse_intervention, statut, montant, notes)
-    VALUES
-      (@client_id, @prestation, @problemes, @nb_jantes, @taille, @marque, @modele,
-       @finition, @mode, @adresse_intervention, @statut, @montant, @notes)
-  `),
+function createIntervention(data) {
+  const id = _db._iid++;
+  const inter = { id, created_at: now(), updated_at: now(), statut: 'nouveau', notes: '', montant: null, ...data };
+  _db.interventions.push(inter);
+  save();
+  return id;
+}
 
-  updateIntervention: db.prepare(`
-    UPDATE interventions
-    SET statut=@statut, montant=@montant, notes=@notes, updated_at=datetime('now')
-    WHERE id=@id
-  `),
+function updateIntervention(id, data) {
+  const i = _db.interventions.findIndex(x => x.id === Number(id));
+  if (i === -1) return;
+  _db.interventions[i] = { ..._db.interventions[i], ...data, updated_at: now() };
+  save();
+}
 
-  deleteIntervention: db.prepare(`DELETE FROM interventions WHERE id = ?`),
+function deleteIntervention(id) {
+  _db.interventions = _db.interventions.filter(i => i.id !== Number(id));
+  save();
+}
 
-  allInterventions: db.prepare(`
-    SELECT i.*, c.prenom, c.nom, c.email, c.tel
-    FROM interventions i
-    JOIN clients c ON c.id = i.client_id
-    ORDER BY i.created_at DESC
-    LIMIT 200
-  `),
+// ── Stats ─────────────────────────────────────────────────────
+function stats() {
+  const ym = new Date().toISOString().slice(0, 7);
+  const paid = _db.interventions.filter(i => i.statut === 'paye');
+  return {
+    total_clients:       _db.clients.length,
+    total_interventions: _db.interventions.length,
+    en_cours:            _db.interventions.filter(i => !['termine','paye','annule'].includes(i.statut)).length,
+    nouveaux:            _db.interventions.filter(i => i.statut === 'nouveau').length,
+    ca_total:            paid.reduce((s,i) => s + (Number(i.montant) || 0), 0),
+    ca_mois:             paid.filter(i => i.created_at.startsWith(ym)).reduce((s,i) => s + (Number(i.montant) || 0), 0),
+  };
+}
+
+module.exports = {
+  stats, clientsList, clientById, findByEmail,
+  createClient, updateClient, deleteClient,
+  allInterventions, createIntervention, updateIntervention, deleteIntervention,
 };
-
-module.exports = { db, q };
