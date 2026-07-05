@@ -795,157 +795,6 @@
   </div>
 </section>
 
-<!-- ④ AVANT / APRÈS ─────────────────────────────────────── -->
-<style>
-  /* ── Showcase avant/après ── */
-  .ba-section { padding-block: 0; border-bottom: 1px solid rgba(255,255,255,0.07); }
-  .ba-header { display:flex; align-items:flex-end; justify-content:space-between; padding: clamp(2.5rem,5vw,4rem) clamp(1.5rem,5vw,4rem) clamp(1.5rem,3vw,2.5rem); }
-  .ba-header__left { display:flex; flex-direction:column; gap:0.4rem; }
-
-  /* Wrapper centré */
-  .ba-wrapper { max-width:1200px; margin:0 auto; padding:0 clamp(1.5rem,4vw,4rem) clamp(2rem,4vw,3.5rem); }
-
-  /* Slides */
-  .ba-showcase { position:relative; border:1px solid rgba(255,255,255,0.1); overflow:hidden; border-radius:10px; }
-  .ba-slides { position:relative; width:100%; aspect-ratio:43/20; overflow:hidden; background:var(--grey-900); }
-  @media(max-width:768px) { .ba-slides { aspect-ratio:16/9; } }
-  .ba-slide { position:absolute; inset:0; opacity:0; transition:opacity 0.7s cubic-bezier(0.32,0.72,0,1); pointer-events:none; }
-  .ba-slide.active { opacity:1; pointer-events:auto; }
-
-  /* Compare slider */
-  .cs { position:relative; width:100%; height:100%; cursor:col-resize; user-select:none; -webkit-user-select:none; touch-action:none; }
-  .cs-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; }
-  .cs-img--after { clip-path:inset(0 50% 0 0); transition:clip-path 0s; }
-  .cs-line { position:absolute; top:0; bottom:0; left:50%; width:1.5px; background:#fff; transform:translateX(-50%); pointer-events:none; }
-  .cs-knob {
-    position:absolute; top:50%; left:50%;
-    transform:translate(-50%,-50%);
-    width:46px; height:46px; border-radius:50%;
-    background:#fff;
-    display:flex; align-items:center; justify-content:center;
-    box-shadow:0 4px 24px rgba(0,0,0,0.5);
-  }
-  .cs-knob svg { color:#000; flex-shrink:0; }
-  .cs-label {
-    position:absolute; bottom:1.75rem;
-    padding:0.3rem 0.9rem;
-    font-size:0.58rem; font-weight:600; letter-spacing:0.2em; text-transform:uppercase;
-    background:rgba(6,6,6,0.55); backdrop-filter:blur(10px) saturate(1.5);
-    color:rgba(255,255,255,0.75); pointer-events:none;
-  }
-  .cs-label--avant { left:1.75rem; }
-  .cs-label--apres { right:1.75rem; }
-  @media(max-width:480px) { .cs-label { bottom:1rem; } .cs-label--avant { left:1rem; } .cs-label--apres { right:1rem; } }
-
-  /* Bottom bar */
-  .ba-bar {
-    display:flex; align-items:center; justify-content:space-between;
-    padding: clamp(1.2rem,3vw,2rem) clamp(1.5rem,5vw,4rem);
-    border-top:1px solid rgba(255,255,255,0.07);
-  }
-  .ba-bar__info { display:flex; flex-direction:column; gap:0.3rem; }
-  .ba-bar__cat { font-size:0.58rem; font-weight:600; letter-spacing:0.2em; text-transform:uppercase; color:rgba(255,255,255,0.28); }
-  .ba-bar__title { font-family:var(--font-display); font-size:clamp(1.4rem,3vw,2.2rem); font-weight:300; line-height:1; }
-  .ba-bar__sub { font-size:0.72rem; color:rgba(255,255,255,0.3); letter-spacing:0.06em; margin-top:0.1rem; }
-  .ba-bar__right { display:flex; align-items:center; gap:1.25rem; }
-  .ba-count { font-size:0.7rem; letter-spacing:0.1em; color:rgba(255,255,255,0.25); min-width:3rem; text-align:center; }
-  .ba-count strong { color:rgba(255,255,255,0.75); font-weight:400; }
-  .ba-arrow {
-    width:42px; height:42px;
-    border:1px solid rgba(255,255,255,0.13);
-    background:transparent; color:rgba(255,255,255,0.6);
-    display:flex; align-items:center; justify-content:center;
-    cursor:pointer;
-    transition:border-color .2s, color .2s, background .2s;
-  }
-  .ba-arrow:hover { border-color:rgba(255,255,255,0.45); color:#fff; background:rgba(255,255,255,0.04); }
-  @media(max-width:600px) { .ba-bar { gap:1rem; } .ba-bar__sub { display:none; } }
-</style>
-
-<section class="ba-section">
-  <div class="ba-header" data-reveal>
-    <div class="ba-header__left">
-      <p class="label">Le résultat parle</p>
-      <h2 class="h2" style="margin:0;">Avant / <em>Après</em></h2>
-    </div>
-    <a href="realisations.html" class="btn btn-outline">
-      <span>Toutes les réalisations</span>
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
-    </a>
-  </div>
-
-  <div class="ba-wrapper">
-  <div class="ba-showcase" id="ba-showcase">
-    <div class="ba-slides">
-
-      <!-- Slide 1 — Mercedes -->
-      <div class="ba-slide active">
-        <div class="cs" data-compare>
-          <img class="cs-img cs-img--before" src="assets/images/mercedes-jante-apres.jpg" alt="Avant — Mercedes jante abîmée" fetchpriority="high" />
-          <img class="cs-img cs-img--after"  src="assets/images/mercedes-jante-avant.jpg"  alt="Après — Mercedes jante rénovée" fetchpriority="high" />
-          <div class="cs-line">
-            <div class="cs-knob">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg>
-            </div>
-          </div>
-          <span class="cs-label cs-label--avant">Avant</span>
-          <span class="cs-label cs-label--apres">Après</span>
-        </div>
-      </div>
-
-      <!-- Slide 2 — Porsche Macan -->
-      <div class="ba-slide">
-        <div class="cs" data-compare>
-          <picture><source srcset="assets/images/macan-avant.webp" type="image/webp"><img class="cs-img cs-img--before" src="assets/images/macan-avant.jpg" alt="Avant — Porsche Macan" loading="lazy" /></picture>
-          <picture><source srcset="assets/images/macan-apres.webp" type="image/webp"><img class="cs-img cs-img--after"  src="assets/images/macan-apres.jpg"  alt="Après — Porsche Macan" loading="lazy" /></picture>
-          <div class="cs-line">
-            <div class="cs-knob">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg>
-            </div>
-          </div>
-          <span class="cs-label cs-label--avant">Avant</span>
-          <span class="cs-label cs-label--apres">Après</span>
-        </div>
-      </div>
-
-      <!-- Slide 3 — Kia Picanto -->
-      <div class="ba-slide">
-        <div class="cs" data-compare>
-          <picture><source srcset="assets/images/kia-apres.webp" type="image/webp"><img class="cs-img cs-img--before" src="assets/images/kia-apres.jpg" alt="Avant — Kia Picanto" loading="lazy"/></picture>
-          <picture><source srcset="assets/images/kia-avant.webp" type="image/webp"><img class="cs-img cs-img--after"  src="assets/images/kia-avant.jpg"  alt="Après — Kia Picanto" loading="lazy"/></picture>
-          <div class="cs-line">
-            <div class="cs-knob">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg>
-            </div>
-          </div>
-          <span class="cs-label cs-label--avant">Avant</span>
-          <span class="cs-label cs-label--apres">Après</span>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Barre de navigation -->
-    <div class="ba-bar">
-      <div class="ba-bar__info">
-        <p class="ba-bar__cat" id="ba-cat">Rénovation</p>
-        <p class="ba-bar__title" id="ba-title">Mercedes</p>
-        <p class="ba-bar__sub" id="ba-sub">Rénovation jante alliage</p>
-      </div>
-      <div class="ba-bar__right">
-        <button class="ba-arrow" id="ba-prev" aria-label="Précédent">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 19l-7-7 7-7"/></svg>
-        </button>
-        <span class="ba-count"><strong id="ba-cur">01</strong> / <span id="ba-tot">02</span></span>
-        <button class="ba-arrow" id="ba-next" aria-label="Suivant">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5l7 7-7 7"/></svg>
-        </button>
-      </div>
-    </div>
-  </div>
-  </div>
-</section>
-
 <!-- ⑤ PRESTATIONS ───────────────────────────────────────── -->
 <section class="section border-bottom" style="padding-top:clamp(2rem,4vw,4rem)">
   <div class="container">
@@ -1201,8 +1050,87 @@
   </div>
 </section>
 
+<!-- AVANT / APRÈS ─────────────────────────────────────── -->
+<style>
+  .ba-section { padding-block: 0; border-bottom: 1px solid rgba(255,255,255,0.07); }
+  .ba-header { display:flex; align-items:flex-end; justify-content:space-between; padding: clamp(2.5rem,5vw,4rem) clamp(1.5rem,5vw,4rem) clamp(1.5rem,3vw,2.5rem); }
+  .ba-header__left { display:flex; flex-direction:column; gap:0.4rem; }
+  .ba-wrapper { max-width:1200px; margin:0 auto; padding:0 clamp(1.5rem,4vw,4rem) clamp(2rem,4vw,3.5rem); }
+  .ba-showcase { position:relative; border:1px solid rgba(255,255,255,0.1); overflow:hidden; border-radius:10px; }
+  .ba-slides { position:relative; width:100%; aspect-ratio:43/20; overflow:hidden; background:var(--grey-900); }
+  @media(max-width:768px) { .ba-slides { aspect-ratio:16/9; } }
+  .ba-slide { position:absolute; inset:0; opacity:0; transition:opacity 0.7s cubic-bezier(0.32,0.72,0,1); pointer-events:none; }
+  .ba-slide.active { opacity:1; pointer-events:auto; }
+  .cs { position:relative; width:100%; height:100%; cursor:col-resize; user-select:none; -webkit-user-select:none; touch-action:none; }
+  .cs-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; }
+  .cs-img--after { clip-path:inset(0 50% 0 0); transition:clip-path 0s; }
+  .cs-line { position:absolute; top:0; bottom:0; left:50%; width:1.5px; background:#fff; transform:translateX(-50%); pointer-events:none; }
+  .cs-knob { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:46px; height:46px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 24px rgba(0,0,0,0.5); }
+  .cs-knob svg { color:#000; flex-shrink:0; }
+  .cs-label { position:absolute; bottom:1.75rem; padding:0.3rem 0.9rem; font-size:0.58rem; font-weight:600; letter-spacing:0.2em; text-transform:uppercase; background:rgba(6,6,6,0.55); backdrop-filter:blur(10px) saturate(1.5); color:rgba(255,255,255,0.75); pointer-events:none; }
+  .cs-label--avant { left:1.75rem; }
+  .cs-label--apres { right:1.75rem; }
+  @media(max-width:480px) { .cs-label { bottom:1rem; } .cs-label--avant { left:1rem; } .cs-label--apres { right:1rem; } }
+  .ba-bar { display:flex; align-items:center; justify-content:space-between; padding: clamp(1.2rem,3vw,2rem) clamp(1.5rem,5vw,4rem); border-top:1px solid rgba(255,255,255,0.07); }
+  .ba-bar__info { display:flex; flex-direction:column; gap:0.3rem; }
+  .ba-bar__cat { font-size:0.58rem; font-weight:600; letter-spacing:0.2em; text-transform:uppercase; color:rgba(255,255,255,0.28); }
+  .ba-bar__title { font-family:var(--font-display); font-size:clamp(1.4rem,3vw,2.2rem); font-weight:300; line-height:1; }
+  .ba-bar__sub { font-size:0.72rem; color:rgba(255,255,255,0.3); letter-spacing:0.06em; margin-top:0.1rem; }
+  .ba-bar__right { display:flex; align-items:center; gap:1.25rem; }
+  .ba-count { font-size:0.7rem; letter-spacing:0.1em; color:rgba(255,255,255,0.25); min-width:3rem; text-align:center; }
+  .ba-count strong { color:rgba(255,255,255,0.75); font-weight:400; }
+  .ba-arrow { width:42px; height:42px; border:1px solid rgba(255,255,255,0.13); background:transparent; color:rgba(255,255,255,0.6); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:border-color .2s, color .2s, background .2s; }
+  .ba-arrow:hover { border-color:rgba(255,255,255,0.45); color:#fff; background:rgba(255,255,255,0.04); }
+  @media(max-width:600px) { .ba-bar { gap:1rem; } .ba-bar__sub { display:none; } }
+</style>
+<section class="ba-section">
+  <div class="ba-header" data-reveal>
+    <div class="ba-header__left">
+      <p class="label">Le résultat parle</p>
+      <h2 class="h2" style="margin:0;">Avant / <em>Après</em></h2>
+    </div>
+    <a href="realisations.html" class="btn btn-outline"><span>Toutes les réalisations</span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+  </div>
+  <div class="ba-wrapper">
+  <div class="ba-showcase" id="ba-showcase">
+    <div class="ba-slides">
+      <div class="ba-slide active"><div class="cs" data-compare>
+        <img class="cs-img cs-img--before" src="assets/images/mercedes-jante-apres.jpg" alt="Avant — Mercedes" loading="lazy" />
+        <img class="cs-img cs-img--after"  src="assets/images/mercedes-jante-avant.jpg"  alt="Après — Mercedes" loading="lazy" />
+        <div class="cs-line"><div class="cs-knob"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg></div></div>
+        <span class="cs-label cs-label--avant">Avant</span><span class="cs-label cs-label--apres">Après</span>
+      </div></div>
+      <div class="ba-slide"><div class="cs" data-compare>
+        <picture><source srcset="assets/images/macan-avant.webp" type="image/webp"><img class="cs-img cs-img--before" src="assets/images/macan-avant.jpg" alt="Avant — Porsche Macan" loading="lazy" /></picture>
+        <picture><source srcset="assets/images/macan-apres.webp" type="image/webp"><img class="cs-img cs-img--after"  src="assets/images/macan-apres.jpg"  alt="Après — Porsche Macan" loading="lazy" /></picture>
+        <div class="cs-line"><div class="cs-knob"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg></div></div>
+        <span class="cs-label cs-label--avant">Avant</span><span class="cs-label cs-label--apres">Après</span>
+      </div></div>
+      <div class="ba-slide"><div class="cs" data-compare>
+        <picture><source srcset="assets/images/kia-apres.webp" type="image/webp"><img class="cs-img cs-img--before" src="assets/images/kia-apres.jpg" alt="Avant — Kia Picanto" loading="lazy"/></picture>
+        <picture><source srcset="assets/images/kia-avant.webp" type="image/webp"><img class="cs-img cs-img--after"  src="assets/images/kia-avant.jpg"  alt="Après — Kia Picanto" loading="lazy"/></picture>
+        <div class="cs-line"><div class="cs-knob"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg></div></div>
+        <span class="cs-label cs-label--avant">Avant</span><span class="cs-label cs-label--apres">Après</span>
+      </div></div>
+    </div>
+    <div class="ba-bar">
+      <div class="ba-bar__info">
+        <p class="ba-bar__cat" id="ba-cat">Rénovation</p>
+        <p class="ba-bar__title" id="ba-title">Mercedes</p>
+        <p class="ba-bar__sub" id="ba-sub">Rénovation jante alliage</p>
+      </div>
+      <div class="ba-bar__right">
+        <button class="ba-arrow" id="ba-prev" aria-label="Précédent"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 19l-7-7 7-7"/></svg></button>
+        <span class="ba-count"><strong id="ba-cur">01</strong> / <span id="ba-tot">03</span></span>
+        <button class="ba-arrow" id="ba-next" aria-label="Suivant"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+    </div>
+  </div>
+  </div>
+</section>
+
 <!-- ⑩ FAQ ────────────────────────────────────────────────── -->
-<section class="section border-bottom" style="display:none">
+<section class="section border-bottom">
   <div class="container-narrow">
     <div class="section-intro" data-reveal>
       <p class="label">Questions fréquentes</p>
