@@ -4,6 +4,7 @@ const helmet      = require('helmet');
 const rateLimit   = require('express-rate-limit');
 const multer      = require('multer');
 const path        = require('path');
+const { q }       = require('./db');
 
 const app    = express();
 const PORT   = parseInt(process.env.PORT) || 3000;
@@ -266,6 +267,97 @@ function clientEmail(d) {
 </body></html>`;
 }
 
+// ── CRM — auth middleware ─────────────────────────────────────
+const CRM_PASSWORD = process.env.CRM_PASSWORD || 'reynov-crm-2025';
+function crmAuth(req, res, next) {
+  const auth = req.headers['authorization'] || '';
+  const key  = auth.startsWith('Bearer ') ? auth.slice(7) : req.headers['x-crm-key'] || '';
+  if (key !== CRM_PASSWORD) return res.status(401).json({ ok: false, error: 'Non autorisé' });
+  next();
+}
+
+app.use('/api/crm', express.json(), crmAuth);
+
+// GET /api/crm/stats
+app.get('/api/crm/stats', (req, res) => {
+  res.json({ ok: true, data: q.stats.get() });
+});
+
+// GET /api/crm/clients?q=search
+app.get('/api/crm/clients', (req, res) => {
+  const search = `%${req.query.q || ''}%`;
+  res.json({ ok: true, data: q.clientsList.all({ q: search }) });
+});
+
+// GET /api/crm/clients/:id
+app.get('/api/crm/clients/:id', (req, res) => {
+  const client = q.clientById.get(req.params.id);
+  if (!client) return res.status(404).json({ ok: false, error: 'Client introuvable' });
+  const interventions = q.clientInterventions.all(req.params.id);
+  res.json({ ok: true, data: { ...client, interventions } });
+});
+
+// POST /api/crm/clients
+app.post('/api/crm/clients', (req, res) => {
+  const b = req.body;
+  const r = q.createClient.run({
+    prenom: b.prenom || '', nom: b.nom || '', email: b.email || '',
+    tel: b.tel || '', adresse: b.adresse || '', ville: b.ville || '', notes: b.notes || '',
+  });
+  res.json({ ok: true, id: r.lastInsertRowid });
+});
+
+// PUT /api/crm/clients/:id
+app.put('/api/crm/clients/:id', (req, res) => {
+  const b = req.body;
+  q.updateClient.run({
+    id: req.params.id,
+    prenom: b.prenom || '', nom: b.nom || '', email: b.email || '',
+    tel: b.tel || '', adresse: b.adresse || '', ville: b.ville || '', notes: b.notes || '',
+  });
+  res.json({ ok: true });
+});
+
+// DELETE /api/crm/clients/:id
+app.delete('/api/crm/clients/:id', (req, res) => {
+  q.deleteClient.run(req.params.id);
+  res.json({ ok: true });
+});
+
+// GET /api/crm/interventions
+app.get('/api/crm/interventions', (req, res) => {
+  res.json({ ok: true, data: q.allInterventions.all() });
+});
+
+// POST /api/crm/interventions
+app.post('/api/crm/interventions', (req, res) => {
+  const b = req.body;
+  const r = q.createIntervention.run({
+    client_id: b.client_id, prestation: b.prestation || '', problemes: b.problemes || '',
+    nb_jantes: b.nb_jantes || '', taille: b.taille || '', marque: b.marque || '',
+    modele: b.modele || '', finition: b.finition || '', mode: b.mode || '',
+    adresse_intervention: b.adresse_intervention || '',
+    statut: b.statut || 'nouveau', montant: b.montant || null, notes: b.notes || '',
+  });
+  res.json({ ok: true, id: r.lastInsertRowid });
+});
+
+// PUT /api/crm/interventions/:id
+app.put('/api/crm/interventions/:id', (req, res) => {
+  const b = req.body;
+  q.updateIntervention.run({
+    id: req.params.id,
+    statut: b.statut, montant: b.montant || null, notes: b.notes || '',
+  });
+  res.json({ ok: true });
+});
+
+// DELETE /api/crm/interventions/:id
+app.delete('/api/crm/interventions/:id', (req, res) => {
+  q.deleteIntervention.run(req.params.id);
+  res.json({ ok: true });
+});
+
 // ── POST /api/devis ───────────────────────────────────────────
 app.post('/api/devis', devisLimiter, (req, res, next) => {
   upload.array('photos', 10)(req, res, (err) => {
@@ -337,6 +429,30 @@ app.post('/api/devis', devisLimiter, (req, res, next) => {
       html:    clientEmail(d),
     });
     console.log('✅ Mail client envoyé');
+
+    // ── Auto-save dans le CRM ──────────────────────────────────
+    try {
+      let client = d.email ? q.findByEmail.get(d.email) : null;
+      if (!client) {
+        const r = q.createClient.run({
+          prenom: d.prenom, nom: d.nom, email: d.email,
+          tel: d.tel, adresse: d.adresse || '', ville: d.adresse || '', notes: '',
+        });
+        client = { id: r.lastInsertRowid };
+      }
+      q.createIntervention.run({
+        client_id: client.id,
+        prestation: d.prestation, problemes: d.problemes,
+        nb_jantes: d.nb_jantes, taille: d.taille,
+        marque: d.marque, modele: d.modele,
+        finition: d.finition, mode: d.mode,
+        adresse_intervention: d.adresse_client || d.adresse,
+        statut: 'devis_envoye', montant: null, notes: '',
+      });
+      console.log('✅ CRM mis à jour');
+    } catch (e) {
+      console.error('⚠️ CRM save error:', e.message);
+    }
 
     res.json({ ok: true });
 

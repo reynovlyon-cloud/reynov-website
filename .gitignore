@@ -1,3 +1,6 @@
+server/data/*.db
+server/data/*.db-*
+
 # Local Netlify folder
 .netlify
 node_modules/
