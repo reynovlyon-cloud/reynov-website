@@ -878,11 +878,11 @@
   <div class="ba-showcase" id="ba-showcase">
     <div class="ba-slides">
 
-      <!-- Slide 1 — Porsche Macan -->
+      <!-- Slide 1 — Mercedes -->
       <div class="ba-slide active">
         <div class="cs" data-compare>
-          <picture><source srcset="assets/images/macan-avant.webp" type="image/webp"><img class="cs-img cs-img--before" src="assets/images/macan-avant.jpg" alt="Avant — Porsche Macan" fetchpriority="high" /></picture>
-          <picture><source srcset="assets/images/macan-apres.webp" type="image/webp"><img class="cs-img cs-img--after"  src="assets/images/macan-apres.jpg"  alt="Après — Porsche Macan" fetchpriority="high" /></picture>
+          <img class="cs-img cs-img--before" src="assets/images/mercedes-jante-avant.jpg" alt="Avant — Mercedes jante abîmée" fetchpriority="high" />
+          <img class="cs-img cs-img--after"  src="assets/images/mercedes-jante-apres.jpg"  alt="Après — Mercedes jante rénovée" fetchpriority="high" />
           <div class="cs-line">
             <div class="cs-knob">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg>
@@ -893,11 +893,26 @@
         </div>
       </div>
 
-      <!-- Slide 2 — Kia Picanto -->
+      <!-- Slide 2 — Porsche Macan -->
       <div class="ba-slide">
         <div class="cs" data-compare>
-          <picture><source srcset="assets/images/kia-apres.webp" type="image/webp"><img class="cs-img cs-img--before" src="assets/images/kia-apres.jpg" alt="Avant — Kia Picanto"  loading="lazy"/></picture>
-          <picture><source srcset="assets/images/kia-avant.webp" type="image/webp"><img class="cs-img cs-img--after"  src="assets/images/kia-avant.jpg"  alt="Après — Kia Picanto"  loading="lazy"/></picture>
+          <picture><source srcset="assets/images/macan-avant.webp" type="image/webp"><img class="cs-img cs-img--before" src="assets/images/macan-avant.jpg" alt="Avant — Porsche Macan" loading="lazy" /></picture>
+          <picture><source srcset="assets/images/macan-apres.webp" type="image/webp"><img class="cs-img cs-img--after"  src="assets/images/macan-apres.jpg"  alt="Après — Porsche Macan" loading="lazy" /></picture>
+          <div class="cs-line">
+            <div class="cs-knob">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg>
+            </div>
+          </div>
+          <span class="cs-label cs-label--avant">Avant</span>
+          <span class="cs-label cs-label--apres">Après</span>
+        </div>
+      </div>
+
+      <!-- Slide 3 — Kia Picanto -->
+      <div class="ba-slide">
+        <div class="cs" data-compare>
+          <picture><source srcset="assets/images/kia-apres.webp" type="image/webp"><img class="cs-img cs-img--before" src="assets/images/kia-apres.jpg" alt="Avant — Kia Picanto" loading="lazy"/></picture>
+          <picture><source srcset="assets/images/kia-avant.webp" type="image/webp"><img class="cs-img cs-img--after"  src="assets/images/kia-avant.jpg"  alt="Après — Kia Picanto" loading="lazy"/></picture>
           <div class="cs-line">
             <div class="cs-knob">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg>
@@ -914,8 +929,8 @@
     <div class="ba-bar">
       <div class="ba-bar__info">
         <p class="ba-bar__cat" id="ba-cat">Rénovation</p>
-        <p class="ba-bar__title" id="ba-title">Porsche Macan</p>
-        <p class="ba-bar__sub" id="ba-sub">20"</p>
+        <p class="ba-bar__title" id="ba-title">Mercedes</p>
+        <p class="ba-bar__sub" id="ba-sub">Rénovation jante alliage</p>
       </div>
       <div class="ba-bar__right">
         <button class="ba-arrow" id="ba-prev" aria-label="Précédent">
@@ -1476,6 +1491,7 @@
     const elTot   = document.getElementById('ba-tot');
 
     const DATA = [
+      { cat:'Rénovation', title:'Mercedes',      sub:'Rénovation jante alliage' },
       { cat:'Rénovation', title:'Porsche Macan', sub:'20"' },
       { cat:'Rénovation', title:'Kia Picanto',   sub:'15"' },
     ];
