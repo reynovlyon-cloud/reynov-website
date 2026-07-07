@@ -32,6 +32,12 @@ app.use(helmet({
   permittedCrossDomainPolicies: false,
 }));
 
+// ── HSTS — force HTTPS pendant 1 an ──────────────────────────
+app.use((_req, res, next) => {
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  next();
+});
+
 // ── Permissions-Policy ────────────────────────────────────────
 app.use((_req, res, next) => {
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
@@ -55,6 +61,15 @@ const upload = multer({
   fileFilter: (_req, file, cb) => {
     cb(null, ALLOWED_MIME.has(file.mimetype));
   },
+});
+
+// ── Tracking visites pages HTML ───────────────────────────────
+app.use((req, res, next) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api') && !req.path.startsWith('/admin')) {
+    const ext = path.extname(req.path);
+    if (ext === '.html' || ext === '') db.logVisit();
+  }
+  next();
 });
 
 // ── Static site ───────────────────────────────────────────────
@@ -268,11 +283,11 @@ function clientEmail(d) {
 }
 
 // ── CRM — auth middleware ─────────────────────────────────────
-const CRM_PASSWORD = process.env.CRM_PASSWORD || 'reynov-crm-2025';
+const CRM_PASSWORD = process.env.CRM_PASSWORD;
 function crmAuth(req, res, next) {
   const auth = req.headers['authorization'] || '';
   const key  = auth.startsWith('Bearer ') ? auth.slice(7) : req.headers['x-crm-key'] || '';
-  if (key !== CRM_PASSWORD) return res.status(401).json({ ok: false, error: 'Non autorisé' });
+  if (!CRM_PASSWORD || key !== CRM_PASSWORD) return res.status(401).json({ ok: false, error: 'Non autorisé' });
   next();
 }
 
@@ -353,6 +368,12 @@ app.put('/api/crm/interventions/:id', (req, res) => {
 app.delete('/api/crm/interventions/:id', (req, res) => {
   db.deleteIntervention(req.params.id);
   res.json({ ok: true });
+});
+
+// GET /api/crm/visits?days=30
+app.get('/api/crm/visits', (req, res) => {
+  const days = Math.min(parseInt(req.query.days) || 30, 365);
+  res.json({ ok: true, data: db.visitsByDay(days) });
 });
 
 // ── POST /api/devis ───────────────────────────────────────────

@@ -314,6 +314,9 @@ function submitForm() {
     try {
       const data = JSON.parse(xhr.responseText);
       if (data.ok) {
+        if (typeof gtag === 'function') {
+          gtag('event', 'conversion', { send_to: 'AW-18189889040/7zKmCNbLnMwcEJDczuFD', value: 150, currency: 'EUR' });
+        }
         form.querySelectorAll('.devis-step').forEach(s => s.classList.remove('current'));
         const success = form.querySelector('.devis-success');
         if (success) success.style.display = 'block';
