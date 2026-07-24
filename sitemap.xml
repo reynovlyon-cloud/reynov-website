@@ -8,6 +8,9 @@
   <url><loc>https://www.reynovjantes.fr/realisations.html</loc><lastmod>2026-07-01</lastmod><priority>0.8</priority><changefreq>weekly</changefreq></url>
   <url><loc>https://www.reynovjantes.fr/faq.html</loc><lastmod>2026-06-01</lastmod><priority>0.6</priority><changefreq>monthly</changefreq></url>
   <url><loc>https://www.reynovjantes.fr/contact.html</loc><lastmod>2026-06-01</lastmod><priority>0.6</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://www.reynovjantes.fr/mentions-legales.html</loc><lastmod>2026-07-24</lastmod><priority>0.2</priority><changefreq>yearly</changefreq></url>
+  <url><loc>https://www.reynovjantes.fr/politique-de-confidentialite.html</loc><lastmod>2026-07-24</lastmod><priority>0.2</priority><changefreq>yearly</changefreq></url>
+  <url><loc>https://www.reynovjantes.fr/cgv.html</loc><lastmod>2026-07-24</lastmod><priority>0.2</priority><changefreq>yearly</changefreq></url>
 
   <!-- Blog -->
   <url><loc>https://www.reynovjantes.fr/blog/</loc><lastmod>2026-07-06</lastmod><priority>0.7</priority><changefreq>weekly</changefreq></url>
