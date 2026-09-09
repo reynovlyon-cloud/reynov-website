@@ -44,6 +44,14 @@ app.use((_req, res, next) => {
   next();
 });
 
+// ── Redirection non-www -> www (évite le duplicate content) ──
+app.use((req, res, next) => {
+  if (req.hostname === 'reynovjantes.fr') {
+    return res.redirect(301, `https://www.reynovjantes.fr${req.originalUrl}`);
+  }
+  next();
+});
+
 // ── Rate limiting — formulaire devis ─────────────────────────
 const devisLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,   // 1 heure
