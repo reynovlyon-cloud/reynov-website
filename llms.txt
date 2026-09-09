@@ -1,0 +1,42 @@
+# REYNOV
+
+> REYNOV est un spécialiste de la rénovation, réparation et personnalisation de jantes aluminium premium, basé à La Mulatière (69350, périphérie sud de Lyon). Service mobile à domicile dans le Rhône, l'Ain, l'Isère, la Loire et la Haute-Savoie, ainsi qu'en atelier fixe. Intervention sur toutes marques, y compris véhicules électriques (Tesla, BYD, Xpeng).
+
+## Informations essentielles
+
+- Nom : REYNOV
+- Adresse atelier : 47 chemin du Pras, 69350 La Mulatière (agglomération lyonnaise)
+- Téléphone : 06 61 45 35 27
+- Email : reynov.lyon@gmail.com
+- Zone d'intervention : Lyon et agglomération, Ouest lyonnais, Ain (01), Isère (38), Loire (42), Haute-Savoie (74), frontaliers genevois
+- Horaires : lundi-vendredi 8h-18h, samedi 9h-17h
+- Tarifs : rénovation esthétique à partir de 130€/jante, réparation de rayure/frottement à partir de 100€/jante — devis gratuit sous 24h sur photos
+- Garantie : 30 jours sur toutes les prestations
+
+## Prestations
+
+- [Rénovation de jantes](https://www.reynovjantes.fr/prestations/renovation.html) : remise en état esthétique complète (décapage, traitement anticorrosion, peinture bi-composant, vernis)
+- [Réparation de jantes](https://www.reynovjantes.fr/prestations/reparation.html) : rayures, frottements de trottoir, chocs de stationnement
+- [Soudure de jantes fissurées](https://www.reynovjantes.fr/prestations/soudure.html) : réparation TIG aluminium pour jantes fissurées ou cassées
+- [Dévoilage](https://www.reynovjantes.fr/prestations/devoilage.html) : redressement de jantes voilées (vibrations, faux-rond)
+- [Personnalisation](https://www.reynovjantes.fr/prestations/personnalisation.html) : changement de couleur, finitions bi-ton, diamantées, mates
+- [Préparation avant vente](https://www.reynovjantes.fr/prestations/preparation-vente.html) : remise à neuf des jantes avant revente du véhicule
+- [Retour de leasing](https://www.reynovjantes.fr/prestations/retour-leasing.html) : remise en état avant restitution LOA/LLD pour éviter les pénalités
+- [Professionnels](https://www.reynovjantes.fr/professionnels.html) : concessions, garages, loueurs, flottes d'entreprise
+
+## Marques traitées
+
+Toutes marques et tous types de jantes aluminium. Pages dédiées : [Audi](https://www.reynovjantes.fr/marques/renovation-jantes-audi.html), [BMW](https://www.reynovjantes.fr/marques/renovation-jantes-bmw.html), [Mercedes](https://www.reynovjantes.fr/marques/renovation-jantes-mercedes.html), [Porsche](https://www.reynovjantes.fr/marques/renovation-jantes-porsche.html), [Tesla](https://www.reynovjantes.fr/marques/renovation-jantes-tesla.html), [BYD](https://www.reynovjantes.fr/marques/renovation-jantes-byd.html), [Xpeng](https://www.reynovjantes.fr/marques/renovation-jantes-xpeng.html), [Volkswagen](https://www.reynovjantes.fr/marques/renovation-jantes-volkswagen.html), [Peugeot](https://www.reynovjantes.fr/marques/renovation-jantes-peugeot.html), [Renault](https://www.reynovjantes.fr/marques/renovation-jantes-renault.html), [Alfa Romeo](https://www.reynovjantes.fr/marques/renovation-jantes-alfa-romeo.html), [Fiat](https://www.reynovjantes.fr/marques/renovation-jantes-fiat.html).
+
+## Pages de référence
+
+- [Accueil](https://www.reynovjantes.fr/) — présentation générale et zones d'intervention
+- [FAQ](https://www.reynovjantes.fr/faq.html) — questions fréquentes sur prix, délais, garantie
+- [Réalisations](https://www.reynovjantes.fr/realisations.html) — galerie avant/après
+- [Blog](https://www.reynovjantes.fr/blog/) — guides pratiques (jante rayée, jante voilée, jante fissurée, prix, retour de leasing)
+- [Devis gratuit](https://www.reynovjantes.fr/devis.html) — formulaire de demande de devis sur photos
+- [Contact](https://www.reynovjantes.fr/contact.html)
+
+## Notes
+
+Ce fichier suit la convention [llms.txt](https://llmstxt.org/). Il est maintenu à jour manuellement ; en cas d'écart avec le site, le site fait foi. Sitemap complet : https://www.reynovjantes.fr/sitemap.xml

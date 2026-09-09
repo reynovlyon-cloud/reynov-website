@@ -4,3 +4,6 @@ Disallow: /node_modules/
 Disallow: /email-prospection-pro.html
 
 Sitemap: https://www.reynovjantes.fr/sitemap.xml
+
+# https://llmstxt.org/
+# llms.txt: https://www.reynovjantes.fr/llms.txt
