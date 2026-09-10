@@ -314,12 +314,9 @@ function submitForm() {
     try {
       const data = JSON.parse(xhr.responseText);
       if (data.ok) {
-        if (typeof gtag === 'function') {
-          gtag('event', 'conversion', { send_to: 'AW-18189889040/7zKmCNbLnMwcEJDczuFD', value: 150, currency: 'EUR' });
-        }
-        form.querySelectorAll('.devis-step').forEach(s => s.classList.remove('current'));
-        const success = form.querySelector('.devis-success');
-        if (success) success.style.display = 'block';
+        // Marque l'envoi puis redirige vers la page de confirmation (conversion Google Ads déclenchée là-bas)
+        try { sessionStorage.setItem('reynov_devis_ok', '1'); } catch (e) {}
+        window.location.href = '/devis-confirmation.html';
       } else {
         resetBtn();
         alert('Erreur : ' + (data.error || 'Erreur serveur'));
