@@ -17,20 +17,10 @@
     gtag('config', 'AW-18189889040');
     gtag('config', 'G-01NZWZF0Y3');
   </script>
-  <!-- Conversion Google Ads — uniquement si on arrive d'un envoi de formulaire réel -->
+  <!-- La conversion Google Ads est désormais déclenchée avant la redirection (voir assets/js/main.js) -->
+  <!-- Nettoyage de l'ancien marqueur de session, s'il existe encore -->
   <script>
-    (function () {
-      var ok = false;
-      try { ok = sessionStorage.getItem('reynov_devis_ok') === '1'; } catch (e) {}
-      if (ok) {
-        try { sessionStorage.removeItem('reynov_devis_ok'); } catch (e) {}
-        gtag('event', 'conversion', {
-          'send_to': 'AW-18189889040/7zKmCNbLnMwcEJDczuFD',
-          'value': 150.0,
-          'currency': 'EUR'
-        });
-      }
-    })();
+    try { sessionStorage.removeItem('reynov_devis_ok'); } catch (e) {}
   </script>
   <meta charset="UTF-8" />
   <link rel="icon" type="image/png" href="/assets/images/logo.png" />

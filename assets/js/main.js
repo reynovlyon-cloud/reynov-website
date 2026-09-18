@@ -314,9 +314,16 @@ function submitForm() {
     try {
       const data = JSON.parse(xhr.responseText);
       if (data.ok) {
-        // Marque l'envoi puis redirige vers la page de confirmation (conversion Google Ads déclenchée là-bas)
-        try { sessionStorage.setItem('reynov_devis_ok', '1'); } catch (e) {}
-        window.location.href = '/devis-confirmation.html';
+        // Snippet officiel Google Ads : déclenche la conversion puis redirige une fois l'envoi confirmé
+        // (gtag.js applique lui-même un délai de sécurité si le callback ne répond pas)
+        if (typeof gtag === 'function') {
+          gtag('event', 'conversion', {
+            'send_to': 'AW-18189889040/7zKmCNbLnMwcEJDczuFD',
+            'event_callback': function () { window.location.href = '/devis-confirmation.html'; }
+          });
+        } else {
+          window.location.href = '/devis-confirmation.html';
+        }
       } else {
         resetBtn();
         alert('Erreur : ' + (data.error || 'Erreur serveur'));
