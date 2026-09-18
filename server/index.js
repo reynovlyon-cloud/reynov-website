@@ -17,13 +17,14 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc:  ["'self'"],
-      scriptSrc:   ["'self'", "'unsafe-inline'", 'https://www.google-analytics.com', 'https://www.googletagmanager.com'],       // inline scripts dans les HTML
+      scriptSrc:   ["'self'", "'unsafe-inline'", 'https://www.google-analytics.com', 'https://www.googletagmanager.com', 'https://googleads.g.doubleclick.net', 'https://www.googleadservices.com'],       // inline scripts dans les HTML
       styleSrc:    ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       fontSrc:     ["'self'", 'https://fonts.gstatic.com'],
       imgSrc:      ["'self'", 'data:', 'https:'],
       mediaSrc:    ["'self'"],
-      connectSrc:  ["'self'", 'https://www.google-analytics.com', 'https://www.googletagmanager.com'],
-      frameSrc:    ["'none'"],
+      // Domaines nécessaires pour l'envoi effectif des conversions Google Ads (googletagmanager.com ne fait que charger le tag)
+      connectSrc:  ["'self'", 'https://www.google-analytics.com', 'https://www.googletagmanager.com', 'https://googleads.g.doubleclick.net', 'https://www.googleadservices.com', 'https://www.google.com', 'https://td.doubleclick.net'],
+      frameSrc:    ['https://googleads.g.doubleclick.net', 'https://td.doubleclick.net'],
       objectSrc:   ["'none'"],
       upgradeInsecureRequests: [],
     },
