@@ -18,12 +18,14 @@ app.use(helmet({
     directives: {
       defaultSrc:  ["'self'"],
       scriptSrc:   ["'self'", "'unsafe-inline'", 'https://www.google-analytics.com', 'https://www.googletagmanager.com', 'https://googleads.g.doubleclick.net', 'https://www.googleadservices.com'],       // inline scripts dans les HTML
+      // Directive distincte requise par le diagnostic Google Ads (script-src-elem prime sur script-src pour les balises <script>)
+      scriptSrcElem: ["'self'", "'unsafe-inline'", 'https://www.google-analytics.com', 'https://www.googletagmanager.com', 'https://googleads.g.doubleclick.net', 'https://www.googleadservices.com'],
       styleSrc:    ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       fontSrc:     ["'self'", 'https://fonts.gstatic.com'],
       imgSrc:      ["'self'", 'data:', 'https:'],
       mediaSrc:    ["'self'"],
-      // Domaines nécessaires pour l'envoi effectif des conversions Google Ads (googletagmanager.com ne fait que charger le tag)
-      connectSrc:  ["'self'", 'https://www.google-analytics.com', 'https://www.googletagmanager.com', 'https://googleads.g.doubleclick.net', 'https://www.googleadservices.com', 'https://www.google.com', 'https://td.doubleclick.net'],
+      // Domaines nécessaires pour l'envoi effectif des conversions Google Ads (googletagmanager.com ne fait que charger le tag) — liste exacte donnée par le diagnostic "Balise Google" de Google Ads
+      connectSrc:  ["'self'", 'https://www.google-analytics.com', 'https://www.googletagmanager.com', 'https://googleads.g.doubleclick.net', 'https://www.googleadservices.com', 'https://google.com', 'https://www.google.com', 'https://ad.doubleclick.net', 'https://td.doubleclick.net'],
       frameSrc:    ['https://googleads.g.doubleclick.net', 'https://td.doubleclick.net'],
       objectSrc:   ["'none'"],
       upgradeInsecureRequests: [],
