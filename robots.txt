@@ -2,6 +2,9 @@ User-agent: *
 Allow: /
 Disallow: /node_modules/
 Disallow: /email-prospection-pro.html
+Disallow: /admin/
+Disallow: /ads/
+Disallow: /lp/
 
 Sitemap: https://www.reynovjantes.fr/sitemap.xml
 
