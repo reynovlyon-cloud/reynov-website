@@ -487,9 +487,13 @@ app.post('/api/devis', devisLimiter, (req, res, next) => {
   }
 });
 
-// ── Fallback HTML ─────────────────────────────────────────────
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'index.html'));
+// ── Fallback 404 ───────────────────────────────────────────────
+// N'importe quelle URL inconnue (fautes de frappe, vieux liens, robots
+// qui empilent des segments de chemin relatifs) doit renvoyer un vrai
+// 404, pas l'accueil — sinon Google explore un espace infini d'URLs
+// bidon qui se déclarent toutes "dupliquées" de la page d'accueil.
+app.use((req, res) => {
+  res.status(404).sendFile(path.join(__dirname, '..', '404.html'));
 });
 
 process.on('uncaughtException',  err => console.error('💥 uncaughtException:', err.message));
