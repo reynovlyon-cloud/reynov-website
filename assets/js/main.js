@@ -147,6 +147,11 @@ function initDevisForm(form) {
     currentStep = n;
     form.querySelector('[data-step-current]') && (form.querySelector('[data-step-current]').textContent = n);
     form.querySelector('[data-step-total]') && (form.querySelector('[data-step-total]').textContent = totalSteps);
+    if (n > 1) {
+      const r = form.getBoundingClientRect();
+      if (r.top < 0) window.scrollBy({ top: r.top - 90, behavior: 'smooth' });
+    }
+    if (typeof gtag === 'function') gtag('event', n === 1 ? 'devis_start' : 'devis_step', { step: n, transport_type: 'beacon' });
   };
 
   // Choice buttons (radio-like)
@@ -181,39 +186,44 @@ function initDevisForm(form) {
     });
   });
 
+  const MARK = 'rgba(248,248,246,0.7)';
   const validate = (step) => {
-    if (step === 5) {
-      const input = form.querySelector('input[name="photos"]');
-      const error = document.getElementById('photos-error');
-      const drop  = document.getElementById('upload-drop');
-      if (error) error.style.display = 'none';
-      if (drop)  drop.style.borderColor = '';
+    if (step === 1) {
+      const chosen = form.querySelector('[data-group="raison"].selected');
+      const err = document.getElementById('raison-error');
+      if (err) err.style.display = chosen ? 'none' : 'block';
+      if (!chosen) return false;
     }
-    if (step === 6) {
-      let ok = true;
-      const prenom = document.getElementById('prenom');
-      const email  = document.getElementById('email');
-      const tel    = document.getElementById('tel');
-      const emailErr = document.getElementById('email-error');
-      const telErr   = document.getElementById('tel-error');
-
-      if (!email || !email.value.trim()) {
-        if (emailErr) emailErr.style.display = 'block';
-        if (email) email.style.borderColor = 'rgba(255,100,100,0.45)';
-        ok = false;
-      } else {
-        if (emailErr) emailErr.style.display = 'none';
-        if (email) email.style.borderColor = '';
+    if (step === 2) {
+      const err = document.getElementById('photos-error');
+      const input = form.querySelector('input[name="photos"]');
+      const drop = document.getElementById('upload-drop');
+      const hasPhoto = input && input.files && input.files.length;
+      // Non bloquant : on prévient une fois, puis on laisse continuer (photos possibles ensuite par WhatsApp)
+      if (!hasPhoto && !form.dataset.photoWarned) {
+        form.dataset.photoWarned = '1';
+        if (err) err.style.display = 'block';
+        if (drop) drop.style.borderColor = MARK;
+        return false;
       }
-      if (!tel || !tel.value.trim()) {
-        if (telErr) telErr.style.display = 'block';
-        if (tel) { tel.style.borderColor = 'rgba(255,100,100,0.45)'; if (ok) tel.focus(); }
-        ok = false;
-      } else {
-        if (telErr) telErr.style.display = 'none';
-        if (tel) tel.style.borderColor = '';
-      }
-      if (!ok) return false;
+      if (err) err.style.display = 'none';
+      if (drop) drop.style.borderColor = '';
+    }
+    if (step === 3) {
+      let ok = true, first = null;
+      const get = (id) => document.getElementById(id);
+      const check = (id, errId, test) => {
+        const el = get(id), er = get(errId);
+        const valid = !!(el && test(el.value.trim()));
+        if (er) er.style.display = valid ? 'none' : 'block';
+        if (el) el.style.borderColor = valid ? '' : MARK;
+        if (!valid) { ok = false; if (!first) first = el; }
+      };
+      check('email', 'email-error', v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v));
+      check('tel', 'tel-error', v => v.replace(/\D/g, '').length >= 8);
+      const row = get('adresse-row'), ad = get('adresse-client');
+      if (row && ad && row.style.display !== 'none' && !ad.value.trim()) { ad.style.borderColor = MARK; ok = false; if (!first) first = ad; } else if (ad) { ad.style.borderColor = ''; }
+      if (!ok) { if (first) first.focus(); return false; }
     }
     return true;
   };

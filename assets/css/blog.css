@@ -84,10 +84,10 @@
 /* Titre principal */
 .article-hero__title {
   font-family: var(--font-display);
-  font-size: clamp(2.8rem, 5.5vw, 5.5rem);
+  font-size: min(var(--h1-size), 4rem);
   font-weight: 400;
-  line-height: 0.97;
-  letter-spacing: -0.025em;
+  line-height: 1.04;
+  letter-spacing: -0.022em;
   color: var(--white);
   margin-bottom: 2.2rem;
 }

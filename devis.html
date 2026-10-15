@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    (function () {
+      var ok = false;
+      try { var c = JSON.parse(localStorage.getItem('reynov_consent') || 'null'); ok = !!(c && c.v === 'granted' && Date.now() - c.t < 15552000000); } catch (e) {}
+      var s = ok ? 'granted' : 'denied';
+      gtag('consent', 'default', { ad_storage: s, ad_user_data: s, ad_personalization: s, analytics_storage: s, wait_for_update: 500 });
+    })();
+  </script>
   <!-- Google Tag Manager -->
   <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
   new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -36,7 +46,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preload" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" /></noscript>
-  <link rel="stylesheet" href="assets/css/style.css?v=2" />
+  <link rel="stylesheet" href="assets/css/style.css?v=4" />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Devis Gratuit Rénovation Jantes Lyon — Réponse en 24h | REYNOV" />
   <meta property="og:description" content="Demandez votre devis gratuit pour la rénovation de jantes à Lyon. Envoyez vos photos, recevez un devis clair sous 24h. Sans engagement." />
@@ -146,7 +156,7 @@
       align-items: flex-start;
       gap: 0.75rem;
       font-size: 0.8rem;
-      color: rgba(255,190,80,0.9);
+      color: rgba(248,248,246,0.85);
       line-height: 1.5;
     }
     .domicile-info__warning::before {
@@ -230,6 +240,8 @@
     {"@type":"ListItem","position":2,"name":"Devis","item":"https://www.reynov-jantes.fr/devis.html"}
   ]}
   </script>
+  <script src="/assets/js/consent.js?v=1" defer></script>
+  <script src="/assets/js/track.js?v=1" defer></script>
 </head>
 <body>
 <!-- Google Tag Manager (noscript) -->
@@ -310,71 +322,38 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <div class="devis-progress__step active"></div>
           <div class="devis-progress__step"></div>
           <div class="devis-progress__step"></div>
-          <div class="devis-progress__step"></div>
-          <div class="devis-progress__step"></div>
-          <div class="devis-progress__step"></div>
         </div>
 
-        <!-- ÉTAPE 1 : Prestation -->
+        <!-- ÉTAPE 1 : Projet -->
         <div class="devis-step current" data-step="1">
-          <p class="devis-step__count">Étape 1 / 6</p>
-          <h2 class="devis-step__title">Quelle prestation<br /><em>vous intéresse ?</em></h2>
-          <p class="devis-step__sub">Sélectionnez ce qui correspond à votre besoin.</p>
-          <div class="choices-grid" style="grid-template-columns:1fr 1fr;">
-            <button type="button" class="choice-btn" data-group="raison" data-auto-advance>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-              Rénovation
-            </button>
-            <button type="button" class="choice-btn" data-group="raison" data-auto-advance>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-              Personnalisation
-            </button>
-            <button type="button" class="choice-btn" data-group="raison" data-auto-advance>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
-              Dévoilage
-            </button>
-            <button type="button" class="choice-btn" data-group="raison" data-auto-advance>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3-3a1 1 0 000-1.4l-1.6-1.6a1 1 0 00-1.4 0l-3 3z"/><path d="M3 21l9-9M7.5 7.5l-3 3"/></svg>
-              Soudure / fissure
-            </button>
-          </div>
-          <div class="devis-nav">
-            <button type="button" class="btn btn-outline" data-next>
-              <span>Continuer</span>
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
-            </button>
-          </div>
-        </div>
+          <p class="devis-step__count">Étape 1 / 3</p>
+          <h2 class="devis-step__title">Votre<br /><em>projet</em></h2>
+          <p class="devis-step__sub">Dites-nous ce dont vous avez besoin.</p>
 
-        <!-- ÉTAPE 2 : Type de problème -->
-        <div class="devis-step" data-step="2">
-          <p class="devis-step__count">Étape 2 / 6</p>
-          <h2 class="devis-step__title">Quel est<br /><em>le problème ?</em></h2>
-          <p class="devis-step__sub">Sélectionnez jusqu'à 3 options.</p>
-          <div class="choices-grid">
-            <button type="button" class="choice-btn" data-group="probleme" data-multi>Rayures</button>
-            <button type="button" class="choice-btn" data-group="probleme" data-multi>Impacts / chocs</button>
-            <button type="button" class="choice-btn" data-group="probleme" data-multi>Fissure / cassure</button>
-            <button type="button" class="choice-btn" data-group="probleme" data-multi>Jante voilée</button>
-            <button type="button" class="choice-btn" data-group="probleme" data-multi>Peinture écaillée</button>
-            <button type="button" class="choice-btn" data-group="probleme" data-multi>Corrosion / rouille</button>
-            <button type="button" class="choice-btn" data-group="probleme" data-multi>Changement de couleur</button>
-            <button type="button" class="choice-btn" data-group="probleme" data-multi>Autre</button>
+          <div class="form-row">
+            <label class="form-label">Prestation</label>
+            <div class="choices-grid" style="grid-template-columns:1fr 1fr;">
+              <button type="button" class="choice-btn" data-group="raison">Rénovation</button>
+              <button type="button" class="choice-btn" data-group="raison">Personnalisation</button>
+              <button type="button" class="choice-btn" data-group="raison">Dévoilage</button>
+              <button type="button" class="choice-btn" data-group="raison">Soudure / fissure</button>
+            </div>
+            <p id="raison-error" class="devis-error">Choisissez la prestation qui vous intéresse.</p>
           </div>
-          <div class="devis-nav">
-            <button type="button" class="btn btn-ghost" data-prev>← Retour</button>
-            <button type="button" class="btn btn-outline" data-next>
-              <span>Continuer</span>
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
-            </button>
-          </div>
-        </div>
 
-        <!-- ÉTAPE 3 : Jantes & Véhicule -->
-        <div class="devis-step" data-step="3">
-          <p class="devis-step__count">Étape 3 / 6</p>
-          <h2 class="devis-step__title">Vos jantes<br /><em>&amp; votre véhicule</em></h2>
-          <p class="devis-step__sub">Ces informations nous permettent de vous faire une estimation précise.</p>
+          <div class="form-row">
+            <label class="form-label">Problème rencontré <span class="devis-hint">— jusqu'à 3 choix</span></label>
+            <div class="choices-grid">
+              <button type="button" class="choice-btn" data-group="probleme" data-multi>Rayures</button>
+              <button type="button" class="choice-btn" data-group="probleme" data-multi>Impacts / chocs</button>
+              <button type="button" class="choice-btn" data-group="probleme" data-multi>Fissure / cassure</button>
+              <button type="button" class="choice-btn" data-group="probleme" data-multi>Jante voilée</button>
+              <button type="button" class="choice-btn" data-group="probleme" data-multi>Peinture écaillée</button>
+              <button type="button" class="choice-btn" data-group="probleme" data-multi>Corrosion / rouille</button>
+              <button type="button" class="choice-btn" data-group="probleme" data-multi>Changement de couleur</button>
+              <button type="button" class="choice-btn" data-group="probleme" data-multi>Autre</button>
+            </div>
+          </div>
 
           <div class="form-row">
             <label class="form-label">Nombre de jantes concernées</label>
@@ -386,9 +365,45 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
           </div>
 
+          <div class="devis-nav">
+            <button type="button" class="btn btn-outline" data-next>
+              <span>Continuer</span>
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- ÉTAPE 2 : Véhicule & photos -->
+        <div class="devis-step" data-step="2">
+          <p class="devis-step__count">Étape 2 / 3</p>
+          <h2 class="devis-step__title">Votre véhicule<br /><em>&amp; vos photos</em></h2>
+          <p class="devis-step__sub">Les photos sont ce qui nous permet de vous répondre vite et juste. Pas de photo sous la main ? Envoyez-les ensuite sur WhatsApp.</p>
+
+          <div class="upload-area" id="upload-area">
+            <label class="upload-drop" for="photos" id="upload-drop">
+              <input type="file" id="photos" name="photos" accept="image/*,video/*" multiple />
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+              <strong id="upload-label-text">Ajouter des photos</strong>
+              <span>Appuyez ou glissez vos fichiers ici</span>
+              <small>JPG, PNG, vidéo — Max 10 Mo par fichier</small>
+            </label>
+            <div class="upload-previews" id="upload-previews"></div>
+          </div>
+          <p id="photos-error" class="devis-error">Ajoutez au moins une photo pour un devis précis.</p>
+
+          <div class="form-grid mt-2">
+            <div class="form-row">
+              <label class="form-label" for="marque">Marque du véhicule</label>
+              <input class="form-input" type="text" id="marque" name="marque" placeholder="ex: BMW, Audi, Renault…" />
+            </div>
+            <div class="form-row">
+              <label class="form-label" for="modele">Modèle <span class="devis-hint">— optionnel</span></label>
+              <input class="form-input" type="text" id="modele" name="modele" placeholder="ex: M3, Q7, 911 Carrera…" />
+            </div>
+          </div>
           <div class="form-grid">
             <div class="form-row">
-              <label class="form-label" for="taille">Taille des jantes (pouces)</label>
+              <label class="form-label" for="taille">Taille des jantes</label>
               <select class="form-input" id="taille" name="taille">
                 <option value="">Sélectionner</option>
                 <option>15"</option><option>16"</option><option>17"</option><option>18"</option>
@@ -397,22 +412,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
               </select>
             </div>
             <div class="form-row">
-              <label class="form-label" for="marque">Marque du véhicule</label>
-              <input class="form-input" type="text" id="marque" name="marque" placeholder="ex: BMW, Audi, Renault…" />
+              <label class="form-label" for="finition">Finition actuelle</label>
+              <select class="form-input" id="finition" name="finition">
+                <option value="">Sélectionner</option>
+                <option>Noir mat</option><option>Noir brillant</option><option>Argent</option>
+                <option>Gris anthracite</option><option>Poli diamant</option><option>Bronze</option>
+                <option>Or / Champagne</option><option>Bi-ton</option><option>Autre couleur</option><option>Je ne sais pas</option>
+              </select>
             </div>
           </div>
           <div class="form-row">
-            <label class="form-label" for="modele">Modèle (optionnel)</label>
-            <input class="form-input" type="text" id="modele" name="modele" placeholder="ex: M3 Compétition, Q7, 911 Carrera…" />
-          </div>
-          <div class="form-row">
-            <label class="form-label" for="finition">Finition actuelle des jantes</label>
-            <select class="form-input" id="finition" name="finition">
-              <option value="">Sélectionner</option>
-              <option>Noir mat</option><option>Noir brillant</option><option>Argent</option>
-              <option>Gris anthracite</option><option>Poli diamant</option><option>Bronze</option>
-              <option>Or / Champagne</option><option>Bi-ton</option><option>Autre couleur</option><option>Je ne sais pas</option>
-            </select>
+            <label class="form-label" for="description">Précisions <span class="devis-hint">— optionnel</span></label>
+            <textarea class="form-input" id="description" name="description" rows="3" placeholder="Tout ce qui peut nous aider à établir votre devis…"></textarea>
           </div>
 
           <div class="devis-nav">
@@ -424,11 +435,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           </div>
         </div>
 
-        <!-- ÉTAPE 4 : Mode d'intervention & Délai -->
-        <div class="devis-step" data-step="4">
-          <p class="devis-step__count">Étape 4 / 6</p>
-          <h2 class="devis-step__title">Intervention<br /><em>&amp; délai</em></h2>
-          <p class="devis-step__sub">Comment souhaitez-vous qu'on intervienne ?</p>
+        <!-- ÉTAPE 3 : Intervention & contact -->
+        <div class="devis-step" data-step="3">
+          <p class="devis-step__count">Étape 3 / 3</p>
+          <h2 class="devis-step__title">Intervention<br /><em>&amp; contact</em></h2>
+          <p class="devis-step__sub">Dernière étape : où et quand, puis comment vous joindre.</p>
 
           <div class="form-row">
             <label class="form-label">Mode d'intervention</label>
@@ -444,7 +455,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
           </div>
 
-          <!-- Conditions domicile — visible uniquement si sélectionné -->
           <div class="domicile-info" id="domicile-info">
             <p class="domicile-info__title">Conditions pour l'intervention à domicile</p>
             <ul class="domicile-info__list">
@@ -455,7 +465,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <p class="domicile-info__warning">Non disponible en appartement ou parking souterrain.</p>
           </div>
 
-          <!-- Conditions atelier — visible uniquement si sélectionné -->
           <div class="domicile-info" id="atelier-info">
             <p class="domicile-info__title">Conditions pour l'intervention en atelier</p>
             <ul class="domicile-info__list">
@@ -466,7 +475,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <p class="domicile-info__warning">Dépôt tardif = prise en charge décalée. Merci de votre ponctualité.</p>
           </div>
 
-          <div class="form-row mt-2">
+          <div class="form-row">
             <label class="form-label">Délai souhaité</label>
             <div class="choices-grid">
               <button type="button" class="choice-btn" data-group="delai">Urgent (48h)</button>
@@ -476,81 +485,36 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
           </div>
 
-          <div class="form-row mt-2">
+          <div class="form-row">
             <label class="form-label" for="adresse">Ville / Code postal</label>
             <input class="form-input" type="text" id="adresse" name="adresse" placeholder="ex: Lyon, 69000" />
           </div>
 
-          <div class="devis-nav">
-            <button type="button" class="btn btn-ghost" data-prev>← Retour</button>
-            <button type="button" class="btn btn-outline" data-next>
-              <span>Continuer</span>
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- ÉTAPE 5 : Photos -->
-        <div class="devis-step" data-step="5">
-          <p class="devis-step__count">Étape 5 / 6</p>
-          <h2 class="devis-step__title">Photos<br /><em>de vos jantes</em></h2>
-          <p class="devis-step__sub">Obligatoire — sans photo il nous est impossible d'établir un devis précis.</p>
-
-          <div class="upload-area" id="upload-area">
-            <label class="upload-drop" for="photos" id="upload-drop">
-              <input type="file" id="photos" name="photos" accept="image/*,video/*" multiple />
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-              <strong id="upload-label-text">Ajouter des photos *</strong>
-              <span>Appuyez ou glissez vos fichiers ici</span>
-              <small>JPG, PNG, vidéo — Max 10 Mo par fichier</small>
-            </label>
-            <div class="upload-previews" id="upload-previews"></div>
-          </div>
-          <p id="photos-error" style="display:none;font-size:0.78rem;color:rgba(255,100,100,0.85);margin-top:0.75rem;">Merci d'ajouter au moins une photo de vos jantes.</p>
-
-          <div class="form-row mt-2">
-            <label class="form-label" for="description">Description du problème (optionnel)</label>
-            <textarea class="form-input" id="description" name="description" rows="4" placeholder="Précisez tout ce qui pourrait nous aider à établir votre devis…"></textarea>
-          </div>
-
-          <div class="devis-nav">
-            <button type="button" class="btn btn-ghost" data-prev>← Retour</button>
-            <button type="button" class="btn btn-outline" data-next>
-              <span>Continuer</span>
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- ÉTAPE 6 : Coordonnées -->
-        <div class="devis-step" data-step="6">
-          <p class="devis-step__count">Étape 6 / 6</p>
-          <h2 class="devis-step__title">Vos<br /><em>coordonnées</em></h2>
-          <p class="devis-step__sub">Pour vous envoyer votre devis.</p>
+          <div class="devis-sep"></div>
 
           <div class="form-grid">
             <div class="form-row">
               <label class="form-label" for="prenom">Prénom *</label>
-              <input class="form-input" type="text" id="prenom" name="prenom" placeholder="Votre prénom" />
+              <input class="form-input" type="text" id="prenom" name="prenom" placeholder="Votre prénom" autocomplete="given-name" />
             </div>
             <div class="form-row">
               <label class="form-label" for="nom">Nom *</label>
-              <input class="form-input" type="text" id="nom" name="nom" placeholder="Votre nom" />
+              <input class="form-input" type="text" id="nom" name="nom" placeholder="Votre nom" autocomplete="family-name" />
             </div>
           </div>
           <div class="form-row">
             <label class="form-label" for="email">Email *</label>
-            <input class="form-input" type="text" id="email" name="email" placeholder="votre@email.fr" />
-            <p id="email-error" style="display:none;font-size:0.78rem;color:rgba(255,100,100,0.85);margin-top:0.5rem;">Un email valide est requis.</p>
+            <input class="form-input" type="text" id="email" name="email" placeholder="votre@email.fr" autocomplete="email" inputmode="email" />
+            <p id="email-error" class="devis-error">Un email valide est requis.</p>
           </div>
           <div class="form-row">
             <label class="form-label" for="tel">Téléphone *</label>
-            <input class="form-input" type="text" id="tel" name="tel" placeholder="06 61 45 35 27" />
-            <p id="tel-error" style="display:none;font-size:0.78rem;color:rgba(255,100,100,0.85);margin-top:0.5rem;">Un numéro de téléphone est requis.</p>
+            <input class="form-input" type="text" id="tel" name="tel" placeholder="06 61 45 35 27" autocomplete="tel" inputmode="tel" />
+            <p id="tel-error" class="devis-error">Un numéro de téléphone est requis.</p>
           </div>
           <div class="form-row" id="adresse-row" style="display:none">
             <label class="form-label" for="adresse-client">Adresse d'intervention *</label>
-            <input class="form-input" type="text" id="adresse-client" name="adresse" placeholder="Ex: 12 rue de la Paix, 69003 Lyon" />
+            <input class="form-input" type="text" id="adresse-client" name="adresse" placeholder="Ex: 12 rue de la Paix, 69003 Lyon" autocomplete="street-address" />
           </div>
 
           <!-- Honeypot anti-spam — champ caché, ne pas remplir -->
@@ -578,7 +542,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </main>
 </div>
 
-<script src="assets/js/main.js?v=10"></script>
+<script src="assets/js/main.js?v=11"></script>
 <a href="https://wa.me/33661453527" class="whatsapp-float" target="_blank" rel="noopener" aria-label="Contacter sur WhatsApp">
   <span class="whatsapp-float__label">Envoyer un message</span>
   <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.12 1.531 5.849L.057 23.571a.75.75 0 0 0 .921.921l5.668-1.485A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.713 9.713 0 0 1-4.953-1.354l-.355-.213-3.664.961.977-3.572-.232-.368A9.712 9.712 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>

@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    (function () {
+      var ok = false;
+      try { var c = JSON.parse(localStorage.getItem('reynov_consent') || 'null'); ok = !!(c && c.v === 'granted' && Date.now() - c.t < 15552000000); } catch (e) {}
+      var s = ok ? 'granted' : 'denied';
+      gtag('consent', 'default', { ad_storage: s, ad_user_data: s, ad_personalization: s, analytics_storage: s, wait_for_update: 500 });
+    })();
+  </script>
   <!-- Google Tag Manager -->
   <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
   new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -57,7 +67,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preload" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" /></noscript>
-  <link rel="stylesheet" href="assets/css/style.css?v=2" />
+  <link rel="stylesheet" href="assets/css/style.css?v=4" />
   <style>
     /* ═══════════════════════════════════════════════════════════
        HERO — améliorations conversion & premium
@@ -69,7 +79,7 @@
     .hero__eyebrow { margin-bottom: 1rem; }
     .hero__title {
       font-family: 'Cormorant Garamond', Georgia, serif;
-      font-size: clamp(1.8rem, 4.7vw, 4.5rem);
+      font-size: var(--h1-size);
       font-weight: 300;
       line-height: 1.06;
       letter-spacing: -0.015em;
@@ -582,6 +592,8 @@
     ]
   }
   </script>
+  <script src="/assets/js/consent.js?v=1" defer></script>
+  <script src="/assets/js/track.js?v=1" defer></script>
 </head>
 <body class="loading">
 
@@ -729,9 +741,9 @@
 <!-- AVANT / APRÈS ─────────────────────────────────────── -->
 <style>
   .ba-section { padding-block: 0; border-bottom: 1px solid rgba(255,255,255,0.07); }
-  .ba-header { display:flex; align-items:flex-end; justify-content:space-between; padding: clamp(2.5rem,5vw,4rem) clamp(1.5rem,5vw,4rem) clamp(1.5rem,3vw,2.5rem); }
+  .ba-header { display:flex; align-items:flex-end; justify-content:space-between; padding: clamp(2.5rem,5vw,4rem) var(--edge) clamp(1.5rem,3vw,2.5rem); }
   .ba-header__left { display:flex; flex-direction:column; gap:0.4rem; }
-  .ba-wrapper { max-width:1200px; margin:0 auto; padding:0 clamp(1.5rem,4vw,4rem) clamp(2rem,4vw,3.5rem); }
+  .ba-wrapper { max-width:var(--max-w); margin:0 auto; padding:0 var(--gutter) clamp(2rem,4vw,3.5rem); }
   .ba-showcase { position:relative; border:1px solid rgba(255,255,255,0.1); overflow:hidden; border-radius:10px; }
   .ba-slides { position:relative; width:100%; aspect-ratio:43/20; overflow:hidden; background:var(--grey-900); }
   @media(max-width:768px) { .ba-slides { aspect-ratio:16/9; } }
@@ -837,8 +849,8 @@
   </div>
 
   <!-- Titre et contenu — en dessous des photos -->
-  <div style="background:var(--black);padding:clamp(3rem,6vw,5rem) clamp(1.5rem,5vw,5rem);" data-reveal>
-    <div style="max-width:var(--max-w,1280px);margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:clamp(3rem,7vw,7rem);align-items:center;">
+  <div style="background:var(--black);padding:clamp(3rem,6vw,5rem) 0;" data-reveal>
+    <div style="max-width:var(--max-w,1400px);margin:0 auto;padding-inline:var(--gutter);display:grid;grid-template-columns:1fr 1fr;gap:clamp(3rem,7vw,7rem);align-items:center;">
       <div>
         <p class="label mb-2">Notre atout</p>
         <h2 class="h2">Le service<br /><em>mobile</em></h2>
@@ -1160,47 +1172,6 @@
 </section>
 
 <!-- ⑨ AVIS GOOGLE ──────────────────────────────────────── -->
-<style>
-  .sat { padding:clamp(4.5rem,9vw,8rem) 0; background:var(--black); }
-  .sat__head { text-align:center; margin-bottom:clamp(2.5rem,5vw,4.5rem); }
-  .sat__score { display:flex; align-items:center; justify-content:center; gap:clamp(1.5rem,4vw,3.5rem); margin-bottom:clamp(3rem,6vw,5rem); }
-  .sat__big { display:flex; align-items:baseline; gap:.45rem; font-family:var(--font-display); }
-  .sat__num { font-size:clamp(4.5rem,10vw,8rem); line-height:.9; font-weight:300; letter-spacing:-0.045em; font-variant-numeric:tabular-nums; }
-  .sat__out { font-size:clamp(1.3rem,2.4vw,2rem); font-weight:300; color:rgba(248,248,246,.35); }
-  .sat__rule { width:1px; align-self:stretch; min-height:64px; background:rgba(248,248,246,.16); }
-  .sat__side { display:flex; flex-direction:column; gap:1rem; }
-  .sat__stars { display:flex; gap:.55rem; }
-  .sat__star { width:clamp(20px,2.3vw,27px); height:auto; fill:rgba(248,248,246,0); stroke:rgba(248,248,246,.32); stroke-width:1; stroke-linejoin:round; }
-  .sat__cap { font-size:.68rem; letter-spacing:.18em; text-transform:uppercase; color:rgba(248,248,246,.5); line-height:1.7; }
-  .sat__cap strong { color:var(--white); font-weight:500; }
-  .sat__score.is-live .sat__star { animation:satStarOn .55s cubic-bezier(.22,.61,.36,1) calc(var(--i) * .5s + .3s) both; }
-  @keyframes satStarOn { from { fill:rgba(248,248,246,0); stroke:rgba(248,248,246,.32); } to { fill:#f8f8f6; stroke:#f8f8f6; } }
-  .sat__stats { display:grid; grid-template-columns:repeat(3,1fr); max-width:900px; margin:0 auto clamp(3rem,6vw,5rem); border-top:1px solid rgba(248,248,246,.12); border-bottom:1px solid rgba(248,248,246,.12); }
-  .sat__stat { padding:clamp(1.5rem,3vw,2.4rem) 1rem; text-align:center; border-right:1px solid rgba(248,248,246,.1); }
-  .sat__stat:last-child { border-right:none; }
-  .sat__stat-val { display:block; font-family:var(--font-display); font-size:clamp(2rem,4.2vw,3.3rem); font-weight:300; line-height:1; letter-spacing:-0.02em; font-variant-numeric:tabular-nums; }
-  .sat__stat-label { display:block; margin-top:.7rem; font-size:.62rem; letter-spacing:.18em; text-transform:uppercase; color:rgba(248,248,246,.45); }
-  .sat__cards { display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(1rem,2vw,1.5rem); }
-  .sat__card { background:var(--black-satin); border:1px solid rgba(248,248,246,.09); border-radius:6px; padding:clamp(1.5rem,2.6vw,2.2rem); display:flex; flex-direction:column; gap:1.3rem; opacity:0; transform:translateY(18px); transition:border-color .4s; }
-  .sat__cards.is-live .sat__card { animation:satCardIn .9s cubic-bezier(.22,.61,.36,1) calc(var(--k) * .14s) forwards; }
-  @keyframes satCardIn { to { opacity:1; transform:none; } }
-  .sat__card:hover { border-color:rgba(248,248,246,.28); }
-  .sat__card-stars { display:flex; gap:5px; }
-  .sat__mini { width:13px; height:13px; fill:rgba(248,248,246,0); stroke:rgba(248,248,246,.3); stroke-width:1.1; stroke-linejoin:round; }
-  .sat__cards.is-live .sat__mini { animation:satStarOn .4s ease-out calc(var(--k) * .14s + var(--i) * .1s + .4s) both; }
-  .sat__quote { font-family:var(--font-display); font-size:clamp(1.05rem,1.45vw,1.22rem); line-height:1.6; font-style:italic; font-weight:300; color:rgba(248,248,246,.88); flex:1; }
-  .sat__author { display:flex; align-items:center; gap:.85rem; padding-top:1.1rem; border-top:1px solid rgba(248,248,246,.08); }
-  .sat__avatar { width:34px; height:34px; border-radius:50%; border:1px solid rgba(248,248,246,.22); display:flex; align-items:center; justify-content:center; font-size:.78rem; font-weight:500; flex-shrink:0; }
-  .sat__name { font-size:.85rem; font-weight:500; }
-  .sat__meta { font-size:.7rem; color:rgba(248,248,246,.42); letter-spacing:.04em; }
-  .sat__links { display:flex; justify-content:center; flex-wrap:wrap; gap:1rem; margin-top:clamp(2.25rem,4vw,3.25rem); }
-  @media (max-width:860px) { .sat__cards { grid-template-columns:1fr; } .sat__stat { padding:1.1rem .35rem; } .sat__stat-val { font-size:clamp(1.45rem,7vw,2rem); } .sat__stat-label { font-size:.54rem; letter-spacing:.1em; } }
-  @media (max-width:640px) { .sat__score { flex-direction:column; gap:1.4rem; } .sat__rule { width:56px; height:1px; min-height:0; align-self:center; } .sat__side { align-items:center; text-align:center; } }
-  @media (prefers-reduced-motion:reduce) {
-    .sat__star, .sat__mini { fill:#f8f8f6; stroke:#f8f8f6; } .sat__card { opacity:1; transform:none; }
-    .sat__score.is-live .sat__star, .sat__cards.is-live .sat__mini, .sat__cards.is-live .sat__card { animation:none; }
-  }
-</style>
 <noscript><style>.sat__star,.sat__mini{fill:#f8f8f6;stroke:#f8f8f6}.sat__card{opacity:1;transform:none}</style></noscript>
 <section class="sat border-bottom" id="avis" aria-label="Avis clients REYNOV">
   <div class="container">
@@ -1219,10 +1190,12 @@
     </div>
 
     <div class="sat__stats">
+      <div class="sat__stat"><span class="sat__stat-val" data-sat-count="1000" data-sat-pre="+">+1&nbsp;000</span><span class="sat__stat-label">Clients satisfaits</span></div>
       <div class="sat__stat"><span class="sat__stat-val" data-sat-count="1200" data-sat-pre="+">+1&nbsp;200</span><span class="sat__stat-label">Jantes rénovées</span></div>
-      <div class="sat__stat"><span class="sat__stat-val" data-sat-count="54">54</span><span class="sat__stat-label">Avis Google vérifiés</span></div>
+      <div class="sat__stat"><span class="sat__stat-val" data-sat-count="20">20</span><span class="sat__stat-label">Garages &amp; concessions partenaires</span></div>
       <div class="sat__stat"><span class="sat__stat-val" data-sat-count="30" data-sat-suf="&nbsp;j">30&nbsp;j</span><span class="sat__stat-label">Garantie sur chaque prestation</span></div>
     </div>
+    <p class="sat__partners"><span>Parmi eux</span><b>Volkswagen</b><i></i><b>Audi</b><i></i><b>Mercedes</b></p>
 
     <div class="sat__cards">
       <article class="sat__card" style="--k:0">
@@ -1248,36 +1221,7 @@
     </div>
   </div>
 </section>
-<script>
-(function () {
-  var sec = document.querySelector('.sat'); if (!sec) return;
-  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  function fmt(n, dec) { return n.toLocaleString('fr-FR', { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
-  function count(el) {
-    var target = parseFloat(el.getAttribute('data-sat-count')), dec = parseInt(el.getAttribute('data-sat-dec') || '0', 10);
-    var dur = parseInt(el.getAttribute('data-sat-dur') || '1800', 10), pre = el.getAttribute('data-sat-pre') || '';
-    var suf = (el.getAttribute('data-sat-suf') || '').replace(/&nbsp;/g, ' '), t0 = null;
-    el.textContent = pre + fmt(0, dec) + suf;
-    function step(ts) {
-      if (t0 === null) t0 = ts;
-      var p = Math.min((ts - t0) / dur, 1), e = dur > 2000 ? p : 1 - Math.pow(1 - p, 3);
-      el.textContent = pre + fmt(target * e, dec) + suf;
-      if (p < 1) requestAnimationFrame(step);
-    }
-    requestAnimationFrame(step);
-  }
-  function watch(node, opts, fn) {
-    if (!node) return;
-    if (!('IntersectionObserver' in window) || reduce) { node.classList.add('is-live'); return; }
-    var io = new IntersectionObserver(function (en) { if (en[0].isIntersecting) { node.classList.add('is-live'); fn && fn(); io.disconnect(); } }, opts);
-    io.observe(node);
-  }
-  var score = sec.querySelector('.sat__score'), stats = sec.querySelector('.sat__stats'), cards = sec.querySelector('.sat__cards');
-  watch(score, { threshold: 0.9 }, function () { count(score.querySelector('[data-sat-count]')); });
-  watch(stats, { threshold: 0.7 }, function () { stats.querySelectorAll('[data-sat-count]').forEach(count); });
-  watch(cards, { threshold: 0.15 });
-})();
-</script>
+<script src="assets/js/satisfaction.js?v=1" defer></script>
 
 <!-- ⑩ FAQ ────────────────────────────────────────────────── -->
 <section class="section border-bottom">
@@ -1357,7 +1301,7 @@
           <img src="assets/images/logo.png" alt="REYNOV" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" />
           <div class="footer__logo-text" style="display:none">REYNOV</div>
         </div>
-        <p class="footer__tagline">Rénovation et réparation de jantes premium en Rhône-Alpes. Service mobile à domicile : Lyon — dep. 69, 42, 38, 01, 74.</p>
+        <p class="footer__tagline">Rénovation et réparation de jantes premium en Rhône-Alpes. Service mobile à domicile : Lyon — dép. 69, 42, 38, 01, 74.</p>
       </div>
       <div>
         <p class="footer__col-title">Prestations</p>
@@ -1383,9 +1327,10 @@
       <div>
         <p class="footer__col-title">Contact</p>
         <div class="footer__links">
-          <span class="footer__link">Rhône-Alpes · Ain · Haute-Savoie · Ain (01)</span>
+          <span class="footer__link">Lyon · Ain · Isère · Loire · Haute-Savoie</span>
           <a href="tel:+33661453527" class="footer__link">06 61 45 35 27</a>
-          <a href="mailto:reynov.lyon@gmail.com" class="footer__link">reynov.lyon@gmail.com</a><span class="footer__link">47 chemin du Pras, 69350 La Mulatière</span>
+          <a href="mailto:reynov.lyon@gmail.com" class="footer__link">reynov.lyon@gmail.com</a>
+          <span class="footer__link">47 chemin du Pras, 69350 La Mulatière</span>
           <a href="contact.html" class="footer__link">Formulaire de contact</a>
         </div>
       </div>
@@ -1405,7 +1350,7 @@
   </div>
 </footer>
 
-<script src="assets/js/main.js?v=10"></script>
+<script src="assets/js/main.js?v=11"></script>
 
 <script>
   (function () {

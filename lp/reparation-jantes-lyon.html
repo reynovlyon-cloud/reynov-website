@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    (function () {
+      var ok = false;
+      try { var c = JSON.parse(localStorage.getItem('reynov_consent') || 'null'); ok = !!(c && c.v === 'granted' && Date.now() - c.t < 15552000000); } catch (e) {}
+      var s = ok ? 'granted' : 'denied';
+      gtag('consent', 'default', { ad_storage: s, ad_user_data: s, ad_personalization: s, analytics_storage: s, wait_for_update: 500 });
+    })();
+  </script>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18189889040"></script>
   <script>
@@ -279,6 +289,8 @@
       .cta-section__btns { flex-direction: column; align-items: center; }
     }
   </style>
+  <script src="/assets/js/consent.js?v=1" defer></script>
+  <script src="/assets/js/track.js?v=1" defer></script>
 </head>
 <body>
 
@@ -514,8 +526,8 @@ document.getElementById('lp-form').addEventListener('submit', function(e) {
   const prenom = document.getElementById('lp-prenom').value.trim();
   const tel    = document.getElementById('lp-tel').value.trim();
   if (!prenom || !tel) {
-    if (!prenom) document.getElementById('lp-prenom').style.borderColor = 'rgba(255,100,100,0.5)';
-    if (!tel)    document.getElementById('lp-tel').style.borderColor    = 'rgba(255,100,100,0.5)';
+    if (!prenom) document.getElementById('lp-prenom').style.borderColor = 'rgba(248,248,246,0.7)';
+    if (!tel)    document.getElementById('lp-tel').style.borderColor    = 'rgba(248,248,246,0.7)';
     return;
   }
   const btn = document.getElementById('lp-submit');
