@@ -20,8 +20,8 @@ app.use(helmet({
       scriptSrc:   ["'self'", "'unsafe-inline'", 'https://www.google-analytics.com', 'https://www.googletagmanager.com', 'https://googleads.g.doubleclick.net', 'https://www.googleadservices.com'],       // inline scripts dans les HTML
       // Directive distincte requise par le diagnostic Google Ads (script-src-elem prime sur script-src pour les balises <script>)
       scriptSrcElem: ["'self'", "'unsafe-inline'", 'https://www.google-analytics.com', 'https://www.googletagmanager.com', 'https://googleads.g.doubleclick.net', 'https://www.googleadservices.com'],
-      styleSrc:    ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-      fontSrc:     ["'self'", 'https://fonts.gstatic.com'],
+      styleSrc:    ["'self'", "'unsafe-inline'"],
+      fontSrc:     ["'self'"],   // polices hébergées dans /assets/fonts
       imgSrc:      ["'self'", 'data:', 'https:'],
       mediaSrc:    ["'self'"],
       // Domaines nécessaires pour l'envoi effectif des conversions Google Ads (googletagmanager.com ne fait que charger le tag) — liste exacte donnée par le diagnostic "Balise Google" de Google Ads
