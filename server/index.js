@@ -49,8 +49,8 @@ app.use((_req, res, next) => {
 
 // ── Redirection non-www -> www (évite le duplicate content) ──
 app.use((req, res, next) => {
-  if (req.hostname === 'reynovjantes.fr') {
-    return res.redirect(301, `https://www.reynovjantes.fr${req.originalUrl}`);
+  if (req.hostname === 'reynov-jantes.fr') {
+    return res.redirect(301, `https://www.reynov-jantes.fr${req.originalUrl}`);
   }
   next();
 });
@@ -287,7 +287,7 @@ function clientEmail(d) {
   </div>
 
   <div style="background:#f5f5f5;padding:16px 40px;font-size:11px;color:#aaa;">
-    REYNOV · 47 chemin du Pras, 69350 Lyon · <a href="https://reynovjantes.fr" style="color:#aaa;">reynovjantes.fr</a>
+    REYNOV · 47 chemin du Pras, 69350 Lyon · <a href="https://reynov-jantes.fr" style="color:#aaa;">reynov-jantes.fr</a>
   </div>
 </div>
 </body></html>`;

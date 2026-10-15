@@ -6,7 +6,7 @@ Disallow: /admin/
 Disallow: /ads/
 Disallow: /lp/
 
-Sitemap: https://www.reynovjantes.fr/sitemap.xml
+Sitemap: https://www.reynov-jantes.fr/sitemap.xml
 
 # https://llmstxt.org/
-# llms.txt: https://www.reynovjantes.fr/llms.txt
+# llms.txt: https://www.reynov-jantes.fr/llms.txt

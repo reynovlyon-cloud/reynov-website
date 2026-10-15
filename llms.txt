@@ -15,28 +15,28 @@
 
 ## Prestations
 
-- [Rénovation de jantes](https://www.reynovjantes.fr/prestations/renovation.html) : remise en état esthétique complète (décapage, traitement anticorrosion, peinture bi-composant, vernis)
-- [Réparation de jantes](https://www.reynovjantes.fr/prestations/reparation.html) : rayures, frottements de trottoir, chocs de stationnement
-- [Soudure de jantes fissurées](https://www.reynovjantes.fr/prestations/soudure.html) : réparation TIG aluminium pour jantes fissurées ou cassées
-- [Dévoilage](https://www.reynovjantes.fr/prestations/devoilage.html) : redressement de jantes voilées (vibrations, faux-rond)
-- [Personnalisation](https://www.reynovjantes.fr/prestations/personnalisation.html) : changement de couleur, finitions bi-ton, diamantées, mates
-- [Préparation avant vente](https://www.reynovjantes.fr/prestations/preparation-vente.html) : remise à neuf des jantes avant revente du véhicule
-- [Retour de leasing](https://www.reynovjantes.fr/prestations/retour-leasing.html) : remise en état avant restitution LOA/LLD pour éviter les pénalités
-- [Professionnels](https://www.reynovjantes.fr/professionnels.html) : concessions, garages, loueurs, flottes d'entreprise
+- [Rénovation de jantes](https://www.reynov-jantes.fr/prestations/renovation.html) : remise en état esthétique complète (décapage, traitement anticorrosion, peinture bi-composant, vernis)
+- [Réparation de jantes](https://www.reynov-jantes.fr/prestations/reparation.html) : rayures, frottements de trottoir, chocs de stationnement
+- [Soudure de jantes fissurées](https://www.reynov-jantes.fr/prestations/soudure.html) : réparation TIG aluminium pour jantes fissurées ou cassées
+- [Dévoilage](https://www.reynov-jantes.fr/prestations/devoilage.html) : redressement de jantes voilées (vibrations, faux-rond)
+- [Personnalisation](https://www.reynov-jantes.fr/prestations/personnalisation.html) : changement de couleur, finitions bi-ton, diamantées, mates
+- [Préparation avant vente](https://www.reynov-jantes.fr/prestations/preparation-vente.html) : remise à neuf des jantes avant revente du véhicule
+- [Retour de leasing](https://www.reynov-jantes.fr/prestations/retour-leasing.html) : remise en état avant restitution LOA/LLD pour éviter les pénalités
+- [Professionnels](https://www.reynov-jantes.fr/professionnels.html) : concessions, garages, loueurs, flottes d'entreprise
 
 ## Marques traitées
 
-Toutes marques et tous types de jantes aluminium. Pages dédiées : [Audi](https://www.reynovjantes.fr/marques/renovation-jantes-audi.html), [BMW](https://www.reynovjantes.fr/marques/renovation-jantes-bmw.html), [Mercedes](https://www.reynovjantes.fr/marques/renovation-jantes-mercedes.html), [Porsche](https://www.reynovjantes.fr/marques/renovation-jantes-porsche.html), [Tesla](https://www.reynovjantes.fr/marques/renovation-jantes-tesla.html), [BYD](https://www.reynovjantes.fr/marques/renovation-jantes-byd.html), [Xpeng](https://www.reynovjantes.fr/marques/renovation-jantes-xpeng.html), [Volkswagen](https://www.reynovjantes.fr/marques/renovation-jantes-volkswagen.html), [Peugeot](https://www.reynovjantes.fr/marques/renovation-jantes-peugeot.html), [Renault](https://www.reynovjantes.fr/marques/renovation-jantes-renault.html), [Alfa Romeo](https://www.reynovjantes.fr/marques/renovation-jantes-alfa-romeo.html), [Fiat](https://www.reynovjantes.fr/marques/renovation-jantes-fiat.html).
+Toutes marques et tous types de jantes aluminium. Pages dédiées : [Audi](https://www.reynov-jantes.fr/marques/renovation-jantes-audi.html), [BMW](https://www.reynov-jantes.fr/marques/renovation-jantes-bmw.html), [Mercedes](https://www.reynov-jantes.fr/marques/renovation-jantes-mercedes.html), [Porsche](https://www.reynov-jantes.fr/marques/renovation-jantes-porsche.html), [Tesla](https://www.reynov-jantes.fr/marques/renovation-jantes-tesla.html), [BYD](https://www.reynov-jantes.fr/marques/renovation-jantes-byd.html), [Xpeng](https://www.reynov-jantes.fr/marques/renovation-jantes-xpeng.html), [Volkswagen](https://www.reynov-jantes.fr/marques/renovation-jantes-volkswagen.html), [Peugeot](https://www.reynov-jantes.fr/marques/renovation-jantes-peugeot.html), [Renault](https://www.reynov-jantes.fr/marques/renovation-jantes-renault.html), [Alfa Romeo](https://www.reynov-jantes.fr/marques/renovation-jantes-alfa-romeo.html), [Fiat](https://www.reynov-jantes.fr/marques/renovation-jantes-fiat.html).
 
 ## Pages de référence
 
-- [Accueil](https://www.reynovjantes.fr/) — présentation générale et zones d'intervention
-- [FAQ](https://www.reynovjantes.fr/faq.html) — questions fréquentes sur prix, délais, garantie
-- [Réalisations](https://www.reynovjantes.fr/realisations.html) — galerie avant/après
-- [Blog](https://www.reynovjantes.fr/blog/) — guides pratiques (jante rayée, jante voilée, jante fissurée, prix, retour de leasing)
-- [Devis gratuit](https://www.reynovjantes.fr/devis.html) — formulaire de demande de devis sur photos
-- [Contact](https://www.reynovjantes.fr/contact.html)
+- [Accueil](https://www.reynov-jantes.fr/) — présentation générale et zones d'intervention
+- [FAQ](https://www.reynov-jantes.fr/faq.html) — questions fréquentes sur prix, délais, garantie
+- [Réalisations](https://www.reynov-jantes.fr/realisations.html) — galerie avant/après
+- [Blog](https://www.reynov-jantes.fr/blog/) — guides pratiques (jante rayée, jante voilée, jante fissurée, prix, retour de leasing)
+- [Devis gratuit](https://www.reynov-jantes.fr/devis.html) — formulaire de demande de devis sur photos
+- [Contact](https://www.reynov-jantes.fr/contact.html)
 
 ## Notes
 
-Ce fichier suit la convention [llms.txt](https://llmstxt.org/). Il est maintenu à jour manuellement ; en cas d'écart avec le site, le site fait foi. Sitemap complet : https://www.reynovjantes.fr/sitemap.xml
+Ce fichier suit la convention [llms.txt](https://llmstxt.org/). Il est maintenu à jour manuellement ; en cas d'écart avec le site, le site fait foi. Sitemap complet : https://www.reynov-jantes.fr/sitemap.xml
