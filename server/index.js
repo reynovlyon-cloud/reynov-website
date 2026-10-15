@@ -84,6 +84,16 @@ app.use((req, res, next) => {
 });
 
 // ── Static site ───────────────────────────────────────────────
+// express.static serves the whole repo root below, so server code, data
+// and build files must be explicitly blocked before it — they are not
+// meant to be publicly downloadable.
+app.use((req, res, next) => {
+  if (/^\/(server|node_modules|\.git)(\/|$)|^\/(package(-lock)?\.json|\.env.*|\.gitignore)$/i.test(req.path)) {
+    return res.status(404).sendFile(path.join(__dirname, '..', '404.html'));
+  }
+  next();
+});
+
 const ONE_YEAR = 365 * 24 * 60 * 60;
 app.use(express.static(path.join(__dirname, '..'), {
   setHeaders: (res, filePath) => {

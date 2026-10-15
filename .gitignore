@@ -11,3 +11,4 @@ assets/images/*.HEIC
 assets/images/*.MP4
 assets/images/IMG_*
 assets/images/*.PNG
+**/.DS_Store
