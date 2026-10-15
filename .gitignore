@@ -1,5 +1,6 @@
 server/data/*.db
 server/data/*.db-*
+server/data/*.json
 
 # Local Netlify folder
 .netlify
