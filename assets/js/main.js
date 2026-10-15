@@ -8,6 +8,30 @@ document.addEventListener('DOMContentLoaded', () => {
   const heroVid = document.querySelector('.hero__video');
   if (heroVid) heroVid.play().catch(() => {});
 
+  // ── Curseur personnalisé sur galeries / comparateurs ────────
+  (function initCursorHint() {
+    const targets = document.querySelectorAll('[data-cursor-text]');
+    if (!targets.length || window.matchMedia('(hover: none), (pointer: coarse)').matches) return;
+    const hint = document.createElement('div');
+    hint.className = 'cursor-hint';
+    document.body.appendChild(hint);
+    let active = null;
+    document.addEventListener('mousemove', (e) => {
+      hint.style.transform = `translate(${e.clientX}px, ${e.clientY}px) scale(${active ? 1 : 0.6})`;
+    });
+    targets.forEach((el) => {
+      el.addEventListener('mouseenter', () => {
+        hint.textContent = el.getAttribute('data-cursor-text') || '';
+        hint.classList.add('is-active');
+        active = el;
+      });
+      el.addEventListener('mouseleave', () => {
+        hint.classList.remove('is-active');
+        active = null;
+      });
+    });
+  })();
+
   // ── Nav scroll effect ──────────────────────────────────────
   const nav = document.querySelector('.nav');
   if (nav) {

@@ -69,12 +69,12 @@
     .hero__eyebrow { margin-bottom: 1rem; }
     .hero__title {
       font-family: 'Cormorant Garamond', Georgia, serif;
-      font-size: clamp(2.6rem, 5.5vw, 5rem);
+      font-size: clamp(1.8rem, 4.7vw, 4.5rem);
       font-weight: 300;
-      line-height: 1.05;
-      letter-spacing: -0.01em;
+      line-height: 1.06;
+      letter-spacing: -0.015em;
       margin-bottom: 1.8rem;
-      max-width: 640px;
+      max-width: 1000px;
       color: #fff;
     }
     .hero__title em { font-style: italic; color: rgba(255,255,255,0.75); }
@@ -108,7 +108,7 @@
       flex-wrap: wrap;
     }
     .hero__trust-stars {
-      color: #FBBC04;
+      color: #f8f8f6;
       font-size: 0.85rem;
       letter-spacing: 0.12em;
       line-height: 1;
@@ -246,8 +246,8 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 2.5rem 1rem;
+      justify-content: flex-start;
+      padding: 2.75rem 1rem 2.5rem;
       border-right: 1px solid rgba(255,255,255,0.07);
       text-align: center;
       gap: 0.6rem;
@@ -286,8 +286,9 @@
       letter-spacing: 0.14em;
       text-transform: uppercase;
       font-family: 'Inter', sans-serif;
-      max-width: 140px;
+      max-width: 150px;
       line-height: 1.5;
+      min-height: 3em;
     }
 
     /* ═══════════════════════════════════════════════════════════
@@ -303,10 +304,10 @@
     .dual-mode__card {
       position: relative;
       padding: clamp(2.5rem, 5vw, 4.5rem) clamp(2rem, 5vw, 4.5rem);
-      background: #050505;
+      background: var(--black);
       overflow: hidden;
     }
-    .dual-mode__card--atelier { background: #0a0a0a; }
+    .dual-mode__card--atelier { background: var(--black-satin); }
 
     .dual-mode__card::after {
       content: '';
@@ -725,6 +726,87 @@
 })();
 </script>
 
+<!-- AVANT / APRÈS ─────────────────────────────────────── -->
+<style>
+  .ba-section { padding-block: 0; border-bottom: 1px solid rgba(255,255,255,0.07); }
+  .ba-header { display:flex; align-items:flex-end; justify-content:space-between; padding: clamp(2.5rem,5vw,4rem) clamp(1.5rem,5vw,4rem) clamp(1.5rem,3vw,2.5rem); }
+  .ba-header__left { display:flex; flex-direction:column; gap:0.4rem; }
+  .ba-wrapper { max-width:1200px; margin:0 auto; padding:0 clamp(1.5rem,4vw,4rem) clamp(2rem,4vw,3.5rem); }
+  .ba-showcase { position:relative; border:1px solid rgba(255,255,255,0.1); overflow:hidden; border-radius:10px; }
+  .ba-slides { position:relative; width:100%; aspect-ratio:43/20; overflow:hidden; background:var(--grey-900); }
+  @media(max-width:768px) { .ba-slides { aspect-ratio:16/9; } }
+  .ba-slide { position:absolute; inset:0; opacity:0; transition:opacity 0.7s cubic-bezier(0.32,0.72,0,1); pointer-events:none; }
+  .ba-slide.active { opacity:1; pointer-events:auto; }
+  .cs { position:relative; width:100%; height:100%; cursor:col-resize; user-select:none; -webkit-user-select:none; touch-action:none; }
+  .cs-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; }
+  .cs-img--after { clip-path:inset(0 50% 0 0); transition:clip-path 0s; }
+  .cs-line { position:absolute; top:0; bottom:0; left:50%; width:1.5px; background:#fff; transform:translateX(-50%); pointer-events:none; }
+  .cs-knob { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:46px; height:46px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 24px rgba(0,0,0,0.5); }
+  .cs-knob svg { color:#000; flex-shrink:0; }
+  .cs-label { position:absolute; bottom:1.75rem; padding:0.3rem 0.9rem; font-size:0.58rem; font-weight:600; letter-spacing:0.2em; text-transform:uppercase; background:rgba(6,6,6,0.55); backdrop-filter:blur(10px) saturate(1.5); color:rgba(255,255,255,0.75); pointer-events:none; }
+  .cs-label--avant { left:1.75rem; }
+  .cs-label--apres { right:1.75rem; }
+  @media(max-width:480px) { .cs-label { bottom:1rem; } .cs-label--avant { left:1rem; } .cs-label--apres { right:1rem; } }
+  .ba-bar { display:flex; align-items:center; justify-content:space-between; padding: clamp(1.2rem,3vw,2rem) clamp(1.5rem,5vw,4rem); border-top:1px solid rgba(255,255,255,0.07); }
+  .ba-bar__info { display:flex; flex-direction:column; gap:0.3rem; }
+  .ba-bar__cat { font-size:0.58rem; font-weight:600; letter-spacing:0.2em; text-transform:uppercase; color:rgba(255,255,255,0.28); }
+  .ba-bar__title { font-family:var(--font-display); font-size:clamp(1.4rem,3vw,2.2rem); font-weight:300; line-height:1; }
+  .ba-bar__sub { font-size:0.72rem; color:rgba(255,255,255,0.3); letter-spacing:0.06em; margin-top:0.1rem; }
+  .ba-bar__right { display:flex; align-items:center; gap:1.25rem; }
+  .ba-count { font-size:0.7rem; letter-spacing:0.1em; color:rgba(255,255,255,0.25); min-width:3rem; text-align:center; }
+  .ba-count strong { color:rgba(255,255,255,0.75); font-weight:400; }
+  .ba-arrow { width:42px; height:42px; border:1px solid rgba(255,255,255,0.13); background:transparent; color:rgba(255,255,255,0.6); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:border-color .2s, color .2s, background .2s; }
+  .ba-arrow:hover { border-color:rgba(255,255,255,0.45); color:#fff; background:rgba(255,255,255,0.04); }
+  @media(max-width:600px) { .ba-bar { gap:1rem; } .ba-bar__sub { display:none; } }
+</style>
+<section class="ba-section">
+  <div class="ba-header" data-reveal>
+    <div class="ba-header__left">
+      <p class="label">Le résultat parle</p>
+      <h2 class="h2" style="margin:0;">Avant / <em>Après</em></h2>
+    </div>
+    <a href="realisations.html" class="btn btn-outline"><span>Toutes les réalisations</span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+  </div>
+  <div class="ba-wrapper">
+  <div class="ba-showcase" id="ba-showcase">
+    <div class="ba-slides">
+      <div class="ba-slide active"><div class="cs" data-compare>
+        <img class="cs-img cs-img--before" src="assets/images/mercedes-jante-apres.webp" alt="Avant — Mercedes" loading="lazy" />
+        <img class="cs-img cs-img--after"  src="assets/images/mercedes-jante-avant.webp"  alt="Après — Mercedes" loading="lazy" />
+        <div class="cs-line"><div class="cs-knob"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg></div></div>
+        <span class="cs-label cs-label--avant">Avant</span><span class="cs-label cs-label--apres">Après</span>
+      </div></div>
+      <div class="ba-slide"><div class="cs" data-compare>
+        <picture><source srcset="assets/images/macan-avant.webp" type="image/webp"><img class="cs-img cs-img--before" src="assets/images/macan-avant.webp" alt="Avant — Porsche Macan" loading="lazy" /></picture>
+        <picture><source srcset="assets/images/macan-apres.webp" type="image/webp"><img class="cs-img cs-img--after"  src="assets/images/macan-apres.webp"  alt="Après — Porsche Macan" loading="lazy" /></picture>
+        <div class="cs-line"><div class="cs-knob"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg></div></div>
+        <span class="cs-label cs-label--avant">Avant</span><span class="cs-label cs-label--apres">Après</span>
+      </div></div>
+      <div class="ba-slide"><div class="cs" data-compare>
+        <picture><source srcset="assets/images/kia-apres.webp" type="image/webp"><img class="cs-img cs-img--before" src="assets/images/kia-apres.webp" alt="Avant — Kia Picanto" loading="lazy"/></picture>
+        <picture><source srcset="assets/images/kia-avant.webp" type="image/webp"><img class="cs-img cs-img--after"  src="assets/images/kia-avant.webp"  alt="Après — Kia Picanto" loading="lazy"/></picture>
+        <div class="cs-line"><div class="cs-knob"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg></div></div>
+        <span class="cs-label cs-label--avant">Avant</span><span class="cs-label cs-label--apres">Après</span>
+      </div></div>
+    </div>
+    <div class="ba-bar">
+      <div class="ba-bar__info">
+        <p class="ba-bar__cat" id="ba-cat">Rénovation</p>
+        <p class="ba-bar__title" id="ba-title">Mercedes</p>
+        <p class="ba-bar__sub" id="ba-sub">Rénovation jante alliage</p>
+      </div>
+      <div class="ba-bar__right">
+        <button class="ba-arrow" id="ba-prev" aria-label="Précédent"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 19l-7-7 7-7"/></svg></button>
+        <span class="ba-count"><strong id="ba-cur">01</strong> / <span id="ba-tot">03</span></span>
+        <button class="ba-arrow" id="ba-next" aria-label="Suivant"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+    </div>
+  </div>
+  </div>
+</section>
+
+
+
 <!-- ③ SERVICE MOBILE ────────────────────────────────────── -->
 <section class="border-bottom">
 
@@ -783,7 +865,7 @@
 <style>
   .atelier-grid { display: grid; grid-template-columns: 1fr 1fr; }
   .atelier-img { position: relative; overflow: hidden; min-height: 520px; }
-  .atelier-img img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+  .atelier-img img { width: 100%; height: 100%; object-fit: cover; object-position: center 30%; display: block; }
   .atelier-img__overlay { position: absolute; inset: 0; background: linear-gradient(to right, rgba(0,0,0,0) 60%, rgba(5,5,5,0.9) 100%); pointer-events: none; }
   .atelier-text { background: var(--black); display: flex; align-items: center; padding: clamp(3rem,6vw,5rem) clamp(2rem,5vw,5rem); }
   @media (max-width: 768px) {
@@ -986,7 +1068,7 @@
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,0.06);margin-top:3rem;" data-reveal>
 
       <!-- Rhône (69) -->
-      <div style="background:var(--grey-950,#0a0a0a);padding:2rem 1.5rem;">
+      <div style="background:var(--black-satin);padding:2rem 1.5rem;">
         <p style="font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin:0 0 1rem;">Rhône — 69</p>
         <div style="display:flex;flex-direction:column;gap:0.5rem;">
           <a href="zones/lyon-1.html" style="font-size:0.85rem;color:var(--grey-200);text-decoration:none;display:flex;align-items:center;gap:0.4rem;" class="zone-link"><svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 4h6M4 1l3 3-3 3"/></svg>Lyon 1er</a>
@@ -1016,7 +1098,7 @@
       </div>
 
       <!-- Ain (01) -->
-      <div style="background:var(--grey-950,#0a0a0a);padding:2rem 1.5rem;">
+      <div style="background:var(--black-satin);padding:2rem 1.5rem;">
         <p style="font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin:0 0 1rem;">Ain — 01</p>
         <div style="display:flex;flex-direction:column;gap:0.5rem;">
           <span style="font-size:0.85rem;color:var(--grey-200);">Bourg-en-Bresse</span>
@@ -1034,7 +1116,7 @@
       </div>
 
       <!-- Haute-Savoie (74) -->
-      <div style="background:var(--grey-950,#0a0a0a);padding:2rem 1.5rem;">
+      <div style="background:var(--black-satin);padding:2rem 1.5rem;">
         <p style="font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin:0 0 1rem;">Haute-Savoie — 74</p>
         <div style="display:flex;flex-direction:column;gap:0.5rem;">
           <a href="zones/annecy.html" style="font-size:0.85rem;color:var(--grey-200);text-decoration:none;display:flex;align-items:center;gap:0.4rem;" class="zone-link">
@@ -1051,7 +1133,7 @@
       </div>
 
       <!-- Isère / Loire -->
-      <div style="background:var(--grey-950,#0a0a0a);padding:2rem 1.5rem;">
+      <div style="background:var(--black-satin);padding:2rem 1.5rem;">
         <p style="font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin:0 0 1rem;">Isère & Loire</p>
         <div style="display:flex;flex-direction:column;gap:0.5rem;">
           <a href="zones/isere-38.html" style="font-size:0.85rem;color:var(--grey-200);text-decoration:none;display:flex;align-items:center;gap:0.4rem;" class="zone-link">
@@ -1077,82 +1159,81 @@
   </div>
 </section>
 
-<!-- AVANT / APRÈS ─────────────────────────────────────── -->
-<style>
-  .ba-section { padding-block: 0; border-bottom: 1px solid rgba(255,255,255,0.07); }
-  .ba-header { display:flex; align-items:flex-end; justify-content:space-between; padding: clamp(2.5rem,5vw,4rem) clamp(1.5rem,5vw,4rem) clamp(1.5rem,3vw,2.5rem); }
-  .ba-header__left { display:flex; flex-direction:column; gap:0.4rem; }
-  .ba-wrapper { max-width:1200px; margin:0 auto; padding:0 clamp(1.5rem,4vw,4rem) clamp(2rem,4vw,3.5rem); }
-  .ba-showcase { position:relative; border:1px solid rgba(255,255,255,0.1); overflow:hidden; border-radius:10px; }
-  .ba-slides { position:relative; width:100%; aspect-ratio:43/20; overflow:hidden; background:var(--grey-900); }
-  @media(max-width:768px) { .ba-slides { aspect-ratio:16/9; } }
-  .ba-slide { position:absolute; inset:0; opacity:0; transition:opacity 0.7s cubic-bezier(0.32,0.72,0,1); pointer-events:none; }
-  .ba-slide.active { opacity:1; pointer-events:auto; }
-  .cs { position:relative; width:100%; height:100%; cursor:col-resize; user-select:none; -webkit-user-select:none; touch-action:none; }
-  .cs-img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; }
-  .cs-img--after { clip-path:inset(0 50% 0 0); transition:clip-path 0s; }
-  .cs-line { position:absolute; top:0; bottom:0; left:50%; width:1.5px; background:#fff; transform:translateX(-50%); pointer-events:none; }
-  .cs-knob { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:46px; height:46px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 24px rgba(0,0,0,0.5); }
-  .cs-knob svg { color:#000; flex-shrink:0; }
-  .cs-label { position:absolute; bottom:1.75rem; padding:0.3rem 0.9rem; font-size:0.58rem; font-weight:600; letter-spacing:0.2em; text-transform:uppercase; background:rgba(6,6,6,0.55); backdrop-filter:blur(10px) saturate(1.5); color:rgba(255,255,255,0.75); pointer-events:none; }
-  .cs-label--avant { left:1.75rem; }
-  .cs-label--apres { right:1.75rem; }
-  @media(max-width:480px) { .cs-label { bottom:1rem; } .cs-label--avant { left:1rem; } .cs-label--apres { right:1rem; } }
-  .ba-bar { display:flex; align-items:center; justify-content:space-between; padding: clamp(1.2rem,3vw,2rem) clamp(1.5rem,5vw,4rem); border-top:1px solid rgba(255,255,255,0.07); }
-  .ba-bar__info { display:flex; flex-direction:column; gap:0.3rem; }
-  .ba-bar__cat { font-size:0.58rem; font-weight:600; letter-spacing:0.2em; text-transform:uppercase; color:rgba(255,255,255,0.28); }
-  .ba-bar__title { font-family:var(--font-display); font-size:clamp(1.4rem,3vw,2.2rem); font-weight:300; line-height:1; }
-  .ba-bar__sub { font-size:0.72rem; color:rgba(255,255,255,0.3); letter-spacing:0.06em; margin-top:0.1rem; }
-  .ba-bar__right { display:flex; align-items:center; gap:1.25rem; }
-  .ba-count { font-size:0.7rem; letter-spacing:0.1em; color:rgba(255,255,255,0.25); min-width:3rem; text-align:center; }
-  .ba-count strong { color:rgba(255,255,255,0.75); font-weight:400; }
-  .ba-arrow { width:42px; height:42px; border:1px solid rgba(255,255,255,0.13); background:transparent; color:rgba(255,255,255,0.6); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:border-color .2s, color .2s, background .2s; }
-  .ba-arrow:hover { border-color:rgba(255,255,255,0.45); color:#fff; background:rgba(255,255,255,0.04); }
-  @media(max-width:600px) { .ba-bar { gap:1rem; } .ba-bar__sub { display:none; } }
-</style>
-<section class="ba-section">
-  <div class="ba-header" data-reveal>
-    <div class="ba-header__left">
-      <p class="label">Le résultat parle</p>
-      <h2 class="h2" style="margin:0;">Avant / <em>Après</em></h2>
-    </div>
-    <a href="realisations.html" class="btn btn-outline"><span>Toutes les réalisations</span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
-  </div>
-  <div class="ba-wrapper">
-  <div class="ba-showcase" id="ba-showcase">
-    <div class="ba-slides">
-      <div class="ba-slide active"><div class="cs" data-compare>
-        <img class="cs-img cs-img--before" src="assets/images/mercedes-jante-apres.webp" alt="Avant — Mercedes" loading="lazy" />
-        <img class="cs-img cs-img--after"  src="assets/images/mercedes-jante-avant.webp"  alt="Après — Mercedes" loading="lazy" />
-        <div class="cs-line"><div class="cs-knob"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg></div></div>
-        <span class="cs-label cs-label--avant">Avant</span><span class="cs-label cs-label--apres">Après</span>
-      </div></div>
-      <div class="ba-slide"><div class="cs" data-compare>
-        <picture><source srcset="assets/images/macan-avant.webp" type="image/webp"><img class="cs-img cs-img--before" src="assets/images/macan-avant.webp" alt="Avant — Porsche Macan" loading="lazy" /></picture>
-        <picture><source srcset="assets/images/macan-apres.webp" type="image/webp"><img class="cs-img cs-img--after"  src="assets/images/macan-apres.webp"  alt="Après — Porsche Macan" loading="lazy" /></picture>
-        <div class="cs-line"><div class="cs-knob"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg></div></div>
-        <span class="cs-label cs-label--avant">Avant</span><span class="cs-label cs-label--apres">Après</span>
-      </div></div>
-      <div class="ba-slide"><div class="cs" data-compare>
-        <picture><source srcset="assets/images/kia-apres.webp" type="image/webp"><img class="cs-img cs-img--before" src="assets/images/kia-apres.webp" alt="Avant — Kia Picanto" loading="lazy"/></picture>
-        <picture><source srcset="assets/images/kia-avant.webp" type="image/webp"><img class="cs-img cs-img--after"  src="assets/images/kia-avant.webp"  alt="Après — Kia Picanto" loading="lazy"/></picture>
-        <div class="cs-line"><div class="cs-knob"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg></div></div>
-        <span class="cs-label cs-label--avant">Avant</span><span class="cs-label cs-label--apres">Après</span>
-      </div></div>
-    </div>
-    <div class="ba-bar">
-      <div class="ba-bar__info">
-        <p class="ba-bar__cat" id="ba-cat">Rénovation</p>
-        <p class="ba-bar__title" id="ba-title">Mercedes</p>
-        <p class="ba-bar__sub" id="ba-sub">Rénovation jante alliage</p>
+<!-- ⑨ AVIS GOOGLE ──────────────────────────────────────── -->
+<section class="section border-bottom" data-reveal style="padding-top:clamp(3rem,6vw,5rem);">
+  <div class="container-narrow">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1.5rem;margin-bottom:1.5rem;">
+      <div>
+        <p class="label mb-2">Avis clients</p>
+        <h2 class="h2" style="margin:0;">Ce que disent<br /><em>nos clients</em></h2>
       </div>
-      <div class="ba-bar__right">
-        <button class="ba-arrow" id="ba-prev" aria-label="Précédent"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 19l-7-7 7-7"/></svg></button>
-        <span class="ba-count"><strong id="ba-cur">01</strong> / <span id="ba-tot">03</span></span>
-        <button class="ba-arrow" id="ba-next" aria-label="Suivant"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5l7 7-7 7"/></svg></button>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.5rem;">
+        <div style="display:flex;gap:3px;">
+          <span style="color:#f8f8f6;font-size:1.1rem;">★</span>
+          <span style="color:#f8f8f6;font-size:1.1rem;">★</span>
+          <span style="color:#f8f8f6;font-size:1.1rem;">★</span>
+          <span style="color:#f8f8f6;font-size:1.1rem;">★</span>
+          <span style="color:#f8f8f6;font-size:1.1rem;">★</span>
+        </div>
+        <p style="font-size:0.78rem;color:var(--grey-400);margin:0;">5,0 · 54 avis Google</p>
       </div>
     </div>
-  </div>
+
+    <div style="display:flex;flex-direction:column;gap:0;">
+      <div style="padding:1.25rem 0;border-top:1px solid rgba(255,255,255,0.07);">
+        <div style="display:flex;gap:3px;margin-bottom:1rem;">
+          <span style="color:#f8f8f6;font-size:0.75rem;">★</span><span style="color:#f8f8f6;font-size:0.75rem;">★</span><span style="color:#f8f8f6;font-size:0.75rem;">★</span><span style="color:#f8f8f6;font-size:0.75rem;">★</span><span style="color:#f8f8f6;font-size:0.75rem;">★</span>
+        </div>
+        <p style="font-size:0.95rem;line-height:1.8;color:var(--grey-300);margin:0 0 0.75rem;font-style:italic;">"J'ai beaucoup l'habitude de travailler avec les mêmes prestataires mais le commercial est venu me démarcher, je lui ai fais confiance et je lui referait confiance les yeux fermés. Un travail exceptionnel et de qualité."</p>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:0.78rem;font-weight:600;color:var(--white);flex-shrink:0;">T</div>
+          <div>
+            <p style="font-size:0.82rem;font-weight:500;color:var(--white);margin:0;">Térence Debenoit</p>
+            <p style="font-size:0.72rem;color:var(--grey-500);margin:0;">il y a 3 semaines</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:1.25rem 0;border-top:1px solid rgba(255,255,255,0.07);">
+        <div style="display:flex;gap:3px;margin-bottom:1rem;">
+          <span style="color:#f8f8f6;font-size:0.75rem;">★</span><span style="color:#f8f8f6;font-size:0.75rem;">★</span><span style="color:#f8f8f6;font-size:0.75rem;">★</span><span style="color:#f8f8f6;font-size:0.75rem;">★</span><span style="color:#f8f8f6;font-size:0.75rem;">★</span>
+        </div>
+        <p style="font-size:0.95rem;line-height:1.8;color:var(--grey-300);margin:0 0 0.75rem;font-style:italic;">"Très réactif, suite à la demande de mon devis concernant les jantes de mon Audi A3, ils ont su être à l'écoute, méticuleux, et souriants. Je n'hésiterai pas à les recontacter."</p>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:0.78rem;font-weight:600;color:var(--white);flex-shrink:0;">M</div>
+          <div>
+            <p style="font-size:0.82rem;font-weight:500;color:var(--white);margin:0;">Mael Maussiere</p>
+            <p style="font-size:0.72rem;color:var(--grey-500);margin:0;">il y a 3 semaines · Audi A3</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:1.25rem 0;border-top:1px solid rgba(255,255,255,0.07);border-bottom:1px solid rgba(255,255,255,0.07);">
+        <div style="display:flex;gap:3px;margin-bottom:1rem;">
+          <span style="color:#f8f8f6;font-size:0.75rem;">★</span><span style="color:#f8f8f6;font-size:0.75rem;">★</span><span style="color:#f8f8f6;font-size:0.75rem;">★</span><span style="color:#f8f8f6;font-size:0.75rem;">★</span><span style="color:#f8f8f6;font-size:0.75rem;">★</span>
+        </div>
+        <p style="font-size:0.95rem;line-height:1.8;color:var(--grey-300);margin:0 0 0.75rem;font-style:italic;">"J'ai confié la rénovation des 4 jantes de mon BMW X3 à REYNOV et le résultat est impeccable. Les jantes étaient abîmées avec plusieurs rayures et frottements, et elles sont maintenant comme neuves."</p>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:0.78rem;font-weight:600;color:var(--white);flex-shrink:0;">S</div>
+          <div>
+            <p style="font-size:0.82rem;font-weight:500;color:var(--white);margin:0;">Sandrine Chaume</p>
+            <p style="font-size:0.72rem;color:var(--grey-500);margin:0;">il y a 6 jours · BMW X3</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:1.25rem;display:flex;align-items:center;flex-wrap:wrap;gap:1.5rem;">
+      <a href="https://www.google.com/maps?kgmid=/g/11z6bbgrry" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:0.6rem;font-size:0.82rem;color:var(--grey-400);text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color=''">
+        <svg width="14" height="14" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Voir les 54 avis Google
+        <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+      </a>
+      <a href="avis-clients.html" style="display:inline-flex;align-items:center;gap:0.4rem;font-size:0.82rem;color:var(--grey-400);text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color=''">
+        Tous nos avis clients
+        <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+      </a>
+    </div>
   </div>
 </section>
 
@@ -1202,84 +1283,6 @@
     </div>
     <div style="text-align:center;margin-top:2.5rem;" data-reveal>
       <a href="faq.html" class="btn btn-ghost"><span>Toutes les questions</span><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
-    </div>
-  </div>
-</section>
-
-<!-- ⑨ AVIS GOOGLE ──────────────────────────────────────── -->
-<section class="section border-bottom" data-reveal style="padding-top:clamp(3rem,6vw,5rem);">
-  <div class="container-narrow">
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1.5rem;margin-bottom:1.5rem;">
-      <div>
-        <p class="label mb-2">Avis clients</p>
-        <h2 class="h2" style="margin:0;">Ce que disent<br /><em>nos clients</em></h2>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.5rem;">
-        <div style="display:flex;gap:3px;">
-          <span style="color:#FBBC04;font-size:1.1rem;">★</span>
-          <span style="color:#FBBC04;font-size:1.1rem;">★</span>
-          <span style="color:#FBBC04;font-size:1.1rem;">★</span>
-          <span style="color:#FBBC04;font-size:1.1rem;">★</span>
-          <span style="color:#FBBC04;font-size:1.1rem;">★</span>
-        </div>
-        <p style="font-size:0.78rem;color:var(--grey-400);margin:0;">5,0 · 54 avis Google</p>
-      </div>
-    </div>
-
-    <div style="display:flex;flex-direction:column;gap:0;">
-      <div style="padding:1.25rem 0;border-top:1px solid rgba(255,255,255,0.07);">
-        <div style="display:flex;gap:3px;margin-bottom:1rem;">
-          <span style="color:#FBBC04;font-size:0.75rem;">★</span><span style="color:#FBBC04;font-size:0.75rem;">★</span><span style="color:#FBBC04;font-size:0.75rem;">★</span><span style="color:#FBBC04;font-size:0.75rem;">★</span><span style="color:#FBBC04;font-size:0.75rem;">★</span>
-        </div>
-        <p style="font-size:0.95rem;line-height:1.8;color:var(--grey-300);margin:0 0 0.75rem;font-style:italic;">"J'ai beaucoup l'habitude de travailler avec les mêmes prestataires mais le commercial est venu me démarcher, je lui ai fais confiance et je lui referait confiance les yeux fermés. Un travail exceptionnel et de qualité."</p>
-        <div style="display:flex;align-items:center;gap:0.75rem;">
-          <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:0.78rem;font-weight:600;color:var(--white);flex-shrink:0;">T</div>
-          <div>
-            <p style="font-size:0.82rem;font-weight:500;color:var(--white);margin:0;">Térence Debenoit</p>
-            <p style="font-size:0.72rem;color:var(--grey-500);margin:0;">il y a 3 semaines</p>
-          </div>
-        </div>
-      </div>
-
-      <div style="padding:1.25rem 0;border-top:1px solid rgba(255,255,255,0.07);">
-        <div style="display:flex;gap:3px;margin-bottom:1rem;">
-          <span style="color:#FBBC04;font-size:0.75rem;">★</span><span style="color:#FBBC04;font-size:0.75rem;">★</span><span style="color:#FBBC04;font-size:0.75rem;">★</span><span style="color:#FBBC04;font-size:0.75rem;">★</span><span style="color:#FBBC04;font-size:0.75rem;">★</span>
-        </div>
-        <p style="font-size:0.95rem;line-height:1.8;color:var(--grey-300);margin:0 0 0.75rem;font-style:italic;">"Très réactif, suite à la demande de mon devis concernant les jantes de mon Audi A3, ils ont su être à l'écoute, méticuleux, et souriants. Je n'hésiterai pas à les recontacter."</p>
-        <div style="display:flex;align-items:center;gap:0.75rem;">
-          <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:0.78rem;font-weight:600;color:var(--white);flex-shrink:0;">M</div>
-          <div>
-            <p style="font-size:0.82rem;font-weight:500;color:var(--white);margin:0;">Mael Maussiere</p>
-            <p style="font-size:0.72rem;color:var(--grey-500);margin:0;">il y a 3 semaines · Audi A3</p>
-          </div>
-        </div>
-      </div>
-
-      <div style="padding:1.25rem 0;border-top:1px solid rgba(255,255,255,0.07);border-bottom:1px solid rgba(255,255,255,0.07);">
-        <div style="display:flex;gap:3px;margin-bottom:1rem;">
-          <span style="color:#FBBC04;font-size:0.75rem;">★</span><span style="color:#FBBC04;font-size:0.75rem;">★</span><span style="color:#FBBC04;font-size:0.75rem;">★</span><span style="color:#FBBC04;font-size:0.75rem;">★</span><span style="color:#FBBC04;font-size:0.75rem;">★</span>
-        </div>
-        <p style="font-size:0.95rem;line-height:1.8;color:var(--grey-300);margin:0 0 0.75rem;font-style:italic;">"J'ai confié la rénovation des 4 jantes de mon BMW X3 à REYNOV et le résultat est impeccable. Les jantes étaient abîmées avec plusieurs rayures et frottements, et elles sont maintenant comme neuves."</p>
-        <div style="display:flex;align-items:center;gap:0.75rem;">
-          <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:0.78rem;font-weight:600;color:var(--white);flex-shrink:0;">S</div>
-          <div>
-            <p style="font-size:0.82rem;font-weight:500;color:var(--white);margin:0;">Sandrine Chaume</p>
-            <p style="font-size:0.72rem;color:var(--grey-500);margin:0;">il y a 6 jours · BMW X3</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div style="margin-top:1.25rem;">
-      <a href="https://www.google.com/maps?kgmid=/g/11z6bbgrry" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:0.6rem;font-size:0.82rem;color:var(--grey-400);text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color=''">
-        <svg width="14" height="14" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-        Voir les 54 avis Google
-        <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
-      </a>
-      <a href="avis-clients.html" style="display:inline-flex;align-items:center;gap:0.4rem;font-size:0.82rem;color:var(--grey-400);text-decoration:none;margin-left:1.5rem;transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color=''">
-        Tous nos avis clients
-        <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
-      </a>
     </div>
   </div>
 </section>
@@ -1346,8 +1349,8 @@
       </div>
     </div>
     <div class="footer__social" style="text-align:center;padding:1.2rem 0 0.5rem;border-top:1px solid rgba(255,255,255,0.08);margin-top:1.5rem;">
-      <a href="https://www.instagram.com/reynov.jantes" target="_blank" rel="noopener noreferrer" class="footer__link" style="margin:0 1rem;font-size:0.95rem;">📷 Instagram</a>
-      <a href="https://www.tiktok.com/@reynov.lyon" target="_blank" rel="noopener noreferrer" class="footer__link" style="margin:0 1rem;font-size:0.95rem;">🎵 TikTok</a>
+      <a href="https://www.instagram.com/reynov.jantes" target="_blank" rel="noopener noreferrer" class="footer__link" style="margin:0 1rem;font-size:0.95rem;display:inline-flex;align-items:center;gap:0.5rem;"><svg class="footer__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="0.9" fill="currentColor" stroke="none"/></svg>Instagram</a>
+      <a href="https://www.tiktok.com/@reynov.lyon" target="_blank" rel="noopener noreferrer" class="footer__link" style="margin:0 1rem;font-size:0.95rem;display:inline-flex;align-items:center;gap:0.5rem;"><svg class="footer__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v11.5a3.5 3.5 0 1 1-3.5-3.5"/><path d="M14 3c.4 2.6 2.2 4.4 5 4.6"/></svg>TikTok</a>
     </div>
     <div class="footer__bottom">
       <p class="footer__copy">© 2026 REYNOV — Lyon &amp; Rhône-Alpes. Tous droits réservés.</p>
@@ -1360,7 +1363,7 @@
   </div>
 </footer>
 
-<script src="assets/js/main.js"></script>
+<script src="assets/js/main.js?v=10"></script>
 
 <script>
   (function () {
