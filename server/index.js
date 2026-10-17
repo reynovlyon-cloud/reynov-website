@@ -55,6 +55,16 @@ app.use((req, res, next) => {
   next();
 });
 
+// ── Anciennes URL -> nouvelles (301) ─────────────────────────
+const MOVED = {
+  '/blog/prix-reparation-jante-lyon-2025.html': '/blog/prix-reparation-jante-lyon.html',
+};
+app.use((req, res, next) => {
+  const to = MOVED[req.path];
+  if (to) return res.redirect(301, to);
+  next();
+});
+
 // ── Rate limiting — formulaire devis ─────────────────────────
 const devisLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,   // 1 heure
