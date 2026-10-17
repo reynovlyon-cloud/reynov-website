@@ -356,7 +356,7 @@ async function doLogin() {
     const r = await fetch('/api/crm/stats', { headers: { Authorization: 'Bearer ' + pwd } });
     if (r.ok) {
       TOKEN = pwd;
-      localStorage.setItem('crm_token', pwd);
+      sessionStorage.setItem('crm_token', pwd);
       show('app');
       hide('login-screen');
       initApp();
@@ -371,17 +371,17 @@ async function doLogin() {
 document.getElementById('pwd-input').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
 function doLogout() {
-  TOKEN = ''; localStorage.removeItem('crm_token');
+  TOKEN = ''; sessionStorage.removeItem('crm_token');
   hide('app'); show('login-screen');
   document.getElementById('pwd-input').value = '';
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  const saved = localStorage.getItem('crm_token');
+  const saved = sessionStorage.getItem('crm_token');
   if (!saved) return;
   fetch('/api/crm/stats', { headers: { Authorization: 'Bearer ' + saved } }).then(r => {
     if (r.ok) { TOKEN = saved; show('app'); hide('login-screen'); initApp(); }
-    else localStorage.removeItem('crm_token');
+    else sessionStorage.removeItem('crm_token');
   }).catch(() => {});
 });
 

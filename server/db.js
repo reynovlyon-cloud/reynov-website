@@ -16,9 +16,44 @@ if (fs.existsSync(DB_FILE)) {
   } catch(e) { console.error('CRM load error:', e.message); }
 }
 
+// Écriture atomique : fichier temporaire puis renommage, pour qu'une coupure en plein enregistrement
+// (redéploiement, plantage) ne laisse jamais un crm.json tronqué.
 function save() {
-  fs.writeFileSync(DB_FILE, JSON.stringify(_db));
+  const tmp = DB_FILE + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(_db));
+  fs.renameSync(tmp, DB_FILE);
 }
+
+// Les compteurs de visites s'enregistrent par lots (toutes les 15 s) au lieu d'une écriture disque par page vue.
+let _dirty = false, _timer = null;
+function saveSoon() {
+  _dirty = true;
+  if (_timer) return;
+  _timer = setTimeout(() => {
+    _timer = null;
+    if (!_dirty) return;
+    _dirty = false;
+    try { save(); } catch (e) { console.error('CRM save error:', e.message); }
+  }, 15000);
+}
+function flush() {
+  if (_dirty) { _dirty = false; try { save(); } catch (e) { console.error('CRM flush error:', e.message); } }
+}
+process.on('SIGTERM', () => { flush(); process.exit(0); });
+process.on('SIGINT',  () => { flush(); process.exit(0); });
+
+// Sauvegarde quotidienne (14 jours conservés) à côté de la base
+function backup() {
+  try {
+    if (!fs.existsSync(DB_FILE)) return;
+    const f = path.join(DATA_DIR, `crm-backup-${new Date().toISOString().slice(0, 10)}.json`);
+    if (!fs.existsSync(f)) fs.copyFileSync(DB_FILE, f);
+    const olds = fs.readdirSync(DATA_DIR).filter(n => /^crm-backup-\d{4}-\d{2}-\d{2}\.json$/.test(n)).sort().slice(0, -14);
+    olds.forEach(n => fs.unlinkSync(path.join(DATA_DIR, n)));
+  } catch (e) { console.error('CRM backup error:', e.message); }
+}
+backup();
+setInterval(backup, 24 * 3600 * 1000).unref();
 
 function now() { return new Date().toISOString(); }
 function today() { return new Date().toISOString().slice(0, 10); }
@@ -27,7 +62,7 @@ function today() { return new Date().toISOString().slice(0, 10); }
 function logVisit() {
   const d = today();
   _db.visits[d] = (_db.visits[d] || 0) + 1;
-  save();
+  saveSoon();
 }
 
 function visitsByDay(days = 30) {
@@ -143,7 +178,12 @@ function stats() {
   };
 }
 
+function exportAll() {
+  return { clients: _db.clients, interventions: _db.interventions };
+}
+
 module.exports = {
+  exportAll,
   stats, visitsByDay, logVisit,
   clientsList, clientById, findByEmail,
   createClient, updateClient, deleteClient,

@@ -1,0 +1,41 @@
+name: Surveillance du site
+
+# Vérifie toutes les 30 minutes que le site répond. En cas d'échec, GitHub envoie un e-mail
+# au propriétaire du dépôt (Notifications -> Actions).
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Pages et API répondent
+        run: |
+          check() {
+            for attempt in 1 2 3; do
+              code=$(curl -s -o /tmp/body -w '%{http_code}' --max-time 20 "$1" || echo 000)
+              [ "$code" = "200" ] && return 0
+              sleep 15
+            done
+            echo "::error::$1 répond $code"
+            return 1
+          }
+          check https://www.reynov-jantes.fr/
+          grep -q "REYNOV" /tmp/body || { echo "::error::L'accueil ne contient pas REYNOV"; exit 1; }
+          check https://www.reynov-jantes.fr/devis.html
+          check https://www.reynov-jantes.fr/prestations/renovation.html
+          check https://www.reynov-jantes.fr/api/health
+          check https://www.reynov-jantes.fr/sitemap.xml
+      - name: Certificat HTTPS valide plus de 14 jours
+        run: |
+          end=$(echo | openssl s_client -servername www.reynov-jantes.fr -connect www.reynov-jantes.fr:443 2>/dev/null | openssl x509 -noout -enddate | cut -d= -f2)
+          days=$(( ( $(date -d "$end" +%s) - $(date +%s) ) / 86400 ))
+          echo "Le certificat expire dans $days jours"
+          [ "$days" -gt 14 ] || { echo "::error::Certificat HTTPS proche de l'expiration ($days j)"; exit 1; }
+      - name: Redirections canoniques
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://reynov-jantes.fr/ || echo 000)
+          echo "apex -> $code (attendu : 301 ou 200 selon la redirection OVH)"

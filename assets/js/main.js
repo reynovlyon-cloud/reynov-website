@@ -132,6 +132,7 @@ function animateCount(el) {
 // ── Parcours devis guidé : une étape = une question, l'étape suivante se débloque quand la précédente est remplie ──
 function initDevisForm(form) {
   form.addEventListener('submit', e => e.preventDefault());
+  window.__devisT0 = Date.now();
 
   const MARK = 'rgba(248,248,246,0.7)';
   const steps = Array.from(form.querySelectorAll('.devis-step'));
@@ -313,7 +314,7 @@ function initDevisForm(form) {
       if (hasPhoto()) return true;
       if (!form.dataset.photoWarned) {
         form.dataset.photoWarned = '1';
-        const pe = get('photos-error'); if (pe) pe.style.display = 'block';
+        const pe = get('photos-error'); if (pe) { pe.textContent = 'Une photo nous permet de vous donner un prix précis. Ajoutez-en une, ou continuez sans.'; pe.style.display = 'block'; }
         const drop = get('upload-drop'); if (drop) drop.style.borderColor = MARK;
         const lbl = cur.querySelector('[data-next] span'); if (lbl) lbl.textContent = 'Continuer sans photo';
         return false;
@@ -382,6 +383,13 @@ function initDevisForm(form) {
       }
     });
     uploadInput.addEventListener('change', () => {
+      // Contrôle avant envoi : 8 photos max, 8 Mo chacune, images uniquement
+      const ok = Array.from(uploadInput.files).filter(f => f.type.startsWith('image/') && f.size <= 8 * 1024 * 1024).slice(0, 8);
+      if (ok.length !== uploadInput.files.length) {
+        const dt = new DataTransfer(); ok.forEach(f => dt.items.add(f)); uploadInput.files = dt.files;
+        const pe = document.getElementById('photos-error');
+        if (pe) { pe.textContent = 'Certains fichiers ont été ignorés : images uniquement (JPG, PNG, WebP, HEIC), 8 Mo max chacune, 8 photos max.'; pe.style.display = 'block'; }
+      }
       updateUploadLabel(uploadInput);
       uploadDrop.style.borderColor = '';
       const lbl = form.querySelector('.devis-step[data-step="4"] [data-next] span'); if (lbl) lbl.textContent = 'Continuer';
@@ -434,6 +442,7 @@ function submitForm() {
   });
 
   const fd = new FormData();
+  fd.append('_t', String(window.__devisT0 || ''));
   fd.append('prestation',    (groups.raison   || []).join(', '));
   fd.append('problemes',     (groups.probleme || []).join(', '));
   fd.append('nb_jantes',     (groups.nb       || []).join(''));

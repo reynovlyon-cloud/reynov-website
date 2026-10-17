@@ -4,9 +4,16 @@ const helmet      = require('helmet');
 const rateLimit   = require('express-rate-limit');
 const multer      = require('multer');
 const path        = require('path');
+const crypto      = require('crypto');
 const db          = require('./db');
 
 const app    = express();
+app.disable('x-powered-by');
+// Railway place UN proxy devant l'appli : sans ceci, tous les visiteurs partagent la même IP
+// (limites de débit communes à tout le monde) et req.ip n'est pas fiable.
+// TRUST_PROXY_HOPS = nombre de proxys devant l'appli : 1 (Railway seul) ; 2 si Cloudflare est ajouté devant Railway.
+app.set('trust proxy', Math.max(1, parseInt(process.env.TRUST_PROXY_HOPS, 10) || 1));
+const CANONICAL_HOST = 'www.reynov-jantes.fr';
 const PORT   = parseInt(process.env.PORT) || 3000;
 
 // ── Gzip compression ──────────────────────────────────────────
@@ -31,6 +38,7 @@ app.use(helmet({
       upgradeInsecureRequests: [],
     },
   },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   crossOriginEmbedderPolicy: false,   // évite de casser les fonts
   permittedCrossDomainPolicies: false,
 }));
@@ -43,16 +51,37 @@ app.use((_req, res, next) => {
 
 // ── Permissions-Policy ────────────────────────────────────────
 app.use((_req, res, next) => {
-  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()');
+  next();
+});
+
+// ── Zone d'administration : page jamais indexée ni mise en cache, jamais intégrable dans un cadre.
+// Le CRM utilise des gestionnaires d'événements en ligne (onclick=...) que la politique globale
+// interdit : on ne les autorise QUE sur /admin (l'API reste protégée par mot de passe).
+app.use('/admin', (_req, res, next) => {
+  const csp = res.getHeader('Content-Security-Policy');
+  if (csp) {
+    res.setHeader('Content-Security-Policy', String(csp)
+      .replace("script-src-attr 'none'", "script-src-attr 'unsafe-inline'")
+      .replace("frame-ancestors 'self'", "frame-ancestors 'none'"));
+  }
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
+  next();
+});
+// Pages internes (maquettes, e-mail pro, landing Ads) et API : jamais dans Google
+app.use((req, res, next) => {
+  if (/^\/(ads|lp|api)(\/|$)|^\/email-prospection-pro\.html$/.test(req.path)) {
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+  }
   next();
 });
 
 // ── Redirection non-www -> www (évite le duplicate content) ──
 app.use((req, res, next) => {
-  if (req.hostname === 'reynov-jantes.fr') {
-    return res.redirect(301, `https://www.reynov-jantes.fr${req.originalUrl}`);
-  }
-  next();
+  const host = req.hostname;
+  if (host === CANONICAL_HOST || host === 'localhost' || host === '127.0.0.1' || req.path === '/api/health') return next();
+  return res.redirect(301, `https://${CANONICAL_HOST}${req.originalUrl}`);
 });
 
 // ── Anciennes URL -> nouvelles (301) ─────────────────────────
@@ -65,6 +94,10 @@ app.use((req, res, next) => {
   next();
 });
 
+// ── Rate limiting global de l'API (anti-scraping / abus) ─────
+app.use('/api', rateLimit({ windowMs: 60 * 1000, max: 120, standardHeaders: true, legacyHeaders: false,
+  message: { ok: false, error: 'Trop de requêtes.' } }));
+
 // ── Rate limiting — formulaire devis ─────────────────────────
 const devisLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,   // 1 heure
@@ -74,11 +107,14 @@ const devisLimiter = rateLimit({
   message: { ok: false, error: 'Trop de demandes. Réessayez dans une heure ou appelez le 06 61 45 35 27.' },
 });
 
-// ── Multer — images uniquement, 10 MB max par fichier ────────
+// ── Multer — images uniquement, 8 Mo max par fichier, 8 photos max ──
+// (mémoire limitée : 8 x 8 Mo = 64 Mo au pire, plafonné à 20 Mo au total plus bas)
+const MAX_FILE = 8 * 1024 * 1024;
+const MAX_TOTAL = 20 * 1024 * 1024;
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']);
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024, files: 10 },
+  limits: { fileSize: MAX_FILE, files: 8, fields: 40, fieldSize: 20 * 1024, parts: 60 },
   fileFilter: (_req, file, cb) => {
     cb(null, ALLOWED_MIME.has(file.mimetype));
   },
@@ -104,11 +140,34 @@ app.use((req, res, next) => {
   next();
 });
 
+// Liste blanche : seules ces extensions peuvent être servies (bloque .md, .toml, .lock, .json,
+// scripts, sauvegardes…) même si un fichier de ce type se retrouvait un jour à la racine.
+const PUBLIC_EXT = /\.(html|css|js|webp|jpe?g|png|gif|svg|ico|woff2?|ttf|txt|xml|mp4|webm|webmanifest)$/i;
+app.use((req, res, next) => {
+  const ext = path.extname(req.path);
+  if (ext && !PUBLIC_EXT.test(ext)) return res.status(404).sendFile(path.join(__dirname, '..', '404.html'));
+  next();
+});
+
+// security.txt (RFC 9116) : où signaler une faille
+const SECURITY_TXT = [
+  'Contact: mailto:reynov.lyon@gmail.com',
+  'Expires: 2027-10-18T00:00:00.000Z',
+  'Preferred-Languages: fr, en',
+  'Canonical: https://www.reynov-jantes.fr/.well-known/security.txt',
+].join('\n') + '\n';
+app.get(['/.well-known/security.txt', '/security.txt'], (_req, res) => {
+  res.type('text/plain; charset=utf-8').send(SECURITY_TXT);
+});
+
 const ONE_YEAR = 365 * 24 * 60 * 60;
 app.use(express.static(path.join(__dirname, '..'), {
   setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.html')) {
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    if (filePath.includes(`${path.sep}admin${path.sep}`)) {
+      res.setHeader('Cache-Control', 'no-store');
+    } else if (filePath.endsWith('.html')) {
+      // Revalidation à chaque visite (ETag) : toujours à jour, mais 304 rapide et navigation « retour » instantanée
+      res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
     } else if (/\.(jpg|jpeg|png|gif|webp|svg|ico|woff2?|ttf)$/i.test(filePath)) {
       res.setHeader('Cache-Control', `public, max-age=${ONE_YEAR}, immutable`);
     } else if (/\.(css|js)$/i.test(filePath)) {
@@ -201,9 +260,11 @@ async function sendEmail({ from, to, subject, html, attachments = [] }) {
 
 
 // ── Sanitisation — supprime les balises HTML des champs texte ─
-function sanitize(str) {
+function sanitize(str, { multiline = false } = {}) {
   if (typeof str !== 'string') return '';
-  return str
+  str = str.replace(/\r\n?/g, '\n');
+  str = multiline ? str.replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, ' ') : str.replace(/[\u0000-\u001F\u007F]/g, ' ');
+  return str.trim()
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
@@ -315,14 +376,30 @@ function clientEmail(d) {
 
 // ── CRM — auth middleware ─────────────────────────────────────
 const CRM_PASSWORD = process.env.CRM_PASSWORD;
+if (!CRM_PASSWORD) console.warn('⚠️ CRM_PASSWORD absent : le CRM est verrouillé (aucun accès).');
+else if (CRM_PASSWORD.length < 12) console.warn('⚠️ CRM_PASSWORD trop court : utilisez au moins 12 caractères.');
+function safeEqual(a, b) {
+  const ha = crypto.createHash('sha256').update(String(a)).digest();
+  const hb = crypto.createHash('sha256').update(String(b)).digest();
+  return crypto.timingSafeEqual(ha, hb);
+}
 function crmAuth(req, res, next) {
   const auth = req.headers['authorization'] || '';
   const key  = auth.startsWith('Bearer ') ? auth.slice(7) : req.headers['x-crm-key'] || '';
-  if (!CRM_PASSWORD || key !== CRM_PASSWORD) return res.status(401).json({ ok: false, error: 'Non autorisé' });
+  if (!CRM_PASSWORD || !safeEqual(key, CRM_PASSWORD)) return res.status(401).json({ ok: false, error: 'Non autorisé' });
   next();
 }
+// Anti brute-force : 20 tentatives ratées par 15 min et par IP (les connexions réussies ne comptent pas)
+const crmLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, skipSuccessfulRequests: true,
+  standardHeaders: true, legacyHeaders: false, message: { ok: false, error: 'Trop de tentatives. Réessayez dans 15 minutes.' } });
 
-app.use('/api/crm', express.json(), crmAuth);
+app.use('/api/crm', crmLimiter, express.json({ limit: '100kb' }), crmAuth);
+
+// Export complet (sauvegarde manuelle) : GET /api/crm/export
+app.get('/api/crm/export', (_req, res) => {
+  res.setHeader('Content-Disposition', `attachment; filename="reynov-crm-${new Date().toISOString().slice(0, 10)}.json"`);
+  res.json({ ok: true, exported_at: new Date().toISOString(), data: db.exportAll() });
+});
 
 // GET /api/crm/stats
 app.get('/api/crm/stats', (req, res) => {
@@ -407,25 +484,66 @@ app.get('/api/crm/visits', (req, res) => {
   res.json({ ok: true, data: db.visitsByDay(days) });
 });
 
+// ── Garde-fous du formulaire devis ────────────────────────────
+// Signature réelle du fichier (le type MIME envoyé par le navigateur est falsifiable)
+function sniffImage(buf) {
+  if (!buf || buf.length < 12) return null;
+  if (buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF) return 'image/jpeg';
+  if (buf.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]))) return 'image/png';
+  if (buf.slice(0, 4).toString('latin1') === 'RIFF' && buf.slice(8, 12).toString('latin1') === 'WEBP') return 'image/webp';
+  if (buf.slice(4, 8).toString('latin1') === 'ftyp' && /^(heic|heix|hevc|heim|heis|mif1|msf1)/.test(buf.slice(8, 12).toString('latin1'))) return 'image/heic';
+  return null;
+}
+const emailHits = new Map();   // adresse -> horodatages (24 h)
+function emailBudgetOk(email) {
+  const k = String(email).toLowerCase(), now = Date.now();
+  const hits = (emailHits.get(k) || []).filter(t => now - t < 86400000);
+  if (hits.length >= 3) { emailHits.set(k, hits); return false; }
+  hits.push(now); emailHits.set(k, hits);
+  if (emailHits.size > 5000) for (const [a, h] of emailHits) if (!h.some(t => now - t < 86400000)) emailHits.delete(a);
+  return true;
+}
+let devisDay = '', devisCount = 0;
+function devisBudgetOk() {   // 150 demandes par jour maximum, tous visiteurs confondus
+  const day = new Date().toISOString().slice(0, 10);
+  if (day !== devisDay) { devisDay = day; devisCount = 0; }
+  if (devisCount >= 150) return false;
+  devisCount++; return true;
+}
+
 // ── POST /api/devis ───────────────────────────────────────────
 app.post('/api/devis', devisLimiter, (req, res, next) => {
-  upload.array('photos', 10)(req, res, (err) => {
-    if (err) return res.status(400).json({ ok: false, error: 'Fichier invalide (images uniquement, 10 MB max).' });
+  upload.array('photos', 8)(req, res, (err) => {
+    if (err) {
+      const msg = err.code === 'LIMIT_FILE_SIZE'   ? 'Une photo dépasse 8 Mo. Réduisez-la ou envoyez-la ensuite sur WhatsApp.'
+                : err.code === 'LIMIT_FILE_COUNT' || err.code === 'LIMIT_UNEXPECTED_FILE' ? 'Maximum 8 photos par demande.'
+                : 'Fichier invalide (photos JPG, PNG, WebP ou HEIC uniquement).';
+      return res.status(400).json({ ok: false, error: msg });
+    }
     next();
   });
 }, async (req, res) => {
   try {
-    console.log('📩 Devis reçu depuis', req.ip);
-    const b = req.body;
+    console.log('📩 Devis reçu');
+    const b = req.body || {};
 
     // Honeypot anti-spam
     if (b.website) {
       return res.status(400).json({ ok: false, error: 'Requête invalide.' });
     }
+    // Piège temporel : un humain met plus de 3 s à remplir le parcours (les robots envoient tout de suite)
+    const t0 = Number(b._t);
+    if (t0 && Date.now() - t0 < 3000) {
+      return res.status(400).json({ ok: false, error: 'Requête invalide.' });
+    }
+    // Plafond global (protège le quota d'envoi Gmail et ta boîte contre les inondations)
+    if (!devisBudgetOk()) {
+      return res.status(429).json({ ok: false, error: 'Service momentanément saturé. Appelez le 06 61 45 35 27.' });
+    }
 
     // Validation email basique
     const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!b.email || !emailRe.test(b.email)) {
+    if (!b.email || typeof b.email !== 'string' || b.email.length > 200 || !emailRe.test(b.email)) {
       return res.status(400).json({ ok: false, error: 'Adresse email invalide.' });
     }
     if (!b.prenom || !b.tel) {
@@ -445,20 +563,31 @@ app.post('/api/devis', devisLimiter, (req, res, next) => {
       delai:          sanitize(b.delai),
       adresse:        sanitize(b.adresse),
       adresse_client: sanitize(b.adresse_client),
-      description:    sanitize(b.description),
+      description:    sanitize(b.description, { multiline: true }),
       prenom:         sanitize(b.prenom),
       nom:            sanitize(b.nom),
       email:          b.email.trim().slice(0, 200),
       tel:            sanitize(b.tel),
     };
 
-    console.log('Client:', d.prenom, d.nom, d.email);
+    // Une même adresse ne peut pas recevoir plus de 3 accusés de réception par jour (anti « e-mail bombing » d'un tiers)
+    if (!emailBudgetOk(d.email)) {
+      return res.status(429).json({ ok: false, error: 'Une demande a déjà été reçue pour cette adresse. Appelez-nous au 06 61 45 35 27.' });
+    }
 
-    const attachments = (req.files || []).map(f => ({
-      filename:    f.originalname,
-      content:     f.buffer,
-      contentType: f.mimetype,
-    }));
+    // Photos : vraies images uniquement (signature du fichier), nom de fichier assaini, 20 Mo au total
+    const files = req.files || [];
+    const total = files.reduce((n, f) => n + f.size, 0);
+    if (total > MAX_TOTAL) {
+      return res.status(400).json({ ok: false, error: 'Photos trop lourdes au total (20 Mo max). Envoyez-en moins ou réduisez-les.' });
+    }
+    const attachments = [];
+    for (const f of files) {
+      const type = sniffImage(f.buffer);
+      if (!type) continue;   // fichier déguisé : ignoré
+      const base = path.basename(String(f.originalname || 'photo')).replace(/[^\w.\- ]+/g, '_').slice(0, 60) || 'photo';
+      attachments.push({ filename: base, content: f.buffer, contentType: type });
+    }
 
     console.log(`📎 ${attachments.length} photo(s) jointe(s)`);
 
@@ -514,6 +643,12 @@ app.post('/api/devis', devisLimiter, (req, res, next) => {
 // bidon qui se déclarent toutes "dupliquées" de la page d'accueil.
 app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, '..', '404.html'));
+});
+
+app.use((err, _req, res, next) => {
+  console.error('💥', err && err.message);
+  if (res.headersSent) return next(err);
+  res.status(err && err.status ? err.status : 500).json({ ok: false, error: 'Erreur serveur.' });
 });
 
 process.on('uncaughtException',  err => console.error('💥 uncaughtException:', err.message));
