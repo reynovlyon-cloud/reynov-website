@@ -32,7 +32,12 @@ app.use(helmet({
       imgSrc:      ["'self'", 'data:', 'https:'],
       mediaSrc:    ["'self'"],
       // Domaines nécessaires pour l'envoi effectif des conversions Google Ads (googletagmanager.com ne fait que charger le tag) — liste exacte donnée par le diagnostic "Balise Google" de Google Ads
-      connectSrc:  ["'self'", 'https://www.google-analytics.com', 'https://www.googletagmanager.com', 'https://googleads.g.doubleclick.net', 'https://www.googleadservices.com', 'https://google.com', 'https://www.google.com', 'https://ad.doubleclick.net', 'https://td.doubleclick.net'],
+      connectSrc:  ["'self'",
+        // Google Analytics 4 envoie vers un serveur régional (region1.google-analytics.com pour l'Europe) et
+        // le mode consentement de Google Ads vers pagead2.googlesyndication.com : sans ces domaines, ces mesures étaient bloquées.
+        'https://*.google-analytics.com', 'https://*.analytics.google.com', 'https://*.googletagmanager.com',
+        'https://pagead2.googlesyndication.com', 'https://*.g.doubleclick.net', 'https://ad.doubleclick.net', 'https://td.doubleclick.net',
+        'https://www.googleadservices.com', 'https://google.com', 'https://www.google.com', 'https://www.google.fr'],
       frameSrc:    ['https://googleads.g.doubleclick.net', 'https://td.doubleclick.net'],
       objectSrc:   ["'none'"],
       upgradeInsecureRequests: [],
