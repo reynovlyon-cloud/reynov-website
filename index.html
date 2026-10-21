@@ -1107,59 +1107,102 @@
 </section>
 
 <!-- ⑤b SOLUTIONS : quelle prestation pour quel problème (+ maillage interne) ─────── -->
-<section class="section border-bottom">
-  <div class="container-narrow">
-    <div class="section-intro" data-reveal>
-      <p class="label">Réparation de jantes à Lyon</p>
-      <h2 class="h2 mt-1">Quelle solution<br /><em>pour votre jante ?</em></h2>
+<style>
+  .sol { padding: clamp(4rem,9vw,9rem) 0; }
+  .sol-wrap { display:grid; grid-template-columns: minmax(280px,.8fr) 1.6fr; gap: clamp(2.5rem,6vw,7rem); align-items:start; }
+  .sol-side { position: sticky; top: 7rem; }
+  .sol-side h2 { margin: .8rem 0 1.4rem; }
+  .sol-side p.sol-lead { color: var(--grey-400); line-height:1.8; font-size:.95rem; max-width: 34ch; margin-bottom:2rem; }
+  .sol-cta { display:flex; flex-direction:column; gap:.75rem; max-width: 300px; }
+  .sol-cta .btn { justify-content:center; }
+  .sol-tel { font-size:.78rem; letter-spacing:.14em; text-transform:uppercase; color: var(--grey-400); text-align:center; text-decoration:none; padding:.4rem 0; }
+  .sol-list { border-top:1px solid rgba(248,248,246,.12); }
+  .sol-row { display:grid; grid-template-columns: 3.2rem 1fr auto; gap: 1.2rem; align-items:center; padding: 1.7rem 1rem 1.7rem 0; border-bottom:1px solid rgba(248,248,246,.12); text-decoration:none; color:inherit; position:relative; transition: background .35s, padding .35s, border-color .35s; }
+  .sol-row:hover, .sol-row:focus-visible { background: rgba(248,248,246,.035); padding-left:1rem; border-bottom-color: rgba(248,248,246,.45); outline:none; }
+  .sol-n { font-size:.72rem; letter-spacing:.2em; color: rgba(248,248,246,.35); font-variant-numeric: tabular-nums; }
+  .sol-main { display:flex; flex-direction:column; gap:.45rem; }
+  .sol-t { font-family: var(--font-display); font-size: clamp(1.25rem,2vw,1.7rem); line-height:1.2; color: var(--white); }
+  .sol-d { font-size:.88rem; line-height:1.6; color: var(--grey-400); max-width: 52ch; }
+  .sol-p { display:flex; align-items:baseline; gap:.4rem; white-space:nowrap; }
+  .sol-from { font-size:.62rem; letter-spacing:.2em; text-transform:uppercase; color: var(--grey-400); }
+  .sol-price { font-family: var(--font-display); font-size: clamp(1.6rem,2.6vw,2.2rem); color: var(--white); line-height:1; }
+  .sol-price--quote { font-size:1.15rem; font-style: italic; color: var(--grey-200); }
+  .sol-ht { font-size:.62rem; letter-spacing:.2em; color: var(--grey-400); }
+  .sol-arrow { align-self:center; margin-left:.9rem; opacity:.4; transition: transform .35s, opacity .35s; }
+  .sol-row:hover .sol-arrow { transform: translateX(6px); opacity:1; }
+  .sol-row:hover .sol-t { transform: translateX(2px); }
+  .sol-t { transition: transform .35s; }
+  .sol-more { margin-top: 3.2rem; display:grid; gap:2rem; }
+  .sol-grp { display:grid; grid-template-columns: 9rem 1fr; gap:1rem 2rem; align-items:start; padding-top:1.6rem; border-top:1px solid rgba(248,248,246,.1); }
+  .sol-gl { font-size:.62rem; letter-spacing:.22em; text-transform:uppercase; color: var(--grey-400); padding-top:.7rem; margin:0; }
+  .sol-chips { display:flex; flex-wrap:wrap; gap:.55rem; }
+  .sol-chip { display:inline-block; padding:.55rem 1.05rem; border:1px solid rgba(248,248,246,.2); border-radius:999px; font-size:.74rem; letter-spacing:.08em; color: var(--grey-200); text-decoration:none; transition: background .3s, color .3s, border-color .3s; }
+  .sol-chip:hover, .sol-chip:focus-visible { background: var(--white); color: var(--black); border-color: var(--white); outline:none; }
+  @media (max-width: 900px) {
+    .sol-wrap { grid-template-columns: 1fr; }
+    .sol-side { position: static; }
+    .sol-cta { max-width:none; }
+    .sol-row { grid-template-columns: 2rem 1fr; padding: 1.4rem 0; }
+    .sol-p { grid-column: 2; margin-top:.2rem; }
+    .sol-arrow { margin-left:auto; }
+    .sol-grp { grid-template-columns: 1fr; }
+    .sol-gl { padding-top:0; }
+  }
+</style>
+<section class="sol border-bottom">
+  <div class="container">
+    <div class="sol-wrap">
+      <div class="sol-side" data-reveal>
+        <p class="label">Réparation de jantes à Lyon</p>
+        <h2 class="h2">Quelle solution<br /><em>pour votre jante ?</em></h2>
+        <p class="sol-lead">Choisissez votre situation, ou envoyez simplement deux photos : nous vous disons laquelle convient et combien cela coûte, sous 24 h. Prix de départ par jante.</p>
+        <div class="sol-cta"><a href="devis.html" class="btn btn-primary btn-lg"><span>Envoyer mes photos — devis gratuit</span></a><a href="https://wa.me/33661453527" class="btn btn-outline" target="_blank" rel="noopener"><span>Écrire sur WhatsApp</span></a><a href="tel:+33661453527" class="sol-tel">ou appeler le 06 61 45 35 27</a></div>
+      </div>
+      <div>
+    <div class="sol-list">
+      <a class="sol-row" href="prestations/renovation.html" data-reveal>
+        <span class="sol-n">01</span>
+        <span class="sol-main"><span class="sol-t">Jante rayée, ternie ou écaillée</span><span class="sol-d">Rénovation complète : décapage, primaire, peinture et vernis. À domicile ou en atelier.</span></span>
+        <span class="sol-p"><span class="sol-from">dès</span><span class="sol-price">130&nbsp;€</span><span class="sol-ht">HT</span><svg class="sol-arrow" width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>
+      </a>
+      <a class="sol-row" href="prestations/devoilage.html" data-reveal>
+        <span class="sol-n">02</span>
+        <span class="sol-main"><span class="sol-t">Vibrations au volant, jante voilée</span><span class="sol-d">Dévoilage : redressage à chaud, contrôle de planéité, équilibrage. En atelier.</span></span>
+        <span class="sol-p"><span class="sol-from">dès</span><span class="sol-price">140&nbsp;€</span><span class="sol-ht">HT</span><svg class="sol-arrow" width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>
+      </a>
+      <a class="sol-row" href="prestations/soudure.html" data-reveal>
+        <span class="sol-n">03</span>
+        <span class="sol-main"><span class="sol-t">Jante fissurée, cassée ou éclatée</span><span class="sol-d">Soudure TIG après un diagnostic honnête. En atelier.</span></span>
+        <span class="sol-p"><span class="sol-from">dès</span><span class="sol-price">140&nbsp;€</span><span class="sol-ht">HT</span><svg class="sol-arrow" width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>
+      </a>
+      <a class="sol-row" href="prestations/jante-diamantee.html" data-reveal>
+        <span class="sol-n">04</span>
+        <span class="sol-main"><span class="sol-t">Jante diamantée qui blanchit ou pèle</span><span class="sol-d">Ré-usinage au tour à diamant ou reprise en peinture effet diamant.</span></span>
+        <span class="sol-p"><span class="sol-price sol-price--quote">Sur devis</span><svg class="sol-arrow" width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>
+      </a>
+      <a class="sol-row" href="prestations/personnalisation.html" data-reveal>
+        <span class="sol-n">05</span>
+        <span class="sol-main"><span class="sol-t">Changer la couleur ou la finition</span><span class="sol-d">Bi-ton, brossé, poli diamant, couleur RAL ou teinte carrosserie.</span></span>
+        <span class="sol-p"><span class="sol-price sol-price--quote">Sur devis</span><svg class="sol-arrow" width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>
+      </a>
+      <a class="sol-row" href="prestations/retour-leasing.html" data-reveal>
+        <span class="sol-n">06</span>
+        <span class="sol-main"><span class="sol-t">Véhicule en fin de leasing</span><span class="sol-d">Remise en état avant restitution pour éviter les pénalités.</span></span>
+        <span class="sol-p"><span class="sol-price sol-price--quote">Sur devis</span><svg class="sol-arrow" width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>
+      </a>
+      <a class="sol-row" href="prestations/preparation-vente.html" data-reveal>
+        <span class="sol-n">07</span>
+        <span class="sol-main"><span class="sol-t">Vente de votre véhicule</span><span class="sol-d">Rénovation ciblée des jantes qui se voient sur l'annonce.</span></span>
+        <span class="sol-p"><span class="sol-from">dès</span><span class="sol-price">130&nbsp;€</span><span class="sol-ht">HT</span><svg class="sol-arrow" width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>
+      </a>
     </div>
-    <div data-reveal>
-      <div style="margin-top:2rem;border-bottom:1px solid rgba(248,248,246,.1);">
-      <div style="display:flex;flex-wrap:wrap;gap:.5rem 2rem;padding:1.25rem 0;border-top:1px solid rgba(248,248,246,.1);align-items:baseline;">
-        <div style="flex:1 1 230px;font-weight:500;"><a href="prestations/renovation.html" style="color:var(--white);text-decoration:underline;text-underline-offset:3px;">Jante rayée, ternie ou écaillée</a></div>
-        <div style="flex:2 1 280px;color:var(--grey-400);font-size:.92rem;line-height:1.7;">Rénovation complète : décapage, primaire, peinture et vernis, à domicile ou en atelier.</div>
-        <div style="flex:0 1 auto;font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;color:var(--grey-200);">dès 130 € HT</div>
+    <div class="sol-more">
+    <div class="sol-grp" data-reveal><p class="sol-gl">Par marque</p><div class="sol-chips"><a class="sol-chip" href="marques/renovation-jantes-porsche.html">Porsche</a><a class="sol-chip" href="marques/renovation-jantes-audi.html">Audi</a><a class="sol-chip" href="marques/renovation-jantes-mercedes.html">Mercedes</a><a class="sol-chip" href="marques/renovation-jantes-bmw.html">BMW</a><a class="sol-chip" href="marques/renovation-jantes-tesla.html">Tesla</a><a class="sol-chip" href="marques/renovation-jantes-volkswagen.html">Volkswagen</a><a class="sol-chip" href="marques/">Toutes les marques</a></div></div>
+    <div class="sol-grp" data-reveal><p class="sol-gl">Guides</p><div class="sol-chips"><a class="sol-chip" href="blog/prix-reparation-jante-lyon.html">Prix d'une réparation</a><a class="sol-chip" href="blog/jante-voilee-symptomes.html">Jante voilée : symptômes</a><a class="sol-chip" href="blog/soudure-ou-remplacement-jante.html">Soudure ou remplacement ?</a><a class="sol-chip" href="blog/retour-leasing-jantes.html">Retour de leasing</a><a class="sol-chip" href="blog/index.html">Tous les guides</a></div></div>
+    <div class="sol-grp" data-reveal><p class="sol-gl">Zones</p><div class="sol-chips"><a class="sol-chip" href="zones/lyon-6.html">Lyon</a><a class="sol-chip" href="zones/villeurbanne.html">Villeurbanne</a><a class="sol-chip" href="zones/ecully.html">Écully</a><a class="sol-chip" href="zones/caluire-et-cuire.html">Caluire-et-Cuire</a><a class="sol-chip" href="zones/oullins.html">Oullins</a><a class="sol-chip" href="zones/venissieux.html">Vénissieux</a><a class="sol-chip" href="zones/isere-38.html">Isère</a><a class="sol-chip" href="zones/loire-42.html">Loire</a><a class="sol-chip" href="zones/haute-savoie-74.html">Haute-Savoie</a><a class="sol-chip" href="zones/">Toutes les zones</a></div></div>
+    <div class="sol-grp" data-reveal><p class="sol-gl">Pour les pros</p><div class="sol-chips"><a class="sol-chip" href="professionnels.html">Concessions, marchands VO, loueurs</a></div></div>
+    </div>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:.5rem 2rem;padding:1.25rem 0;border-top:1px solid rgba(248,248,246,.1);align-items:baseline;">
-        <div style="flex:1 1 230px;font-weight:500;"><a href="prestations/devoilage.html" style="color:var(--white);text-decoration:underline;text-underline-offset:3px;">Vibrations au volant, jante voilée</a></div>
-        <div style="flex:2 1 280px;color:var(--grey-400);font-size:.92rem;line-height:1.7;">Dévoilage : redressage à chaud, contrôle de planéité et équilibrage, en atelier.</div>
-        <div style="flex:0 1 auto;font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;color:var(--grey-200);">dès 140 € HT</div>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:.5rem 2rem;padding:1.25rem 0;border-top:1px solid rgba(248,248,246,.1);align-items:baseline;">
-        <div style="flex:1 1 230px;font-weight:500;"><a href="prestations/soudure.html" style="color:var(--white);text-decoration:underline;text-underline-offset:3px;">Jante fissurée, cassée ou éclatée</a></div>
-        <div style="flex:2 1 280px;color:var(--grey-400);font-size:.92rem;line-height:1.7;">Réparation par soudure TIG après un diagnostic honnête, en atelier.</div>
-        <div style="flex:0 1 auto;font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;color:var(--grey-200);">dès 140 € HT</div>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:.5rem 2rem;padding:1.25rem 0;border-top:1px solid rgba(248,248,246,.1);align-items:baseline;">
-        <div style="flex:1 1 230px;font-weight:500;"><a href="prestations/jante-diamantee.html" style="color:var(--white);text-decoration:underline;text-underline-offset:3px;">Jante diamantée qui blanchit ou pèle</a></div>
-        <div style="flex:2 1 280px;color:var(--grey-400);font-size:.92rem;line-height:1.7;">Ré-usinage au tour à diamant ou reprise en peinture effet diamant.</div>
-        <div style="flex:0 1 auto;font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;color:var(--grey-200);">Sur devis</div>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:.5rem 2rem;padding:1.25rem 0;border-top:1px solid rgba(248,248,246,.1);align-items:baseline;">
-        <div style="flex:1 1 230px;font-weight:500;"><a href="prestations/personnalisation.html" style="color:var(--white);text-decoration:underline;text-underline-offset:3px;">Changer la couleur ou la finition</a></div>
-        <div style="flex:2 1 280px;color:var(--grey-400);font-size:.92rem;line-height:1.7;">Bi-ton, brossé, poli diamant, couleur RAL ou teinte carrosserie.</div>
-        <div style="flex:0 1 auto;font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;color:var(--grey-200);">Sur devis</div>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:.5rem 2rem;padding:1.25rem 0;border-top:1px solid rgba(248,248,246,.1);align-items:baseline;">
-        <div style="flex:1 1 230px;font-weight:500;"><a href="prestations/retour-leasing.html" style="color:var(--white);text-decoration:underline;text-underline-offset:3px;">Véhicule en fin de leasing</a></div>
-        <div style="flex:2 1 280px;color:var(--grey-400);font-size:.92rem;line-height:1.7;">Remise en état des jantes avant restitution pour éviter les pénalités.</div>
-        <div style="flex:0 1 auto;font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;color:var(--grey-200);">Sur devis</div>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:.5rem 2rem;padding:1.25rem 0;border-top:1px solid rgba(248,248,246,.1);align-items:baseline;">
-        <div style="flex:1 1 230px;font-weight:500;"><a href="prestations/preparation-vente.html" style="color:var(--white);text-decoration:underline;text-underline-offset:3px;">Vente de votre véhicule</a></div>
-        <div style="flex:2 1 280px;color:var(--grey-400);font-size:.92rem;line-height:1.7;">Rénovation ciblée des jantes qui se voient sur l'annonce.</div>
-        <div style="flex:0 1 auto;font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;color:var(--grey-200);">dès 130 € HT</div>
-      </div>
-      </div>
-      <p class="body-lg" style="margin-top:1.5rem;">Un doute sur l'état de vos jantes ? Envoyez deux photos : nous vous disons laquelle de ces solutions convient, et combien cela coûte, sous 24 h. Les prix sont des tarifs de départ par jante.</p>
-      <p class="label" style="margin-top:2.25rem;">Par marque</p>
-      <div style="display:flex;flex-wrap:wrap;gap:.6rem;margin-top:.9rem;"><a href="marques/renovation-jantes-bmw.html" style="display:inline-block;padding:.5rem .95rem;border:1px solid rgba(248,248,246,.16);font-size:.78rem;letter-spacing:.06em;color:var(--grey-200);text-decoration:none;">BMW</a><a href="marques/renovation-jantes-audi.html" style="display:inline-block;padding:.5rem .95rem;border:1px solid rgba(248,248,246,.16);font-size:.78rem;letter-spacing:.06em;color:var(--grey-200);text-decoration:none;">Audi</a><a href="marques/renovation-jantes-mercedes.html" style="display:inline-block;padding:.5rem .95rem;border:1px solid rgba(248,248,246,.16);font-size:.78rem;letter-spacing:.06em;color:var(--grey-200);text-decoration:none;">Mercedes</a><a href="marques/renovation-jantes-porsche.html" style="display:inline-block;padding:.5rem .95rem;border:1px solid rgba(248,248,246,.16);font-size:.78rem;letter-spacing:.06em;color:var(--grey-200);text-decoration:none;">Porsche</a><a href="marques/renovation-jantes-tesla.html" style="display:inline-block;padding:.5rem .95rem;border:1px solid rgba(248,248,246,.16);font-size:.78rem;letter-spacing:.06em;color:var(--grey-200);text-decoration:none;">Tesla</a><a href="marques/renovation-jantes-volkswagen.html" style="display:inline-block;padding:.5rem .95rem;border:1px solid rgba(248,248,246,.16);font-size:.78rem;letter-spacing:.06em;color:var(--grey-200);text-decoration:none;">Volkswagen</a><a href="marques/" style="display:inline-block;padding:.5rem .95rem;border:1px solid rgba(248,248,246,.16);font-size:.78rem;letter-spacing:.06em;color:var(--grey-200);text-decoration:none;">Toutes les marques</a></div>
-      <p class="label" style="margin-top:2.25rem;">Guides</p>
-      <div style="display:flex;flex-wrap:wrap;gap:.6rem;margin-top:.9rem;"><a href="blog/prix-reparation-jante-lyon.html" style="display:inline-block;padding:.5rem .95rem;border:1px solid rgba(248,248,246,.16);font-size:.78rem;letter-spacing:.06em;color:var(--grey-200);text-decoration:none;">Prix d'une réparation de jante</a><a href="blog/jante-voilee-symptomes.html" style="display:inline-block;padding:.5rem .95rem;border:1px solid rgba(248,248,246,.16);font-size:.78rem;letter-spacing:.06em;color:var(--grey-200);text-decoration:none;">Jante voilée : les symptômes</a><a href="blog/soudure-ou-remplacement-jante.html" style="display:inline-block;padding:.5rem .95rem;border:1px solid rgba(248,248,246,.16);font-size:.78rem;letter-spacing:.06em;color:var(--grey-200);text-decoration:none;">Soudure ou remplacement ?</a><a href="blog/retour-leasing-jantes.html" style="display:inline-block;padding:.5rem .95rem;border:1px solid rgba(248,248,246,.16);font-size:.78rem;letter-spacing:.06em;color:var(--grey-200);text-decoration:none;">Retour de leasing</a><a href="blog/index.html" style="display:inline-block;padding:.5rem .95rem;border:1px solid rgba(248,248,246,.16);font-size:.78rem;letter-spacing:.06em;color:var(--grey-200);text-decoration:none;">Tous les guides</a></div>
-      <p class="label" style="margin-top:2.25rem;">Zones d'intervention</p>
-      <div style="display:flex;flex-wrap:wrap;gap:.6rem;margin-top:.9rem;"><a href="zones/lyon-6.html" style="display:inline-block;padding:.5rem .95rem;border:1px solid rgba(248,248,246,.16);font-size:.78rem;letter-spacing:.06em;color:var(--grey-200);text-decoration:none;">Lyon</a><a href="zones/villeurbanne.html" style="display:inline-block;padding:.5rem .95rem;border:1px solid rgba(248,248,246,.16);font-size:.78rem;letter-spacing:.06em;color:var(--grey-200);text-decoration:none;">Villeurbanne</a><a href="zones/ecully.html" style="display:inline-block;padding:.5rem .95rem;border:1px solid rgba(248,248,246,.16);font-size:.78rem;letter-spacing:.06em;color:var(--grey-200);text-decoration:none;">Écully</a><a href="zones/caluire-et-cuire.html" style="display:inline-block;padding:.5rem .95rem;border:1px solid rgba(248,248,246,.16);font-size:.78rem;letter-spacing:.06em;color:var(--grey-200);text-decoration:none;">Caluire-et-Cuire</a><a href="zones/oullins.html" style="display:inline-block;padding:.5rem .95rem;border:1px solid rgba(248,248,246,.16);font-size:.78rem;letter-spacing:.06em;color:var(--grey-200);text-decoration:none;">Oullins</a><a href="zones/venissieux.html" style="display:inline-block;padding:.5rem .95rem;border:1px solid rgba(248,248,246,.16);font-size:.78rem;letter-spacing:.06em;color:var(--grey-200);text-decoration:none;">Vénissieux</a><a href="zones/isere-38.html" style="display:inline-block;padding:.5rem .95rem;border:1px solid rgba(248,248,246,.16);font-size:.78rem;letter-spacing:.06em;color:var(--grey-200);text-decoration:none;">Isère</a><a href="zones/loire-42.html" style="display:inline-block;padding:.5rem .95rem;border:1px solid rgba(248,248,246,.16);font-size:.78rem;letter-spacing:.06em;color:var(--grey-200);text-decoration:none;">Loire</a><a href="zones/haute-savoie-74.html" style="display:inline-block;padding:.5rem .95rem;border:1px solid rgba(248,248,246,.16);font-size:.78rem;letter-spacing:.06em;color:var(--grey-200);text-decoration:none;">Haute-Savoie</a><a href="zones/" style="display:inline-block;padding:.5rem .95rem;border:1px solid rgba(248,248,246,.16);font-size:.78rem;letter-spacing:.06em;color:var(--grey-200);text-decoration:none;">Toutes les zones</a></div>
-      <p class="label" style="margin-top:2.25rem;">Pour les pros</p>
-      <div style="display:flex;flex-wrap:wrap;gap:.6rem;margin-top:.9rem;"><a href="professionnels.html" style="display:inline-block;padding:.5rem .95rem;border:1px solid rgba(248,248,246,.16);font-size:.78rem;letter-spacing:.06em;color:var(--grey-200);text-decoration:none;">Professionnels : concessions, marchands VO, loueurs</a></div>
     </div>
   </div>
 </section>
