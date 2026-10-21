@@ -484,15 +484,20 @@ function submitForm() {
     try {
       const data = JSON.parse(xhr.responseText);
       if (data.ok) {
-        // Snippet officiel Google Ads : déclenche la conversion puis redirige une fois l'envoi confirmé
-        // (gtag.js applique lui-même un délai de sécurité si le callback ne répond pas)
+        // Snippet officiel Google Ads : déclenche la conversion puis redirige une fois l'envoi confirmé.
+        // Filet de sécurité : si Google ne répond pas (bloqueur de publicités, navigateur en protection
+        // renforcée, réseau lent), le callback n'arrive jamais et la personne resterait bloquée sur le
+        // formulaire alors que sa demande est bien partie. On la redirige donc au plus tard après 3 s.
+        let redirected = false;
+        const goConfirmation = () => { if (redirected) return; redirected = true; window.location.href = '/devis-confirmation.html'; };
         if (typeof gtag === 'function') {
           gtag('event', 'conversion', {
             'send_to': 'AW-18189889040/7zKmCNbLnMwcEJDczuFD',
-            'event_callback': function () { window.location.href = '/devis-confirmation.html'; }
+            'event_callback': goConfirmation
           });
+          setTimeout(goConfirmation, 3000);
         } else {
-          window.location.href = '/devis-confirmation.html';
+          goConfirmation();
         }
       } else {
         resetBtn();
