@@ -569,6 +569,7 @@ app.post('/api/devis', devisLimiter, (req, res, next) => {
       adresse:        sanitize(b.adresse),
       adresse_client: sanitize(b.adresse_client),
       description:    sanitize(b.description, { multiline: true }),
+      source:         sanitize(b.source),
       prenom:         sanitize(b.prenom),
       nom:            sanitize(b.nom),
       email:          b.email.trim().slice(0, 200),
@@ -596,24 +597,9 @@ app.post('/api/devis', devisLimiter, (req, res, next) => {
 
     console.log(`📎 ${attachments.length} photo(s) jointe(s)`);
 
-    await sendEmail({
-      from:        `"REYNOV Site" <${GMAIL_USER}>`,
-      to:          GMAIL_USER,
-      subject:     `Nouveau devis - ${d.prenom} ${d.nom}`,
-      html:        ownerEmail(d),
-      attachments,
-    });
-    console.log('✅ Mail owner envoyé');
-
-    await sendEmail({
-      from:    `"REYNOV" <${GMAIL_USER}>`,
-      to:      d.email,
-      subject: 'Votre demande de devis REYNOV a bien été reçue',
-      html:    clientEmail(d),
-    });
-    console.log('✅ Mail client envoyé');
-
-    // ── Auto-save dans le CRM ──────────────────────────────────
+    // ── 1) Enregistrement de la demande EN PREMIER (CRM) ───────
+    // Une panne Gmail ne doit plus jamais faire perdre un client.
+    let saved = false;
     try {
       let client = d.email ? db.findByEmail(d.email) : null;
       const clientId = client
@@ -626,12 +612,45 @@ app.post('/api/devis', devisLimiter, (req, res, next) => {
         marque: d.marque, modele: d.modele,
         finition: d.finition, mode: d.mode,
         adresse_intervention: d.adresse_client || d.adresse,
-        statut: 'devis_envoye', montant: null, notes: '',
+        statut: 'devis_envoye', montant: null, notes: d.source ? `Source : ${d.source}` : '',
       });
+      saved = true;
       console.log('✅ CRM mis à jour');
     } catch (e) {
       console.error('⚠️ CRM save error:', e.message);
     }
+
+    // ── 2) E-mail de notification pour REYNOV ──────────────────
+    let ownerSent = false;
+    try {
+      await sendEmail({
+        from:        `"REYNOV Site" <${GMAIL_USER}>`,
+        to:          GMAIL_USER,
+        subject:     `Nouveau devis - ${d.prenom} ${d.nom}`,
+        html:        ownerEmail(d),
+        attachments,
+      });
+      ownerSent = true;
+      console.log('✅ Mail owner envoyé');
+    } catch (e) {
+      console.error('❌ Mail owner NON envoyé (demande', saved ? 'sauvegardée dans le CRM' : 'NON sauvegardée', '):', e.message);
+    }
+
+    // ── 3) Accusé de réception client (ne bloque jamais la demande) ──
+    try {
+      await sendEmail({
+        from:    `"REYNOV" <${GMAIL_USER}>`,
+        to:      d.email,
+        subject: 'Votre demande de devis REYNOV a bien été reçue',
+        html:    clientEmail(d),
+      });
+      console.log('✅ Mail client envoyé');
+    } catch (e) {
+      console.error('⚠️ Mail client non envoyé:', e.message);
+    }
+
+    // Seul cas d'erreur pour le visiteur : la demande n'est ni sauvegardée ni envoyée.
+    if (!saved && !ownerSent) throw new Error('Demande ni enregistrée ni envoyée');
 
     res.json({ ok: true });
 

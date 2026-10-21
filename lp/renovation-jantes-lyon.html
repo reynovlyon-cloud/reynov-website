@@ -718,6 +718,10 @@
             <input class="lp-form__input" type="tel" id="lp-tel" name="tel" placeholder="07 XX XX XX XX" required autocomplete="tel" />
           </div>
           <div class="lp-form__group">
+            <label class="lp-form__label" for="lp-email">E-mail *</label>
+            <input class="lp-form__input" type="email" id="lp-email" name="email" placeholder="vous@exemple.fr" required autocomplete="email" inputmode="email" />
+          </div>
+          <div class="lp-form__group">
             <label class="lp-form__label" for="lp-prestation">Prestation</label>
             <select class="lp-form__select" id="lp-prestation" name="prestation">
               <option value="Rénovation complète">Rénovation complète</option>
@@ -896,9 +900,12 @@ document.getElementById('lp-form').addEventListener('submit', function(e) {
   e.preventDefault();
   const prenom = document.getElementById('lp-prenom').value.trim();
   const tel    = document.getElementById('lp-tel').value.trim();
-  if (!prenom || !tel) {
-    if (!prenom) document.getElementById('lp-prenom').style.borderColor = 'rgba(248,248,246,0.7)';
-    if (!tel)    document.getElementById('lp-tel').style.borderColor    = 'rgba(248,248,246,0.7)';
+  const email  = document.getElementById('lp-email').value.trim();
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if (!prenom || !tel || !emailOk) {
+    if (!prenom)  document.getElementById('lp-prenom').style.borderColor = 'rgba(248,248,246,0.7)';
+    if (!tel)     document.getElementById('lp-tel').style.borderColor    = 'rgba(248,248,246,0.7)';
+    if (!emailOk) document.getElementById('lp-email').style.borderColor  = 'rgba(248,248,246,0.7)';
     return;
   }
   const btn = document.getElementById('lp-submit');
@@ -911,6 +918,7 @@ document.getElementById('lp-form').addEventListener('submit', function(e) {
   const fd = new FormData();
   fd.append('prenom',     prenom);
   fd.append('tel',        tel);
+  fd.append('email', email);
   fd.append('prestation', prestation);
   fd.append('nb_jantes',  nb);
   fd.append('source',     'lp-renovation');
@@ -938,7 +946,7 @@ document.getElementById('lp-form').addEventListener('submit', function(e) {
 });
 
 // Remove red border on typing
-['lp-prenom','lp-tel'].forEach(id => {
+['lp-prenom','lp-tel','lp-email'].forEach(id => {
   document.getElementById(id).addEventListener('input', function() {
     this.style.borderColor = '';
   });
