@@ -303,6 +303,15 @@
       .devis-progress2__segs span i, .choice-card, .choice-card .cc__icon { transition: none; }
       .devis-unlock.is-open { animation: none; }
     }
+
+    .dc { position:absolute; inset:0; }
+    .dc-slide { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 1.2s ease; }
+    .devis-aside__img img.dc-slide { opacity:0; }
+    .devis-aside__img img.dc-slide.is-on, .dc-slide.is-on { opacity:.8; }
+    .dc--mobile { display:none; position:relative; height:200px; margin:0 0 1.5rem; overflow:hidden; border-radius:12px; }
+    @media(max-width:900px){ .dc--mobile{ display:block; } }
+    .devis-aside::after { content:''; position:absolute; inset:0; background:linear-gradient(to top, rgba(6,6,6,.85) 5%, rgba(6,6,6,0) 55%); pointer-events:none; }
+    .cc__num { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-weight: 200; font-size: 2.2rem; letter-spacing: -0.02em; }
   </style>
   <script type="application/ld+json">
   {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
@@ -359,9 +368,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <div class="devis-layout">
   <!-- Aside visuel -->
   <aside class="devis-aside">
-    <div class="devis-aside__img">
-      <picture><source srcset="assets/images/IMG_6057-1600.webp" type="image/webp"><img src="assets/images/IMG_6057-1600.webp" alt="REYNOV van et Porsche" /></picture>
-    </div>
+    <div class="devis-aside__img"><div class="dc" data-carousel><img class="dc-slide is-on" src="assets/images/IMG_6057-1600.webp" alt="Camion atelier REYNOV et Porsche" /><img class="dc-slide" src="assets/images/macan-apres-1600.webp" alt="Jante Porsche Macan rénovée" loading="lazy" /><img class="dc-slide" src="assets/images/mercedes-jante-avant.webp" alt="Jante Mercedes rénovée" loading="lazy" /><img class="dc-slide" src="assets/images/kia-apres-1600.webp" alt="Jante Kia rénovée" loading="lazy" /><img class="dc-slide" src="assets/images/tesla-jante-apres.webp" alt="Jante Tesla rénovée" loading="lazy" /><img class="dc-slide" src="assets/images/bmw-jante-apres.webp" alt="Jante BMW rénovée" loading="lazy" /><img class="dc-slide" src="assets/images/camion-exterieur.webp" alt="Atelier mobile REYNOV" loading="lazy" /></div></div>
     <div class="devis-aside__content">
       <p class="label mb-2">Réponse sous 24h</p>
       <h1 style="font-family:var(--font-display);font-size:clamp(2rem,3.5vw,3.5rem);font-weight:300;line-height:1.1;margin-bottom:1.5rem;">
@@ -384,6 +391,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
   <!-- Formulaire multi-étapes -->
   <main class="devis-main">
+    <div class="dc dc--mobile" data-carousel aria-hidden="true"><img class="dc-slide is-on" src="assets/images/IMG_6057-1600.webp" alt="Camion atelier REYNOV et Porsche" /><img class="dc-slide" src="assets/images/macan-apres-1600.webp" alt="Jante Porsche Macan rénovée" loading="lazy" /><img class="dc-slide" src="assets/images/mercedes-jante-avant.webp" alt="Jante Mercedes rénovée" loading="lazy" /><img class="dc-slide" src="assets/images/kia-apres-1600.webp" alt="Jante Kia rénovée" loading="lazy" /><img class="dc-slide" src="assets/images/tesla-jante-apres.webp" alt="Jante Tesla rénovée" loading="lazy" /><img class="dc-slide" src="assets/images/bmw-jante-apres.webp" alt="Jante BMW rénovée" loading="lazy" /><img class="dc-slide" src="assets/images/camion-exterieur.webp" alt="Atelier mobile REYNOV" loading="lazy" /></div>
     <div class="devis-form-wrap">
       <form class="devis-form" action="javascript:void(0)" novalidate>
 
@@ -618,6 +626,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </main>
 </div>
 
+<script>
+(function(){document.querySelectorAll('[data-carousel]').forEach(function(c){var sl=c.querySelectorAll('.dc-slide'),i=0;if(sl.length<2)return;
+if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+setInterval(function(){sl[i].classList.remove('is-on');i=(i+1)%sl.length;sl[i].classList.add('is-on');},3500);});})();
+</script>
 <script src="assets/js/main.js?v=14"></script>
 <a href="https://wa.me/33661453527" class="whatsapp-float" target="_blank" rel="noopener" aria-label="Contacter sur WhatsApp">
   <span class="whatsapp-float__label">Envoyer un message</span>
