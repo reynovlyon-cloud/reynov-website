@@ -1,9 +1,0 @@
-REYNOV — visuels Meta Ads (1440 px, JPG qualité 97)
-
-feed_4x5      1440 x 1800  -> publication feed Facebook / Instagram (3 visuels : BMW, Kia, Mercedes)
-story_9x16    1440 x 2560  -> Stories et Reels (2 visuels : atelier mobile, savoir-faire)
-carousel_1x1  1440 x 1440  -> carrousel de 5 slides, à importer dans l'ordre 1 à 5
-
-Textes importants gardés hors des zones de recouvrement de l'interface Meta (stories : haut et bas libres).
-Mentions utilisées : 5,0 / 5 · 54 avis Google · garantie 30 jours · devis gratuit sous 24 h · 06 61 45 35 27.
-Pensez à mettre à jour le nombre d'avis s'il évolue.

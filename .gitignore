@@ -12,3 +12,13 @@ assets/images/*.MP4
 assets/images/IMG_*
 assets/images/*.PNG
 **/.DS_Store
+
+# Visuels et archives publicitaires : travail hors site, ne jamais publier dans ce dépôt public
+/GOOGLE_ADS_PREMIUM*
+/REYNOV_META_ADS_1440*
+/REYNOV_PHOTOS_ORIGINALES*
+/reynov-pubs*
+/reynov_*.jpg
+/gti-*.jpg
+/planche_*.jpg
+/*.zip
