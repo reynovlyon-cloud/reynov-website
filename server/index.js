@@ -92,6 +92,7 @@ app.use((req, res, next) => {
 // ── Anciennes URL -> nouvelles (301) ─────────────────────────
 const MOVED = {
   '/blog/prix-reparation-jante-lyon-2025.html': '/blog/prix-reparation-jante-lyon.html',
+  '/blog/epoxy-ou-peinture-pistolet-jante-difference-lyon.html': '/blog/peinture-epoxy-jantes-haut-de-gamme-collection.html',
 };
 app.use((req, res, next) => {
   const to = MOVED[req.path];
