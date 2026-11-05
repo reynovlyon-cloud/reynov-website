@@ -187,20 +187,22 @@ const GMAIL_USER          = process.env.GMAIL_USER;
 const GMAIL_CLIENT_ID     = process.env.GMAIL_CLIENT_ID;
 const GMAIL_CLIENT_SECRET = process.env.GMAIL_CLIENT_SECRET;
 const GMAIL_REFRESH_TOKEN = process.env.GMAIL_REFRESH_TOKEN;
+// Jeton séparé, en lecture seule, pour la synchronisation de la boîte (facultatif : sinon on réutilise le jeton d'envoi)
+const GMAIL_READ_TOKEN    = process.env.GMAIL_READ_REFRESH_TOKEN;
 
 console.log('ENV CHECK — GMAIL_USER:', !!GMAIL_USER,
   '| CLIENT_ID:', !!GMAIL_CLIENT_ID,
   '| CLIENT_SECRET:', !!GMAIL_CLIENT_SECRET,
   '| REFRESH_TOKEN:', !!GMAIL_REFRESH_TOKEN);
 
-async function getAccessToken() {
+async function getAccessToken(refreshToken = GMAIL_REFRESH_TOKEN) {
   const r = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       client_id:     GMAIL_CLIENT_ID,
       client_secret: GMAIL_CLIENT_SECRET,
-      refresh_token: GMAIL_REFRESH_TOKEN,
+      refresh_token: refreshToken,
       grant_type:    'refresh_token',
     }),
   });
@@ -443,8 +445,8 @@ app.post('/api/crm/leads/import', crmLimiter, crmAuth, express.json({ limit: '8m
 });
 
 const mailsync = require('./mailsync').create({
-  db, getAccessToken, owner: GMAIL_USER, importLeadItem,
-  enabled: () => !!(GMAIL_USER && GMAIL_CLIENT_ID && GMAIL_CLIENT_SECRET && GMAIL_REFRESH_TOKEN) && process.env.CRM_TEST_MODE !== '1' && process.env.MAIL_SYNC !== '0',
+  db, getAccessToken: () => getAccessToken(GMAIL_READ_TOKEN || GMAIL_REFRESH_TOKEN), owner: GMAIL_USER, importLeadItem,
+  enabled: () => !!(GMAIL_USER && GMAIL_CLIENT_ID && GMAIL_CLIENT_SECRET && (GMAIL_READ_TOKEN || GMAIL_REFRESH_TOKEN)) && process.env.CRM_TEST_MODE !== '1' && process.env.MAIL_SYNC !== '0',
 });
 
 app.use('/api/crm', crmLimiter, express.json({ limit: '100kb' }), crmAuth);
