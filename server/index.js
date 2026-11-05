@@ -396,6 +396,46 @@ function crmAuth(req, res, next) {
 const crmLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, skipSuccessfulRequests: true,
   standardHeaders: true, legacyHeaders: false, message: { ok: false, error: 'Trop de tentatives. Réessayez dans 15 minutes.' } });
 
+// ── Import d'anciennes demandes (fichier produit à partir de vos e-mails) ──
+// Déclaré AVANT le montage général : authentification d'abord, puis lecture d'un corps plus volumineux.
+app.post('/api/crm/leads/import', crmLimiter, crmAuth, express.json({ limit: '8mb' }), (req, res) => {
+  const b = req.body || {};
+  const items = Array.isArray(b.leads) ? b.leads : (Array.isArray(b) ? b : null);
+  if (!items || !items.length) return res.status(400).json({ ok: false, error: 'Aucune demande dans le fichier.' });
+  if (items.length > 2000) return res.status(400).json({ ok: false, error: 'Maximum 2000 demandes par import.' });
+  const status = db.LEAD_STATUS.includes(b.status) ? b.status : 'a_rappeler';
+  let added = 0, skipped = 0, duplicates = 0;
+  for (const it of items) {
+    try {
+      const email = cleanLine(it.email, 200);
+      const tel = cleanLine(it.tel, 40);
+      if ((!email || !EMAIL_RE.test(email)) && !tel) { skipped++; continue; }
+      const created = it.created_at && !isNaN(Date.parse(it.created_at)) ? new Date(it.created_at).toISOString() : new Date().toISOString();
+      if (db.leadExists(email, created)) { duplicates++; continue; }
+      const f = it.form || {};
+      const lead = db.createLead({
+        created_at: created, updated_at: created, status,
+        source: cleanLine(it.source || 'devis', 40) || 'devis',
+        prenom: cleanLine(it.prenom, 80), nom: cleanLine(it.nom, 80), email: EMAIL_RE.test(email) ? email : '', tel,
+        ville: cleanLine(it.ville, 120), adresse: cleanLine(it.adresse, 200), sujet: cleanLine(it.sujet, 120), message: clean(it.message, 4000),
+        form: {
+          prestation: cleanLine(f.prestation, 100), problemes: cleanLine(f.problemes, 200), nb_jantes: cleanLine(f.nb_jantes, 10),
+          taille: cleanLine(f.taille, 40), marque: cleanLine(f.marque, 60), modele: cleanLine(f.modele, 60), finition: cleanLine(f.finition, 60),
+          mode: cleanLine(f.mode, 60), delai: cleanLine(f.delai, 60), photos: Number(f.photos) || 0,
+        },
+        notes: 'Ancienne demande importée de vos e-mails.',
+        events: [{ ts: created, type: 'created', text: 'Demande reçue (ancienne demande importée)' }],
+      });
+      const tri = triage.withDrafts(lead, triage.analyzeRules(lead));
+      db.updateLead(lead.id, { triage: tri, created_at: created });
+      ensureClient(db.leadById(lead.id));
+      added++;
+    } catch (e) { skipped++; }
+  }
+  console.log(`📥 Import CRM : ${added} ajoutées, ${duplicates} déjà présentes, ${skipped} ignorées`);
+  res.json({ ok: true, added, duplicates, skipped });
+});
+
 app.use('/api/crm', crmLimiter, express.json({ limit: '100kb' }), crmAuth);
 
 // Export complet (sauvegarde manuelle) : GET /api/crm/export
@@ -418,7 +458,7 @@ app.get('/api/crm/config', (_req, res) => {
 });
 app.get('/api/crm/leads/stats', (_req, res) => res.json({ ok: true, data: db.leadStats() }));
 app.get('/api/crm/leads', (req, res) => {
-  res.json({ ok: true, data: db.leadsList({ status: req.query.status, q: req.query.q, cat: req.query.cat }).slice(0, 500).map(slimLead) });
+  res.json({ ok: true, data: db.leadsList({ status: req.query.status, q: req.query.q, cat: req.query.cat }).slice(0, 2500).map(slimLead) });
 });
 app.get('/api/crm/leads/:id', (req, res) => {
   const l = db.leadById(req.params.id);

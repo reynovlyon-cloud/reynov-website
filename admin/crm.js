@@ -508,6 +508,7 @@
         const b = await r.blob(); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'reynov-crm-' + new Date().toISOString().slice(0, 10) + '.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
       } catch (e) { toast('Export impossible', true); }
     },
+    import: () => { const f = $('#import-file'); f.value = ''; f.click(); },
     notif: async () => {
       if (!window.Notification) return toast('Notifications non disponibles sur ce navigateur.', true);
       const p = await Notification.requestPermission(); toast(p === 'granted' ? 'Notifications activées' : 'Notifications refusées'); renderSettings();
@@ -533,6 +534,20 @@
       const l = await api('GET', '/leads/' + t.dataset.id).then((j) => j.data);
       const tri = l.triage || {}; const d = t.value === '__auto' ? (tri.reply || tri.drafts[tri.primary]) : tri.drafts[t.value];
       if (d) { $('#reply-subject').value = fill(d.subject, l); $('#reply-body').value = fill(d.body, l); }
+    } else if (t.id === 'import-file') {
+      const file = t.files && t.files[0]; if (!file) return;
+      const out = $('#import-result'); out.textContent = 'Lecture du fichier…';
+      try {
+        const data = JSON.parse(await file.text());
+        const leads = Array.isArray(data) ? data : data.leads;
+        if (!Array.isArray(leads) || !leads.length) throw new Error('Fichier vide ou invalide.');
+        if (!confirm('Importer ' + leads.length + ' demande(s) dans « ' + $('#import-status').selectedOptions[0].textContent + ' » ?')) { out.textContent = ''; return; }
+        out.textContent = 'Import en cours…';
+        const j = await api('POST', '/leads/import', { leads, status: $('#import-status').value });
+        out.innerHTML = '<strong style="color:var(--text)">' + j.added + ' ajoutée(s)</strong> · ' + j.duplicates + ' déjà présente(s) · ' + j.skipped + ' ignorée(s)';
+        toast(j.added + ' demande(s) importée(s)');
+        await refreshAll(); render();
+      } catch (er) { out.textContent = ''; toast(er.message || 'Import impossible', true); }
     } else if (t.id === 'inter-filter') renderInters();
     else if (t.getAttribute('data-action') === 'inter-status') { try { const i = S.inters.find((x) => x.id === Number(t.dataset.id)); await api('PUT', '/interventions/' + t.dataset.id, { statut: t.value, montant: i && i.montant, notes: (i && i.notes) || '' }); if (i) i.statut = t.value; toast('Statut mis à jour'); } catch (er) { toast(er.message, true); } }
     else if (t.getAttribute('data-action') === 'inter-money') { try { const i = S.inters.find((x) => x.id === Number(t.dataset.id)); await api('PUT', '/interventions/' + t.dataset.id, { statut: i && i.statut, montant: t.value || null, notes: (i && i.notes) || '' }); if (i) i.montant = t.value; toast('Montant enregistré'); } catch (er) { toast(er.message, true); } }

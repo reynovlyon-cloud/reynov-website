@@ -194,7 +194,7 @@ function leadById(id) { return _db.leads.find(l => l.id === Number(id)) || null;
 function updateLead(id, patch) {
   const l = leadById(id);
   if (!l) return null;
-  const allowed = ['prenom', 'nom', 'email', 'tel', 'ville', 'adresse', 'sujet', 'message', 'notes', 'form', 'reminder_at', 'client_id', 'intervention_id'];
+  const allowed = ['prenom', 'nom', 'email', 'tel', 'ville', 'adresse', 'sujet', 'message', 'notes', 'form', 'reminder_at', 'client_id', 'intervention_id', 'created_at'];
   allowed.forEach(k => { if (patch[k] !== undefined) l[k] = patch[k]; });
   if (patch.status !== undefined && LEAD_STATUS.includes(patch.status) && patch.status !== l.status) {
     addEventRaw(l, 'status', 'Statut : ' + l.status + ' → ' + patch.status);
@@ -260,6 +260,12 @@ function findRecentDuplicate(email, message, minutes = 10) {
   return _db.leads.find(l => (l.email || '').toLowerCase() === e && (l.message || '').trim() === m && Date.parse(l.created_at) > since) || null;
 }
 
+function leadExists(email, createdIso) {
+  const e = (email || '').toLowerCase();
+  const t = Date.parse(createdIso);
+  return _db.leads.some(l => (l.email || '').toLowerCase() === e && Math.abs(Date.parse(l.created_at) - t) < 10 * 60000);
+}
+
 function leadStats() {
   const L = _db.leads;
   const byStatus = {}; LEAD_STATUS.forEach(s => { byStatus[s] = 0; });
@@ -312,7 +318,7 @@ function exportAll() {
 
 module.exports = {
   exportAll, LEAD_STATUS,
-  createLead, leadById, updateLead, logContact, addLeadEvent, deleteLead, leadsList, findRecentDuplicate, leadStats,
+  createLead, leadById, updateLead, logContact, addLeadEvent, deleteLead, leadsList, findRecentDuplicate, leadExists, leadStats,
   stats, visitsByDay, logVisit,
   clientsList, clientById, findByEmail,
   createClient, updateClient, deleteClient,
