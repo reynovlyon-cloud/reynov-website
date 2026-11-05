@@ -56,7 +56,7 @@
   const INTER_ST = { nouveau: 'Nouveau devis', devis_envoye: 'Devis envoyé', confirme: 'Confirmé', en_cours: 'En cours', termine: 'Terminé', paye: 'Payé', annule: 'Annulé' };
   const AV_COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#14b8a6', '#16a34a', '#ca8a04', '#6366f1', '#ef4444', '#0ea5e9'];
 
-  const S = { token: '', cfg: { ai: false, email: false, categories: {}, statuses: [] }, leads: [], stats: null, biz: null, clients: [], inters: [], view: 'dashboard', cats: new Set(), q: '', openId: null, seen: new Set(), polled: false, visitDays: 30, lastNew: 0 };
+  const S = { token: '', cfg: { ai: false, email: false, categories: {}, statuses: [] }, leads: [], stats: null, biz: null, clients: [], inters: [], view: 'dashboard', cats: new Set(), q: '', openId: null, seen: new Set(), polled: false, visitDays: 30, lastNew: 0, wait: false, mail: null };
 
   // ── Utilitaires ───────────────────────────────────────────
   const fullName = (l) => ((l.prenom || '') + ' ' + (l.nom || '')).trim() || l.email || 'Sans nom';
@@ -141,7 +141,11 @@
     const [l, st, biz] = await Promise.all([api('GET', '/leads'), api('GET', '/leads/stats'), api('GET', '/stats')]);
     S.leads = l.data; S.stats = st.data; S.biz = biz.data;
     S.leads.forEach((x) => S.seen.add(x.id));
+    loadMail();
     updateBadge();
+  }
+  async function loadMail() {
+    try { const [a, b] = await Promise.all([api('GET', '/mail/status'), api('GET', '/mail/report')]); S.mail = { status: a.data, report: b.data }; } catch (e) { /* facultatif */ }
   }
   async function poll() {
     try {
@@ -150,6 +154,7 @@
       S.leads = l.data;
       l.data.forEach((x) => S.seen.add(x.id));
       S.stats = (await api('GET', '/leads/stats')).data;
+      await loadMail();
       if (fresh.length) {
         fresh.slice(0, 3).forEach((x) => toast('Nouveau lead : ' + fullName(x), false, () => openLead(x.id)));
         if (window.Notification && Notification.permission === 'granted') {
@@ -196,6 +201,8 @@
     else if (st.reminders_due) alert = `<div class="alert"><span>${ico('clock')}&nbsp; <strong>${st.reminders_due}</strong> rappel${st.reminders_due > 1 ? 's' : ''} à faire aujourd'hui.</span><button class="btn sm" data-nav="leads">Voir les leads</button></div>`;
     else if (nNew) alert = `<div class="alert"><span>${ico('funnel')}&nbsp; <strong>${nNew}</strong> nouveau${nNew > 1 ? 'x' : ''} lead${nNew > 1 ? 's' : ''} à traiter.</span><button class="btn sm" data-nav="leads">Voir les leads</button></div>`;
     else alert = `<div class="alert ok"><span>${ico('check')}&nbsp; Aucun lead en attente.</span></div>`;
+    const rp = S.mail && S.mail.report, ms = S.mail && S.mail.status;
+    if (rp && ms && ms.state === 'ok' && rp.waiting) alert += `<div class="alert" style="margin-top:10px"><span>${ico('mail')}&nbsp; <strong>${rp.waiting}</strong> client${rp.waiting > 1 ? 's' : ''} attend${rp.waiting > 1 ? 'ent' : ''} une réponse${rp.waiting_over_3d ? ' (dont <strong>' + rp.waiting_over_3d + '</strong> depuis plus de 3 jours)' : ''}.</span><button class="btn sm" data-action="show-wait">Voir</button></div>`;
     $('#dash-alert').innerHTML = alert;
     const avg = st.avg_first_contact_min;
     const avgTxt = avg == null ? '—' : (avg < 60 ? avg + ' min' : Math.round(avg / 60 * 10) / 10 + ' h');
@@ -232,10 +239,17 @@
   function filteredLeads() {
     const q = S.q.toLowerCase();
     return S.leads.filter((l) => {
+      if (S.wait && !waiting(l)) return false;
       if (S.cats.size && !((l.triage && l.triage.categories) || []).some((c) => S.cats.has(c))) return false;
       if (!q) return true;
       return [l.prenom, l.nom, l.email, l.tel, l.ville, l.message, (l.form || {}).marque, (l.form || {}).modele, l.triage && l.triage.summary].some((v) => v && String(v).toLowerCase().includes(q));
     });
+  }
+  const waiting = (l) => !!(l.reply && l.reply.waiting);
+  function replyBadge(l) {
+    const r = l.reply;
+    if (!r || !r.waiting) return r && r.n_out ? `<div class="contact-state yes">${ico('mail')} ${r.n_out} réponse${r.n_out > 1 ? 's' : ''} envoyée${r.n_out > 1 ? 's' : ''}</div>` : '';
+    return `<div class="contact-state wait">${ico('alert')} ${r.never ? 'Jamais répondu' : 'Attend une réponse'} · ${esc(ago(r.since))}</div>`;
   }
   function leadCard(l) {
     const t = l.triage || {};
@@ -255,7 +269,7 @@
       <div class="lead-top"><span class="avatar" style="--c:${avColor(l)};width:32px;height:32px">${esc(initials(l))}</span><span class="nm">${esc(fullName(l))}</span><span class="when">${esc(ago(l.created_at))}</span></div>
       <div class="lead-sum">${esc(t.summary || (l.message || '').slice(0, 120) || 'Sans détail')}</div>
       <div class="chips">${cats}${urgent}<span class="chip src">${esc(SRC[l.source] || l.source)}</span></div>
-      ${state}${rem}<div class="card-actions">${actions}</div></article>`;
+      ${state}${replyBadge(l)}${rem}<div class="card-actions">${actions}</div></article>`;
   }
   function colHtml(c, list) {
     return `<div class="col" data-status="${c.id}" style="--c:${stColor(c.id)}"><div class="col-h"><span class="dot" style="--c:${stColor(c.id)}"></span>${esc(c.label)}<span class="count">${list.length}</span></div>${list.map(leadCard).join('') || `<div class="empty">${esc(c.empty)}</div>`}</div>`;
@@ -263,7 +277,8 @@
   function renderLeads() {
     const fl = filteredLeads();
     const present = Object.keys(S.cfg.categories).filter((c) => S.leads.some((l) => ((l.triage && l.triage.categories) || []).includes(c)));
-    $('#lead-filters').innerHTML = present.map((c) => `<span class="chip cat-${esc(c)}${S.cats.has(c) ? ' on' : ''}" data-action="filter-cat" data-cat="${esc(c)}">${esc(catLabel(c))}</span>`).join('');
+    const nWait = S.leads.filter((l) => waiting(l)).length;
+    $('#lead-filters').innerHTML = `<span class="chip wait${S.wait ? ' on' : ''}" data-action="filter-wait">Sans réponse (${nWait})</span>` + present.map((c) => `<span class="chip cat-${esc(c)}${S.cats.has(c) ? ' on' : ''}" data-action="filter-cat" data-cat="${esc(c)}">${esc(catLabel(c))}</span>`).join('');
     $('#board').innerHTML = COLS.map((c) => colHtml(c, fl.filter((l) => l.status === c.id))).join('');
     const done = fl.filter((l) => l.status === 'gagne' || l.status === 'perdu');
     $('#archived-sum').textContent = 'Terminés (' + done.length + ')';
@@ -431,6 +446,18 @@
     $('#set-mail').innerHTML = S.cfg.email
       ? '<p><span class="chip st-rdv"><span class="dot"></span>Prêt</span></p><p class="muted">Les réponses partent de votre adresse REYNOV (Gmail) et apparaissent dans vos « Envoyés ».</p>'
       : '<p><span class="chip"><span class="dot" style="--c:var(--amber)"></span>Non configuré</span></p><p class="muted">Variables Gmail manquantes sur le serveur : l\'envoi depuis le CRM est désactivé (appel et WhatsApp restent disponibles).</p>';
+    const ms = S.mail && S.mail.status, rp = S.mail && S.mail.report;
+    let h;
+    if (!ms) h = '<p class="muted">Chargement…</p>';
+    else if (!ms.enabled) h = '<p><span class="chip"><span class="dot" style="--c:var(--amber)"></span>Indisponible</span></p><p class="muted">Gmail n\'est pas configuré sur le serveur.</p>';
+    else if (ms.state === 'scope_missing') h = '<p><span class="chip"><span class="dot" style="--c:var(--amber)"></span>En attente d\'autorisation</span></p><p class="muted">Le CRM n\'a pas encore le droit de <strong>lire</strong> votre boîte Gmail. Suivez le guide « Connecter Gmail » puis remplacez la variable <strong>GMAIL_REFRESH_TOKEN</strong> dans Railway.</p>';
+    else if (ms.state === 'token_error') h = '<p><span class="chip"><span class="dot" style="--c:var(--rose)"></span>Connexion expirée</span></p><p class="muted">Google a refusé le jeton de connexion. Il faut en générer un nouveau (voir le guide) et remplacer <strong>GMAIL_REFRESH_TOKEN</strong> dans Railway.</p>';
+    else {
+      const pct = ms.leads_total ? Math.round(ms.leads_synced / ms.leads_total * 100) : 100;
+      h = `<p><span class="chip st-rdv"><span class="dot"></span>${ms.state === 'error' ? 'Erreur temporaire' : 'Connecté'}</span></p><p class="muted">${ms.devis_done ? 'Historique analysé : ' + pct + ' % (' + ms.leads_synced + ' / ' + ms.leads_total + ' clients).' : 'Recherche des anciens devis dans votre boîte…'} ${ms.counts.in} e-mail(s) reçus et ${ms.counts.out} envoyés rattachés aux fiches. ${ms.last_ok ? 'Dernière synchro ' + esc(ago(ms.last_ok)) + '.' : ''}${ms.error ? ' <br>' + esc(ms.error) : ''}</p>` +
+        (rp ? `<p class="muted"><strong>${rp.waiting}</strong> client(s) attendent une réponse · <strong>${rp.never_answered}</strong> jamais répondu(s)${rp.avg_first_reply_hours != null ? ' · délai moyen de 1re réponse : <strong>' + rp.avg_first_reply_hours + ' h</strong>' : ''}</p>` : '');
+    }
+    $('#set-sync').innerHTML = h + (ms && ms.enabled && ms.state !== 'scope_missing' ? `<button class="btn" data-action="sync-now">${ico('mail')}Synchroniser maintenant</button>` : '');
     const nb = $('#notif-btn'); if (window.Notification && Notification.permission === 'granted') nb.innerHTML = ico('bell') + 'Notifications activées';
   }
 
@@ -457,6 +484,9 @@
     'scroll-reply': () => { const e = $('#reply-body'); if (e) { e.scrollIntoView({ behavior: 'smooth', block: 'center' }); e.focus(); } },
     'new-lead': () => { $('#form-lead').reset(); $('#dlg-lead').showModal(); },
     'close-dlg': (el) => el.closest('dialog').close(),
+    'show-wait': () => { S.wait = true; go('leads'); },
+    'filter-wait': () => { S.wait = !S.wait; renderLeads(); },
+    'sync-now': async () => { try { await api('POST', '/mail/sync'); toast('Synchronisation lancée'); setTimeout(async () => { await loadMail(); if (S.view === 'settings') renderSettings(); }, 4000); } catch (e) { toast(e.message, true); } },
     'filter-cat': (el) => { const c = el.dataset.cat; S.cats.has(c) ? S.cats.delete(c) : S.cats.add(c); renderLeads(); },
     call: (el) => { logContact(Number(el.dataset.id), 'appel'); },
     wa: (el) => { logContact(Number(el.dataset.id), 'whatsapp'); },

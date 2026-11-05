@@ -228,3 +228,7 @@ dialog::backdrop { background: rgba(8,8,10,.5); }
 .lead-card .btn .lbl { display: none; }
 .lead-card .btn.sm { padding: 7px 10px; }
 .lead-card .card-actions .btn:last-child { margin-left: auto; }
+
+.tl.mail_in { --c: var(--rose); } .tl.mail_out { --c: var(--blue); }
+.contact-state.wait { color: var(--rose); font-weight: 600; }
+.chip.wait { cursor: pointer; border-color: var(--rose); color: var(--rose); } .chip.wait.on { background: var(--rose); color: #fff; }

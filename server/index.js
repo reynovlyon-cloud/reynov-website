@@ -209,8 +209,10 @@ async function getAccessToken() {
   return data.access_token;
 }
 
-async function sendEmail({ from, to, subject, html, attachments = [] }) {
+async function sendEmail({ from, to, subject, html, attachments = [], origin = '' }) {
   const accessToken = await getAccessToken();
+  // X-Reynov-Origin : permet à la synchronisation Gmail de ne pas confondre nos envois automatiques avec une vraie réponse
+  const tag = origin ? [`X-Reynov-Origin: ${origin}`] : [];
 
   let rawParts;
   if (attachments.length === 0) {
@@ -218,6 +220,7 @@ async function sendEmail({ from, to, subject, html, attachments = [] }) {
       `From: ${from}`,
       `To: ${to}`,
       `Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`,
+      ...tag,
       'MIME-Version: 1.0',
       'Content-Type: text/html; charset=UTF-8',
       '',
@@ -229,6 +232,7 @@ async function sendEmail({ from, to, subject, html, attachments = [] }) {
       `From: ${from}`,
       `To: ${to}`,
       `Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`,
+      ...tag,
       'MIME-Version: 1.0',
       `Content-Type: multipart/mixed; boundary="${boundary}"`,
       '',
@@ -396,7 +400,35 @@ function crmAuth(req, res, next) {
 const crmLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, skipSuccessfulRequests: true,
   standardHeaders: true, legacyHeaders: false, message: { ok: false, error: 'Trop de tentatives. Réessayez dans 15 minutes.' } });
 
-// ── Import d'anciennes demandes (fichier produit à partir de vos e-mails) ──
+// ── Import d'anciennes demandes (fichier ou synchronisation Gmail) ──
+// Renvoie 'added' | 'duplicate' | 'skipped'.
+function importLeadItem(it, status, note) {
+  try {
+    const email = cleanLine(it.email, 200);
+    const tel = cleanLine(it.tel, 40);
+    if ((!email || !EMAIL_RE.test(email)) && !tel) return 'skipped';
+    const created = it.created_at && !isNaN(Date.parse(it.created_at)) ? new Date(it.created_at).toISOString() : new Date().toISOString();
+    if (db.leadExists(email, created)) return 'duplicate';
+    const f = it.form || {};
+    const lead = db.createLead({
+      created_at: created, updated_at: created, status,
+      source: cleanLine(it.source || 'devis', 40) || 'devis',
+      prenom: cleanLine(it.prenom, 80), nom: cleanLine(it.nom, 80), email: EMAIL_RE.test(email) ? email : '', tel,
+      ville: cleanLine(it.ville, 120), adresse: cleanLine(it.adresse, 200), sujet: cleanLine(it.sujet, 120), message: clean(it.message, 4000),
+      form: {
+        prestation: cleanLine(f.prestation, 100), problemes: cleanLine(f.problemes, 200), nb_jantes: cleanLine(f.nb_jantes, 10),
+        taille: cleanLine(f.taille, 40), marque: cleanLine(f.marque, 60), modele: cleanLine(f.modele, 60), finition: cleanLine(f.finition, 60),
+        mode: cleanLine(f.mode, 60), delai: cleanLine(f.delai, 60), photos: Number(f.photos) || 0,
+      },
+      notes: note,
+      events: [{ ts: created, type: 'created', text: 'Demande reçue (' + note.toLowerCase().replace(/\.$/, '') + ')' }],
+    });
+    const tri = triage.withDrafts(lead, triage.analyzeRules(lead));
+    db.updateLead(lead.id, { triage: tri, created_at: created });
+    ensureClient(db.leadById(lead.id));
+    return 'added';
+  } catch (e) { return 'skipped'; }
+}
 // Déclaré AVANT le montage général : authentification d'abord, puis lecture d'un corps plus volumineux.
 app.post('/api/crm/leads/import', crmLimiter, crmAuth, express.json({ limit: '8mb' }), (req, res) => {
   const b = req.body || {};
@@ -404,39 +436,23 @@ app.post('/api/crm/leads/import', crmLimiter, crmAuth, express.json({ limit: '8m
   if (!items || !items.length) return res.status(400).json({ ok: false, error: 'Aucune demande dans le fichier.' });
   if (items.length > 2000) return res.status(400).json({ ok: false, error: 'Maximum 2000 demandes par import.' });
   const status = db.LEAD_STATUS.includes(b.status) ? b.status : 'a_rappeler';
-  let added = 0, skipped = 0, duplicates = 0;
-  for (const it of items) {
-    try {
-      const email = cleanLine(it.email, 200);
-      const tel = cleanLine(it.tel, 40);
-      if ((!email || !EMAIL_RE.test(email)) && !tel) { skipped++; continue; }
-      const created = it.created_at && !isNaN(Date.parse(it.created_at)) ? new Date(it.created_at).toISOString() : new Date().toISOString();
-      if (db.leadExists(email, created)) { duplicates++; continue; }
-      const f = it.form || {};
-      const lead = db.createLead({
-        created_at: created, updated_at: created, status,
-        source: cleanLine(it.source || 'devis', 40) || 'devis',
-        prenom: cleanLine(it.prenom, 80), nom: cleanLine(it.nom, 80), email: EMAIL_RE.test(email) ? email : '', tel,
-        ville: cleanLine(it.ville, 120), adresse: cleanLine(it.adresse, 200), sujet: cleanLine(it.sujet, 120), message: clean(it.message, 4000),
-        form: {
-          prestation: cleanLine(f.prestation, 100), problemes: cleanLine(f.problemes, 200), nb_jantes: cleanLine(f.nb_jantes, 10),
-          taille: cleanLine(f.taille, 40), marque: cleanLine(f.marque, 60), modele: cleanLine(f.modele, 60), finition: cleanLine(f.finition, 60),
-          mode: cleanLine(f.mode, 60), delai: cleanLine(f.delai, 60), photos: Number(f.photos) || 0,
-        },
-        notes: 'Ancienne demande importée de vos e-mails.',
-        events: [{ ts: created, type: 'created', text: 'Demande reçue (ancienne demande importée)' }],
-      });
-      const tri = triage.withDrafts(lead, triage.analyzeRules(lead));
-      db.updateLead(lead.id, { triage: tri, created_at: created });
-      ensureClient(db.leadById(lead.id));
-      added++;
-    } catch (e) { skipped++; }
-  }
-  console.log(`📥 Import CRM : ${added} ajoutées, ${duplicates} déjà présentes, ${skipped} ignorées`);
-  res.json({ ok: true, added, duplicates, skipped });
+  const c = { added: 0, duplicate: 0, skipped: 0 };
+  for (const it of items) c[importLeadItem(it, status, 'Ancienne demande importée de vos e-mails.')]++;
+  console.log(`📥 Import CRM : ${c.added} ajoutées, ${c.duplicate} déjà présentes, ${c.skipped} ignorées`);
+  res.json({ ok: true, added: c.added, duplicates: c.duplicate, skipped: c.skipped });
+});
+
+const mailsync = require('./mailsync').create({
+  db, getAccessToken, owner: GMAIL_USER, importLeadItem,
+  enabled: () => !!(GMAIL_USER && GMAIL_CLIENT_ID && GMAIL_CLIENT_SECRET && GMAIL_REFRESH_TOKEN) && process.env.CRM_TEST_MODE !== '1' && process.env.MAIL_SYNC !== '0',
 });
 
 app.use('/api/crm', crmLimiter, express.json({ limit: '100kb' }), crmAuth);
+
+// ── CRM : suivi des e-mails (lecture de la boîte Gmail) ──
+app.get('/api/crm/mail/status', (_req, res) => res.json({ ok: true, data: mailsync.status() }));
+app.get('/api/crm/mail/report', (_req, res) => res.json({ ok: true, data: mailsync.report() }));
+app.post('/api/crm/mail/sync', (_req, res) => { mailsync.tick(true); res.json({ ok: true, data: mailsync.status() }); });
 
 // Export complet (sauvegarde manuelle) : GET /api/crm/export
 app.get('/api/crm/export', (_req, res) => {
@@ -525,7 +541,7 @@ app.post('/api/crm/leads/:id/reply', replyLimiter, async (req, res) => {
   try {
     if (process.env.CRM_TEST_MODE !== '1') {
       if (!GMAIL_USER) throw new Error('Gmail non configuré sur le serveur');
-      await sendEmail({ from: `"REYNOV" <${GMAIL_USER}>`, to: l.email, subject, html: replyEmail(body) });
+      await sendEmail({ from: `"REYNOV" <${GMAIL_USER}>`, to: l.email, subject, html: replyEmail(body), origin: 'crm' });
     }
     db.logContact(l.id, 'email', null);
     db.addLeadEvent(l.id, 'reply_sent', 'E-mail envoyé : ' + subject);
@@ -755,9 +771,9 @@ app.post('/api/contact', contactLimiter, express.json({ limit: '20kb' }), async 
     if (duplicate) return res.json({ ok: true });
     console.log('📩 Message de contact enregistré (lead #' + lead.id + ')');
     // Notifications : n'empêchent jamais l'enregistrement
-    sendEmail({ from: `"REYNOV Site" <${GMAIL_USER}>`, to: GMAIL_USER, subject: `Nouveau message - ${lead.prenom} ${lead.nom}`.trim(), html: contactOwnerEmail(lead) })
+    sendEmail({ from: `"REYNOV Site" <${GMAIL_USER}>`, to: GMAIL_USER, subject: `Nouveau message - ${lead.prenom} ${lead.nom}`.trim(), html: contactOwnerEmail(lead), origin: 'owner' })
       .catch(e => console.error('⚠️ Mail owner (contact) non envoyé:', e.message));
-    sendEmail({ from: `"REYNOV" <${GMAIL_USER}>`, to: email, subject: 'Votre message à REYNOV a bien été reçu', html: contactAckEmail(lead) })
+    sendEmail({ from: `"REYNOV" <${GMAIL_USER}>`, to: email, subject: 'Votre message à REYNOV a bien été reçu', html: contactAckEmail(lead), origin: 'ack' })
       .catch(e => console.error('⚠️ Accusé (contact) non envoyé:', e.message));
     res.json({ ok: true });
   } catch (err) {
@@ -886,7 +902,7 @@ app.post('/api/devis', devisLimiter, (req, res, next) => {
         to:          GMAIL_USER,
         subject:     `Nouveau devis - ${d.prenom} ${d.nom}`,
         html:        ownerEmail(d),
-        attachments,
+        attachments, origin: 'owner',
       });
       ownerSent = true;
       console.log('✅ Mail owner envoyé');
@@ -900,7 +916,7 @@ app.post('/api/devis', devisLimiter, (req, res, next) => {
         from:    `"REYNOV" <${GMAIL_USER}>`,
         to:      d.email,
         subject: 'Votre demande de devis REYNOV a bien été reçue',
-        html:    clientEmail(d),
+        html:    clientEmail(d), origin: 'ack',
       });
       console.log('✅ Mail client envoyé');
     } catch (e) {
@@ -937,5 +953,6 @@ process.on('uncaughtException',  err => console.error('💥 uncaughtException:',
 process.on('unhandledRejection', err => console.error('💥 unhandledRejection:', err));
 
 app.listen(PORT, '0.0.0.0', () => {
+  mailsync.start();
   console.log(`🚀 REYNOV server démarré sur le port ${PORT}`);
 });

@@ -244,13 +244,67 @@ function deleteLead(id) {
   return _db.leads.length !== n;
 }
 
+
+// ── Suivi des e-mails (synchronisation Gmail) ──
+// Chaque échange est rangé dans l'historique du lead à sa vraie date, sans doublon (gid = identifiant Gmail).
+const OUT_TYPES = ['contact', 'reply_sent', 'mail_out'];
+function replyState(l) {
+  const evs = l.events || [];
+  const created = Date.parse(l.created_at) || 0;
+  let lastIn = created, lastOut = l.contacted_at ? Date.parse(l.contacted_at) : 0;
+  let nIn = 0, nOut = 0;
+  for (const e of evs) {
+    const t = Date.parse(e.ts) || 0;
+    if (e.type === 'mail_in') { nIn++; if (t > lastIn) lastIn = t; }
+    else if (OUT_TYPES.includes(e.type) && t >= created - 60000) { nOut++; if (t > lastOut) lastOut = t; }   // un envoi antérieur à la demande n'y répond pas
+  }
+  const closed = l.status === 'gagne' || l.status === 'perdu';
+  return {
+    waiting: !closed && lastIn > lastOut,
+    since: lastIn > lastOut ? new Date(lastIn).toISOString() : null,
+    last_in: lastIn ? new Date(lastIn).toISOString() : null,
+    last_out: lastOut ? new Date(lastOut).toISOString() : null,
+    n_in: nIn, n_out: nOut, never: !lastOut,
+  };
+}
+
+function leadsByEmail(email) {
+  const e = (email || '').toLowerCase();
+  return e ? _db.leads.filter(l => (l.email || '').toLowerCase() === e).sort((a, b) => a.created_at.localeCompare(b.created_at)) : [];
+}
+
+// Range un e-mail dans la fiche : renvoie false s'il y est déjà.
+function addMailEvent(id, { gid, dir, ts, text }) {
+  const l = leadById(id);
+  if (!l || !gid) return false;
+  l.events = l.events || [];
+  if (l.events.some(e => e.gid === gid)) return false;
+  l.events.push({ ts, type: dir === 'out' ? 'mail_out' : 'mail_in', text: String(text || '').slice(0, 600), gid });
+  l.events.sort((a, b) => String(a.ts).localeCompare(String(b.ts)));
+  if (l.events.length > 200) l.events = l.events.slice(-200);
+  const t = Date.parse(ts);
+  if (dir === 'out' && t >= Date.parse(l.created_at) - 60000) {          // une vraie réponse à cette demande
+    if (!l.first_contact_at || t < Date.parse(l.first_contact_at)) l.first_contact_at = ts;
+    if (!l.contacted_at || t > Date.parse(l.contacted_at)) l.contacted_at = ts;
+    l.contacted = true; l.last_channel = 'email';
+    if (l.status === 'nouveau' || l.status === 'a_rappeler') {
+      l.events.push({ ts, type: 'status', text: 'Statut : ' + l.status + ' → contacte (réponse trouvée dans Gmail)' });
+      l.status = 'contacte'; l.reminder_at = null;
+    }
+  }
+  l.updated_at = now();
+  saveSoon();
+  return true;
+}
+
 function leadsList({ status, q, cat } = {}) {
   const s = (q || '').toLowerCase();
   return [..._db.leads]
     .filter(l => !status || l.status === status)
     .filter(l => !cat || (l.triage && (l.triage.categories || []).includes(cat)))
     .filter(l => !s || [l.prenom, l.nom, l.email, l.tel, l.ville, l.message, (l.form || {}).marque, (l.form || {}).modele, l.triage && l.triage.summary].some(v => v && String(v).toLowerCase().includes(s)))
-    .sort((a, b) => b.created_at.localeCompare(a.created_at));
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .map(l => ({ ...l, reply: replyState(l) }));
 }
 
 function findRecentDuplicate(email, message, minutes = 10) {
@@ -317,7 +371,7 @@ function exportAll() {
 }
 
 module.exports = {
-  exportAll, LEAD_STATUS,
+  exportAll, LEAD_STATUS, DATA_DIR, replyState, leadsByEmail, addMailEvent, allLeads: () => _db.leads,
   createLead, leadById, updateLead, logContact, addLeadEvent, deleteLead, leadsList, findRecentDuplicate, leadExists, leadStats,
   stats, visitsByDay, logVisit,
   clientsList, clientById, findByEmail,
