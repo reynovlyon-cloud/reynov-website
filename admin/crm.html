@@ -1,710 +1,153 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-theme="light">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow, noarchive" />
 <title>REYNOV — CRM</title>
-<style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg: #050505; --bg2: #0d0d0d; --bg3: #141414;
-  --border: rgba(255,255,255,0.07); --text: #e8e8e8; --muted: rgba(255,255,255,0.35);
-  --gold: #C9A96E; --green: #4ade80; --yellow: #fbbf24;
-  --blue: #60a5fa; --orange: #fb923c; --red: #f87171;
-}
-html,body { height:100%; background:var(--bg); color:var(--text); font-family:'Inter',system-ui,sans-serif; font-size:14px; }
-
-/* Login */
-#login-screen { display:flex; align-items:center; justify-content:center; min-height:100vh; }
-.login-box { width:340px; padding:2.5rem; background:var(--bg2); border:1px solid var(--border); }
-.login-logo { font-size:1rem; font-weight:700; letter-spacing:.25em; color:#fff; margin-bottom:.4rem; }
-.login-sub { font-size:12px; color:var(--muted); margin-bottom:1.75rem; }
-.login-box input { width:100%; padding:.7rem 1rem; background:var(--bg3); border:1px solid var(--border); color:var(--text); font-size:14px; margin-bottom:.75rem; outline:none; }
-.login-box input:focus { border-color:var(--gold); }
-.login-box button { width:100%; padding:.7rem; background:#fff; color:#050505; border:none; font-weight:600; font-size:14px; cursor:pointer; letter-spacing:.05em; }
-.login-box button:hover { background:#ddd; }
-.login-err { color:var(--red); font-size:12px; margin-top:.5rem; display:none; }
-
-/* App */
-#app { display:none; height:100vh; flex-direction:column; }
-.top-bar { display:flex; align-items:center; justify-content:space-between; padding:0 1rem; height:50px; background:var(--bg2); border-bottom:1px solid var(--border); flex-shrink:0; gap:.5rem; overflow:hidden; }
-.top-bar__logo { font-size:.75rem; font-weight:700; letter-spacing:.15em; color:#fff; white-space:nowrap; flex-shrink:0; }
-.top-bar__nav { display:flex; overflow-x:auto; scrollbar-width:none; flex:1; }
-.top-bar__nav::-webkit-scrollbar { display:none; }
-.nav-btn { padding:.4rem .75rem; background:none; border:none; color:var(--muted); font-size:12px; cursor:pointer; border-bottom:2px solid transparent; transition:color .15s; white-space:nowrap; flex-shrink:0; }
-.nav-btn:hover { color:var(--text); }
-.nav-btn.active { color:#fff; border-bottom-color:var(--gold); }
-.logout-btn { padding:.3rem .65rem; background:none; border:1px solid var(--border); color:var(--muted); font-size:11px; cursor:pointer; white-space:nowrap; flex-shrink:0; }
-.logout-btn:hover { color:var(--text); }
-
-.main { flex:1; overflow-y:auto; }
-.view { display:none; padding:1.75rem 2rem; }
-.view.active { display:block; }
-
-/* Stats cards */
-.stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--border); margin-bottom:2rem; }
-.stat-card { background:var(--bg2); padding:1.25rem 1rem; text-align:center; }
-.stat-card__val { font-size:1.6rem; font-weight:300; color:#fff; line-height:1; }
-.stat-card__val.gold { color:var(--gold); }
-.stat-card__label { font-size:.62rem; color:var(--muted); letter-spacing:.12em; text-transform:uppercase; margin-top:.4rem; }
-
-/* Section headers */
-.sec-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; }
-.sec-title { font-size:.7rem; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); }
-
-/* Search */
-.search-input { padding:.55rem .9rem; background:var(--bg2); border:1px solid var(--border); color:var(--text); font-size:13px; outline:none; width:100%; max-width:340px; margin-bottom:1rem; }
-.search-input:focus { border-color:var(--gold); }
-
-/* Table */
-.table-wrap { overflow-x:auto; }
-table { width:100%; border-collapse:collapse; }
-th { padding:.55rem 1rem; text-align:left; font-size:.62rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); white-space:nowrap; }
-td { padding:.65rem 1rem; border-bottom:1px solid rgba(255,255,255,.03); font-size:13px; vertical-align:middle; }
-tr.clickable:hover td { background:rgba(255,255,255,.025); cursor:pointer; }
-.td-name { font-weight:500; color:#fff; }
-.td-muted { color:var(--muted); }
-
-/* Badges */
-.badge { display:inline-flex; align-items:center; gap:.3rem; padding:.18rem .55rem; font-size:11px; letter-spacing:.05em; font-weight:500; white-space:nowrap; }
-.badge::before { content:''; display:block; width:5px; height:5px; border-radius:50%; background:currentColor; flex-shrink:0; }
-.s-nouveau { color:var(--muted); }
-.s-devis_envoye { color:var(--yellow); }
-.s-confirme { color:var(--blue); }
-.s-en_cours { color:var(--orange); }
-.s-termine { color:var(--green); }
-.s-paye { color:var(--gold); }
-.s-annule { color:var(--red); }
-
-/* Buttons */
-.btn { padding:.45rem .9rem; background:none; border:1px solid var(--border); color:var(--text); font-size:12px; cursor:pointer; transition:background .15s; }
-.btn:hover { background:rgba(255,255,255,.05); }
-.btn-primary { background:#fff; color:#050505; border-color:#fff; font-weight:600; }
-.btn-primary:hover { background:#ddd; }
-.btn-danger { color:var(--red); border-color:rgba(248,113,113,.3); }
-.btn-danger:hover { background:rgba(248,113,113,.08); }
-.btn-sm { padding:.28rem .65rem; font-size:11px; }
-
-/* Panel */
-.overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:100; justify-content:flex-end; }
-.overlay.open { display:flex; }
-.panel { width:500px; height:100vh; overflow-y:auto; background:var(--bg2); border-left:1px solid var(--border); padding:2rem; position:relative; }
-.panel-close { position:absolute; top:1.25rem; right:1.25rem; background:none; border:none; color:var(--muted); font-size:1.1rem; cursor:pointer; }
-.panel-close:hover { color:#fff; }
-.panel-title { font-size:1.15rem; font-weight:300; color:#fff; margin-bottom:.25rem; }
-.panel-sub { font-size:12px; color:var(--muted); margin-bottom:1.75rem; }
-.panel-sec { margin-bottom:1.75rem; }
-.panel-sec-title { font-size:.62rem; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin-bottom:.65rem; padding-bottom:.4rem; border-bottom:1px solid var(--border); }
-.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:.65rem; }
-.field { display:flex; flex-direction:column; gap:.3rem; }
-.field label { font-size:11px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; }
-.field input, .field select, .field textarea { padding:.5rem .7rem; background:var(--bg3); border:1px solid var(--border); color:var(--text); font-size:13px; outline:none; width:100%; }
-.field input:focus, .field select:focus, .field textarea:focus { border-color:var(--gold); }
-.field textarea { resize:vertical; min-height:70px; }
-.form-actions { display:flex; gap:.65rem; margin-top:1rem; }
-
-/* Intervention card */
-.inter-card { background:var(--bg3); border:1px solid var(--border); padding:1.1rem; margin-bottom:.65rem; }
-.inter-card__head { display:flex; align-items:center; justify-content:space-between; margin-bottom:.65rem; }
-.inter-card__date { font-size:11px; color:var(--muted); }
-.inter-card__body { font-size:12px; color:var(--muted); line-height:1.8; }
-.inter-card__body strong { color:var(--text); font-weight:500; }
-.inter-card__foot { display:flex; align-items:center; gap:.65rem; margin-top:.9rem; flex-wrap:wrap; }
-.mini-input { width:100px; padding:.28rem .6rem; background:var(--bg); border:1px solid var(--border); color:var(--text); font-size:13px; outline:none; }
-.mini-input:focus { border-color:var(--gold); }
-.mini-select { padding:.28rem .6rem; background:var(--bg); border:1px solid var(--border); color:var(--text); font-size:12px; outline:none; cursor:pointer; }
-.mini-select:focus { border-color:var(--gold); }
-
-/* Modal */
-.modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:200; align-items:center; justify-content:center; }
-.modal-bg.open { display:flex; }
-.modal { width:460px; max-width:95vw; background:var(--bg2); border:1px solid var(--border); padding:2rem; }
-.modal-title { font-size:1.05rem; font-weight:300; color:#fff; margin-bottom:1.5rem; }
-
-/* Visits chart */
-.chart-wrap { margin-top:1.5rem; }
-.chart-bars { display:flex; align-items:flex-end; gap:3px; height:120px; margin-bottom:.4rem; }
-.bar-col { display:flex; flex-direction:column; align-items:center; flex:1; min-width:0; }
-.bar { width:100%; background:rgba(201,169,110,.35); transition:background .15s; min-height:1px; }
-.bar:hover { background:var(--gold); }
-.bar-label { font-size:9px; color:var(--muted); margin-top:.3rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; text-align:center; }
-.chart-summary { font-size:12px; color:var(--muted); margin-top:.75rem; }
-
-/* Toast */
-.toast { position:fixed; bottom:2rem; right:2rem; padding:.65rem 1.1rem; background:var(--bg2); border:1px solid var(--border); color:var(--text); font-size:13px; z-index:999; transform:translateY(80px); opacity:0; transition:all .25s ease; }
-.toast.show { transform:translateY(0); opacity:1; }
-.toast.success { border-color:var(--green); color:var(--green); }
-.toast.error { border-color:var(--red); color:var(--red); }
-
-.empty { padding:3rem; text-align:center; color:var(--muted); font-size:13px; }
-
-@media (max-width:768px) {
-  .stats-row { grid-template-columns:repeat(2,1fr); }
-  .panel { width:100vw; }
-  .form-grid { grid-template-columns:1fr; }
-}
-</style>
+<link rel="icon" type="image/webp" href="/assets/images/logo-160.webp" />
+<script>try{var t=localStorage.getItem('crm_theme')||(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+<link rel="stylesheet" href="crm.css" />
 </head>
 <body>
 
-<!-- LOGIN -->
-<div id="login-screen">
-  <div class="login-box">
-    <div class="login-logo">REYNOV</div>
-    <div class="login-sub">Accès CRM</div>
-    <input type="password" id="pwd-input" placeholder="Mot de passe" />
-    <button onclick="doLogin()">Connexion</button>
-    <p class="login-err" id="login-err">Mot de passe incorrect</p>
-  </div>
+<!-- Connexion -->
+<div id="login">
+  <form class="login-box" id="login-form" autocomplete="on">
+    <div class="brand-mark">REYNOV</div>
+    <div class="login-sub">Administration</div>
+    <input type="password" id="pwd" placeholder="Mot de passe" autocomplete="current-password" required />
+    <button class="btn primary" style="width:100%;justify-content:center;" type="submit">Connexion</button>
+    <p class="login-err" id="login-err" role="alert"></p>
+  </form>
 </div>
 
-<!-- APP -->
-<div id="app">
-  <div class="top-bar">
-    <div class="top-bar__logo">REYNOV · CRM</div>
-    <div class="top-bar__nav">
-      <button class="nav-btn active" id="nav-dashboard" onclick="showView('dashboard')">Dashboard</button>
-      <button class="nav-btn" id="nav-devis" onclick="showView('devis')">Devis reçus</button>
-      <button class="nav-btn" id="nav-clients" onclick="showView('clients')">Clients</button>
-      <button class="nav-btn" id="nav-interventions" onclick="showView('interventions')">Interventions</button>
-      <button class="nav-btn" id="nav-visites" onclick="showView('visites')">Visites</button>
+<!-- Application -->
+<div id="app" hidden>
+  <aside class="sidebar" id="sidebar">
+    <div class="side-brand"><div class="brand-mark">REYNOV</div><small>Administration</small></div>
+    <div class="side-label">Activité</div>
+    <button class="nav-item" data-nav="dashboard"><span data-ico="grid"></span>Tableau de bord</button>
+    <button class="nav-item" data-nav="leads"><span data-ico="funnel"></span>Leads<span class="badge" id="nav-badge" hidden>0</span></button>
+    <button class="nav-item" data-nav="clients"><span data-ico="users"></span>Clients</button>
+    <button class="nav-item" data-nav="interventions"><span data-ico="wrench"></span>Interventions</button>
+    <div class="side-label">Business</div>
+    <button class="nav-item" data-nav="stats"><span data-ico="chart"></span>Statistiques</button>
+    <button class="nav-item" data-nav="settings"><span data-ico="gear"></span>Paramètres</button>
+    <div class="side-bottom">
+      <a class="nav-item" href="/" target="_blank" rel="noopener"><span data-ico="external"></span>Voir le site</a>
+      <button class="nav-item" data-action="logout"><span data-ico="logout"></span>Déconnexion</button>
     </div>
-    <button class="logout-btn" onclick="doLogout()">Déconnexion</button>
-  </div>
+  </aside>
 
   <div class="main">
+    <header class="topbar">
+      <button class="icon-btn burger" data-action="menu" aria-label="Menu"><span data-ico="menu"></span></button>
+      <h1 id="view-title">Tableau de bord</h1>
+      <div class="search"><span data-ico="search"></span><input id="global-search" type="search" placeholder="Rechercher un client, un lead…" autocomplete="off" /></div>
+      <div class="top-right">
+        <button class="btn primary" data-action="new-lead"><span data-ico="plus"></span>Nouveau lead</button>
+        <button class="icon-btn" data-action="theme" aria-label="Changer de thème" title="Thème clair / sombre"><span data-ico="moon" id="theme-ico"></span></button>
+      </div>
+    </header>
 
-    <!-- DASHBOARD -->
-    <div id="view-dashboard" class="view active">
-      <div class="stats-row">
-        <div class="stat-card"><div class="stat-card__val" id="s-clients">—</div><div class="stat-card__label">Clients</div></div>
-        <div class="stat-card"><div class="stat-card__val" id="s-nouveaux">—</div><div class="stat-card__label">Nouveaux devis</div></div>
-        <div class="stat-card"><div class="stat-card__val" id="s-en-cours">—</div><div class="stat-card__label">En cours</div></div>
-        <div class="stat-card"><div class="stat-card__val" id="s-visites">—</div><div class="stat-card__label">Visites aujourd'hui</div></div>
-        <div class="stat-card"><div class="stat-card__val gold" id="s-ca-mois">—</div><div class="stat-card__label">CA ce mois</div></div>
-        <div class="stat-card"><div class="stat-card__val gold" id="s-ca-total">—</div><div class="stat-card__label">CA total</div></div>
-        <div class="stat-card"><div class="stat-card__val" id="s-interventions">—</div><div class="stat-card__label">Total interventions</div></div>
-        <div class="stat-card"><div class="stat-card__val" id="s-visites-total">—</div><div class="stat-card__label">Visites totales</div></div>
-      </div>
-      <div class="sec-head"><span class="sec-title">Derniers devis reçus</span></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Date</th><th>Client</th><th>Téléphone</th><th>Prestation</th><th>Véhicule</th><th>Mode</th><th>Statut</th></tr></thead>
-          <tbody id="recent-tbody"></tbody>
-        </table>
-        <div id="recent-empty" class="empty" style="display:none">Aucun devis reçu</div>
-      </div>
-    </div>
-
-    <!-- DEVIS REÇUS -->
-    <div id="view-devis" class="view">
-      <div class="sec-head">
-        <span class="sec-title">Devis reçus (<span id="devis-count">0</span>)</span>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Date</th><th>Client</th><th>Email</th><th>Téléphone</th><th>Prestation</th><th>Véhicule</th><th>Jantes</th><th>Mode</th><th>Statut</th><th>Montant</th></tr></thead>
-          <tbody id="devis-tbody"></tbody>
-        </table>
-        <div id="devis-empty" class="empty" style="display:none">Aucun devis reçu</div>
-      </div>
-    </div>
-
-    <!-- CLIENTS -->
-    <div id="view-clients" class="view">
-      <div class="sec-head">
-        <span class="sec-title">Clients (<span id="clients-count">0</span>)</span>
-        <button class="btn btn-primary" onclick="openNewClientModal()">+ Nouveau client</button>
-      </div>
-      <input class="search-input" type="text" placeholder="Rechercher nom, email, tél…" oninput="searchClients(this.value)" />
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Client</th><th>Email</th><th>Téléphone</th><th>Ville</th><th>Nb devis</th><th>Dernier statut</th><th>Inscrit le</th></tr></thead>
-          <tbody id="clients-tbody"></tbody>
-        </table>
-        <div id="clients-empty" class="empty" style="display:none">Aucun client</div>
-      </div>
-    </div>
-
-    <!-- INTERVENTIONS -->
-    <div id="view-interventions" class="view">
-      <div class="sec-head"><span class="sec-title">Toutes les interventions</span></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Date</th><th>Client</th><th>Prestation</th><th>Véhicule</th><th>Mode</th><th>Statut</th><th>Montant</th></tr></thead>
-          <tbody id="inter-tbody"></tbody>
-        </table>
-        <div id="inter-empty" class="empty" style="display:none">Aucune intervention</div>
-      </div>
-    </div>
-
-    <!-- VISITES -->
-    <div id="view-visites" class="view">
-      <div class="sec-head">
-        <span class="sec-title">Visites sur le site (30 derniers jours)</span>
-        <div style="display:flex;gap:.5rem;">
-          <button class="btn btn-sm" onclick="loadVisits(7)">7j</button>
-          <button class="btn btn-sm" onclick="loadVisits(30)">30j</button>
-          <button class="btn btn-sm" onclick="loadVisits(90)">90j</button>
+    <main class="content">
+      <!-- Tableau de bord -->
+      <section class="view" id="view-dashboard" hidden>
+        <h2 class="hello">Bonjour.</h2>
+        <div class="muted" id="dash-sub"></div>
+        <div id="dash-alert"></div>
+        <div class="grid stats" id="dash-stats"></div>
+        <div class="grid two">
+          <div class="card"><h3>Demandes reçues</h3><div class="muted">30 derniers jours</div><div id="dash-chart"></div></div>
+          <div class="card"><h3>Types de demandes</h3><div class="muted">tri automatique, 30 jours</div><div id="dash-cats"></div></div>
         </div>
-      </div>
-      <div class="chart-wrap">
-        <div class="chart-bars" id="chart-bars"></div>
-        <div class="chart-summary" id="chart-summary"></div>
-      </div>
-      <div style="margin-top:2rem;" class="sec-head"><span class="sec-title">Tableau détaillé</span></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Date</th><th>Visites</th><th>Variation</th></tr></thead>
-          <tbody id="visits-tbody"></tbody>
-        </table>
-      </div>
-    </div>
+        <div class="grid two even">
+          <div class="card"><h3>À traiter en priorité</h3><div class="muted">nouveaux leads et rappels du jour</div><div class="rows" id="dash-todo"></div></div>
+          <div class="card"><h3>Derniers leads</h3><div class="muted">les plus récents</div><div class="rows" id="dash-recent"></div></div>
+        </div>
+        <div class="grid stats" id="dash-biz"></div>
+      </section>
 
+      <!-- Leads -->
+      <section class="view" id="view-leads" hidden>
+        <div class="toolbar">
+          <div class="filters" id="lead-filters"></div>
+          <span class="hint" id="lead-hint">Toutes les demandes du site arrivent ici automatiquement. Glissez une fiche d'une colonne à l'autre.</span>
+        </div>
+        <div class="board" id="board"></div>
+        <details class="archived" id="archived"><summary id="archived-sum">Terminés (0)</summary><div class="board" id="board-done" style="grid-template-columns:repeat(2,minmax(260px,1fr))"></div></details>
+      </section>
+
+      <!-- Clients -->
+      <section class="view" id="view-clients" hidden>
+        <div class="toolbar"><button class="btn" data-action="new-client"><span data-ico="plus"></span>Nouveau client</button><span class="hint" id="clients-count"></span></div>
+        <div class="card table-card"><table class="tbl"><thead><tr><th>Client</th><th>E-mail</th><th>Téléphone</th><th>Ville</th><th>Interventions</th><th>Dernier statut</th></tr></thead><tbody id="clients-body"></tbody></table></div>
+      </section>
+
+      <!-- Interventions -->
+      <section class="view" id="view-interventions" hidden>
+        <div class="toolbar"><button class="btn" data-action="new-inter"><span data-ico="plus"></span>Nouvelle intervention</button><select class="mini" id="inter-filter"><option value="">Tous les statuts</option></select></div>
+        <div class="card table-card"><table class="tbl"><thead><tr><th>Client</th><th>Prestation</th><th>Véhicule</th><th>Statut</th><th>Montant (€)</th><th>Date</th></tr></thead><tbody id="inter-body"></tbody></table></div>
+      </section>
+
+      <!-- Statistiques -->
+      <section class="view" id="view-stats" hidden>
+        <div class="grid stats" id="stats-top" style="margin-top:0"></div>
+        <div class="grid two">
+          <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><h3>Visites du site</h3><div class="muted">pages vues par jour</div></div><div class="filters" id="visit-range"></div></div><div id="visit-chart"></div></div>
+          <div class="card"><h3>Origine des demandes</h3><div class="muted">30 derniers jours</div><div id="stats-sources"></div></div>
+        </div>
+      </section>
+
+      <!-- Paramètres -->
+      <section class="view" id="view-settings" hidden>
+        <div class="grid two even" style="margin-top:0">
+          <div class="card"><h3>Assistant IA</h3><div id="set-ai"></div></div>
+          <div class="card"><h3>Envoi d'e-mails</h3><div id="set-mail"></div></div>
+          <div class="card"><h3>Sauvegarde</h3><p class="muted">Téléchargez toutes vos données (clients, interventions, leads) dans un fichier.</p><button class="btn" data-action="export"><span data-ico="download"></span>Exporter la base</button></div>
+          <div class="card"><h3>Notifications</h3><p class="muted">Un son discret et une notification du navigateur à chaque nouveau lead (onglet ouvert).</p><button class="btn" data-action="notif" id="notif-btn"><span data-ico="bell"></span>Activer les notifications</button></div>
+        </div>
+      </section>
+    </main>
   </div>
 </div>
 
-<!-- CLIENT PANEL -->
-<div class="overlay" id="client-panel" onclick="closePanelOut(event)">
-  <div class="panel">
-    <button class="panel-close" onclick="closePanel()">✕</button>
-    <div class="panel-title" id="panel-name"></div>
-    <div class="panel-sub" id="panel-meta"></div>
-    <div class="panel-sec">
-      <div class="panel-sec-title">Informations</div>
-      <div class="form-grid" id="client-form"></div>
-      <div class="field" style="margin-top:.65rem;grid-column:span 2"><label>Notes</label><textarea id="client-notes" rows="2" placeholder="Notes libres…"></textarea></div>
-      <div class="form-actions">
-        <button class="btn btn-primary btn-sm" onclick="saveClient()">Enregistrer</button>
-        <button class="btn btn-sm" onclick="closePanel()">Fermer</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteClient()" style="margin-left:auto">Supprimer</button>
-      </div>
-    </div>
-    <div class="panel-sec">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.65rem;">
-        <div class="panel-sec-title" style="margin:0;border:none;padding:0">Interventions</div>
-        <button class="btn btn-sm" onclick="openNewInterModal()">+ Ajouter</button>
-      </div>
-      <div id="panel-inters"></div>
-    </div>
-  </div>
-</div>
+<!-- Fiche lead -->
+<div id="overlay" data-action="close-drawer"></div>
+<aside id="drawer" aria-label="Fiche lead" aria-hidden="true"></aside>
 
-<!-- NEW CLIENT MODAL -->
-<div class="modal-bg" id="modal-client" onclick="closeMOut(event,'modal-client')">
-  <div class="modal">
-    <div class="modal-title">Nouveau client</div>
-    <div class="form-grid">
-      <div class="field"><label>Prénom *</label><input id="nc-prenom" /></div>
-      <div class="field"><label>Nom</label><input id="nc-nom" /></div>
-      <div class="field"><label>Email</label><input id="nc-email" type="email" /></div>
-      <div class="field"><label>Téléphone</label><input id="nc-tel" type="tel" /></div>
-      <div class="field"><label>Ville</label><input id="nc-ville" /></div>
-      <div class="field"><label>Adresse</label><input id="nc-adresse" /></div>
-    </div>
-    <div class="form-actions">
-      <button class="btn btn-primary" onclick="createClient()">Créer</button>
-      <button class="btn" onclick="closeM('modal-client')">Annuler</button>
-    </div>
-  </div>
-</div>
+<!-- Modales -->
+<dialog id="dlg-lead"><form method="dialog" class="dlg" id="form-lead">
+  <h3>Nouveau lead</h3>
+  <div class="two"><div class="field"><label>Prénom *</label><input class="input" name="prenom" required /></div><div class="field"><label>Nom</label><input class="input" name="nom" /></div></div>
+  <div class="two"><div class="field"><label>E-mail</label><input class="input" name="email" type="email" /></div><div class="field"><label>Téléphone</label><input class="input" name="tel" type="tel" /></div></div>
+  <div class="field"><label>Ville</label><input class="input" name="ville" /></div>
+  <div class="field"><label>Message / besoin</label><textarea class="input" name="message" rows="4" placeholder="Collez ici le message du client : il sera analysé automatiquement."></textarea></div>
+  <div class="foot"><button class="btn" type="button" data-action="close-dlg">Annuler</button><button class="btn primary" type="submit">Créer et analyser</button></div>
+</form></dialog>
 
-<!-- NEW INTERVENTION MODAL -->
-<div class="modal-bg" id="modal-inter" onclick="closeMOut(event,'modal-inter')">
-  <div class="modal">
-    <div class="modal-title">Nouvelle intervention</div>
-    <div class="form-grid">
-      <div class="field"><label>Prestation</label>
-        <select id="ni-prestation"><option value="">—</option><option>Rénovation</option><option>Soudure</option><option>Dévoilage</option><option>Personnalisation</option><option>Multiple</option></select>
-      </div>
-      <div class="field"><label>Nb jantes</label><input id="ni-nb_jantes" placeholder="ex: 4" /></div>
-      <div class="field"><label>Marque</label><input id="ni-marque" /></div>
-      <div class="field"><label>Modèle</label><input id="ni-modele" /></div>
-      <div class="field"><label>Mode</label>
-        <select id="ni-mode"><option value="">—</option><option>À domicile</option><option>En atelier</option></select>
-      </div>
-      <div class="field"><label>Montant (€)</label><input id="ni-montant" type="number" min="0" /></div>
-    </div>
-    <div class="field" style="margin-top:.65rem"><label>Notes</label><textarea id="ni-notes" rows="2"></textarea></div>
-    <div class="form-actions">
-      <button class="btn btn-primary" onclick="createIntervention()">Ajouter</button>
-      <button class="btn" onclick="closeM('modal-inter')">Annuler</button>
-    </div>
-  </div>
-</div>
+<dialog id="dlg-client"><form method="dialog" class="dlg" id="form-client">
+  <h3 id="client-title">Client</h3><input type="hidden" name="id" />
+  <div class="two"><div class="field"><label>Prénom *</label><input class="input" name="prenom" required /></div><div class="field"><label>Nom</label><input class="input" name="nom" /></div></div>
+  <div class="two"><div class="field"><label>E-mail</label><input class="input" name="email" type="email" /></div><div class="field"><label>Téléphone</label><input class="input" name="tel" type="tel" /></div></div>
+  <div class="two"><div class="field"><label>Ville</label><input class="input" name="ville" /></div><div class="field"><label>Adresse</label><input class="input" name="adresse" /></div></div>
+  <div class="field"><label>Notes</label><textarea class="input" name="notes" rows="3"></textarea></div>
+  <div id="client-inters" class="muted"></div>
+  <div class="foot"><button class="btn danger" type="button" data-action="delete-client" id="btn-del-client">Supprimer</button><button class="btn" type="button" data-action="close-dlg">Fermer</button><button class="btn primary" type="submit">Enregistrer</button></div>
+</form></dialog>
 
-<div class="toast" id="toast"></div>
+<dialog id="dlg-inter"><form method="dialog" class="dlg" id="form-inter">
+  <h3>Nouvelle intervention</h3>
+  <div class="field"><label>Client *</label><select class="input" name="client_id" id="inter-client" required></select></div>
+  <div class="two"><div class="field"><label>Prestation</label><select class="input" name="prestation"><option value="">—</option><option>Rénovation</option><option>Soudure</option><option>Dévoilage</option><option>Personnalisation</option><option>Époxy</option><option>Multiple</option></select></div><div class="field"><label>Nombre de jantes</label><input class="input" name="nb_jantes" /></div></div>
+  <div class="two"><div class="field"><label>Marque</label><input class="input" name="marque" /></div><div class="field"><label>Modèle</label><input class="input" name="modele" /></div></div>
+  <div class="two"><div class="field"><label>Mode</label><select class="input" name="mode"><option value="">—</option><option>À domicile</option><option>En atelier</option></select></div><div class="field"><label>Montant (€)</label><input class="input" name="montant" type="number" min="0" /></div></div>
+  <div class="field"><label>Notes</label><textarea class="input" name="notes" rows="2"></textarea></div>
+  <div class="foot"><button class="btn" type="button" data-action="close-dlg">Annuler</button><button class="btn primary" type="submit">Créer</button></div>
+</form></dialog>
 
-<script>
-const STATUTS = {
-  nouveau:      { label: 'Nouveau devis',  cls: 's-nouveau' },
-  devis_envoye: { label: 'Devis envoyé',   cls: 's-devis_envoye' },
-  confirme:     { label: 'Confirmé',        cls: 's-confirme' },
-  en_cours:     { label: 'En cours',        cls: 's-en_cours' },
-  termine:      { label: 'Terminé',         cls: 's-termine' },
-  paye:         { label: 'Payé',            cls: 's-paye' },
-  annule:       { label: 'Annulé',          cls: 's-annule' },
-};
-
-let TOKEN = '', currentClientId = null, allClients = [];
-
-// ── Auth ──────────────────────────────────────────────────────
-async function doLogin() {
-  const pwd = document.getElementById('pwd-input').value.trim();
-  if (!pwd) return;
-  try {
-    const r = await fetch('/api/crm/stats', { headers: { Authorization: 'Bearer ' + pwd } });
-    if (r.ok) {
-      TOKEN = pwd;
-      sessionStorage.setItem('crm_token', pwd);
-      show('app');
-      hide('login-screen');
-      initApp();
-    } else {
-      document.getElementById('login-err').style.display = 'block';
-    }
-  } catch(e) {
-    document.getElementById('login-err').textContent = 'Erreur réseau';
-    document.getElementById('login-err').style.display = 'block';
-  }
-}
-document.getElementById('pwd-input').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-
-function doLogout() {
-  TOKEN = ''; sessionStorage.removeItem('crm_token');
-  hide('app'); show('login-screen');
-  document.getElementById('pwd-input').value = '';
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-  const saved = sessionStorage.getItem('crm_token');
-  if (!saved) return;
-  fetch('/api/crm/stats', { headers: { Authorization: 'Bearer ' + saved } }).then(r => {
-    if (r.ok) { TOKEN = saved; show('app'); hide('login-screen'); initApp(); }
-    else sessionStorage.removeItem('crm_token');
-  }).catch(() => {});
-});
-
-function initApp() {
-  loadDashboard();
-  loadClients();
-  loadInterventions();
-  loadDevis();
-}
-
-// ── API ───────────────────────────────────────────────────────
-async function api(method, path, body) {
-  const opts = { method, headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' } };
-  if (body) opts.body = JSON.stringify(body);
-  const r = await fetch('/api/crm' + path, opts);
-  return r.json();
-}
-
-// ── Helpers ───────────────────────────────────────────────────
-function show(id) { const el = document.getElementById(id); el.style.display = el.tagName === 'DIV' && id === 'app' ? 'flex' : 'block'; }
-function hide(id) { document.getElementById(id).style.display = 'none'; }
-function fmtDate(d) { return d ? new Date(d).toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'2-digit' }) : '—'; }
-function fmtMoney(m) { return m ? Number(m).toLocaleString('fr-FR', { style:'currency', currency:'EUR', maximumFractionDigits:0 }) : '—'; }
-function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
-function badge(s) {
-  const st = STATUTS[s] || { label: s, cls: 's-nouveau' };
-  return `<span class="badge ${st.cls}">${st.label}</span>`;
-}
-function statusOpts(cur) {
-  return Object.entries(STATUTS).map(([v,s]) => `<option value="${v}"${v===cur?' selected':''}>${s.label}</option>`).join('');
-}
-function toast(msg, type='success') {
-  const el = document.getElementById('toast');
-  el.textContent = msg; el.className = 'toast ' + type; el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 2500);
-}
-
-// ── Navigation ────────────────────────────────────────────────
-function showView(name) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('view-' + name).classList.add('active');
-  document.getElementById('nav-' + name).classList.add('active');
-  if (name === 'dashboard') loadDashboard();
-  if (name === 'clients') loadClients();
-  if (name === 'interventions') loadInterventions();
-  if (name === 'devis') loadDevis();
-  if (name === 'visites') loadVisits(30);
-}
-
-// ── Dashboard ─────────────────────────────────────────────────
-async function loadDashboard() {
-  const res = await api('GET', '/stats');
-  if (!res.ok) return;
-  const s = res.data;
-  document.getElementById('s-clients').textContent      = s.total_clients;
-  document.getElementById('s-nouveaux').textContent     = s.nouveaux;
-  document.getElementById('s-en-cours').textContent     = s.en_cours;
-  document.getElementById('s-visites').textContent      = s.visites_aujourd_hui;
-  document.getElementById('s-ca-mois').textContent      = fmtMoney(s.ca_mois);
-  document.getElementById('s-ca-total').textContent     = fmtMoney(s.ca_total);
-  document.getElementById('s-interventions').textContent = s.total_interventions;
-  document.getElementById('s-visites-total').textContent = s.visites_total;
-
-  const res2 = await api('GET', '/interventions');
-  const tbody = document.getElementById('recent-tbody');
-  const empty = document.getElementById('recent-empty');
-  if (!res2.ok || !res2.data.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
-  empty.style.display = 'none';
-  tbody.innerHTML = res2.data.slice(0, 10).map(i => `
-    <tr class="clickable" onclick="openClient(${i.client_id})">
-      <td class="td-muted">${fmtDate(i.created_at)}</td>
-      <td class="td-name">${esc(i.prenom)} ${esc(i.nom)}</td>
-      <td class="td-muted">${esc(i.tel||'')}</td>
-      <td>${esc(i.prestation||'—')}</td>
-      <td class="td-muted">${[i.marque,i.modele].filter(Boolean).map(esc).join(' ')||'—'}</td>
-      <td class="td-muted">${esc(i.mode||'—')}</td>
-      <td>${badge(i.statut)}</td>
-    </tr>`).join('');
-}
-
-// ── Devis reçus ───────────────────────────────────────────────
-async function loadDevis() {
-  const res = await api('GET', '/interventions');
-  const tbody = document.getElementById('devis-tbody');
-  const empty = document.getElementById('devis-empty');
-  document.getElementById('devis-count').textContent = res.data ? res.data.length : 0;
-  if (!res.ok || !res.data.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
-  empty.style.display = 'none';
-  tbody.innerHTML = res.data.map(i => `
-    <tr class="clickable" onclick="openClient(${i.client_id})">
-      <td class="td-muted">${fmtDate(i.created_at)}</td>
-      <td class="td-name">${esc(i.prenom)} ${esc(i.nom)}</td>
-      <td class="td-muted">${esc(i.email||'')}</td>
-      <td class="td-muted">${esc(i.tel||'')}</td>
-      <td>${esc(i.prestation||'—')}</td>
-      <td class="td-muted">${[i.marque,i.modele].filter(Boolean).map(esc).join(' ')||'—'}</td>
-      <td class="td-muted">${i.nb_jantes||'—'}${i.taille?' · '+i.taille:''}</td>
-      <td class="td-muted">${esc(i.mode||'—')}</td>
-      <td>${badge(i.statut)}</td>
-      <td>${fmtMoney(i.montant)}</td>
-    </tr>`).join('');
-}
-
-// ── Clients ───────────────────────────────────────────────────
-async function loadClients() {
-  const res = await api('GET', '/clients');
-  allClients = res.data || [];
-  renderClients(allClients);
-}
-function renderClients(data) {
-  document.getElementById('clients-count').textContent = data.length;
-  const tbody = document.getElementById('clients-tbody');
-  const empty = document.getElementById('clients-empty');
-  if (!data.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
-  empty.style.display = 'none';
-  tbody.innerHTML = data.map(c => `
-    <tr class="clickable" onclick="openClient(${c.id})">
-      <td class="td-name">${esc(c.prenom)} ${esc(c.nom||'')}</td>
-      <td class="td-muted">${esc(c.email||'—')}</td>
-      <td class="td-muted">${esc(c.tel||'—')}</td>
-      <td class="td-muted">${esc(c.ville||'—')}</td>
-      <td style="text-align:center">${c.nb_interventions||0}</td>
-      <td>${c.dernier_statut ? badge(c.dernier_statut) : '<span class="td-muted">—</span>'}</td>
-      <td class="td-muted">${fmtDate(c.created_at)}</td>
-    </tr>`).join('');
-}
-function searchClients(q) {
-  const s = q.toLowerCase();
-  renderClients(allClients.filter(c =>
-    [c.prenom,c.nom,c.email,c.tel,c.ville].some(v => v && v.toLowerCase().includes(s))
-  ));
-}
-
-// ── Interventions ─────────────────────────────────────────────
-async function loadInterventions() {
-  const res = await api('GET', '/interventions');
-  const tbody = document.getElementById('inter-tbody');
-  const empty = document.getElementById('inter-empty');
-  if (!res.ok || !res.data.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
-  empty.style.display = 'none';
-  tbody.innerHTML = res.data.map(i => `
-    <tr class="clickable" onclick="openClient(${i.client_id})">
-      <td class="td-muted">${fmtDate(i.created_at)}</td>
-      <td class="td-name">${esc(i.prenom)} ${esc(i.nom||'')}</td>
-      <td>${esc(i.prestation||'—')}</td>
-      <td class="td-muted">${[i.marque,i.modele].filter(Boolean).map(esc).join(' ')||'—'}</td>
-      <td class="td-muted">${esc(i.mode||'—')}</td>
-      <td>${badge(i.statut)}</td>
-      <td>${fmtMoney(i.montant)}</td>
-    </tr>`).join('');
-}
-
-// ── Visites ───────────────────────────────────────────────────
-async function loadVisits(days) {
-  const res = await api('GET', '/visits?days=' + days);
-  if (!res.ok) return;
-  const data = res.data;
-  const max = Math.max(...data.map(d => d.visits), 1);
-  const total = data.reduce((s, d) => s + d.visits, 0);
-
-  document.getElementById('chart-bars').innerHTML = data.map(d => `
-    <div class="bar-col" title="${d.date}: ${d.visits} visite(s)">
-      <div class="bar" style="height:${Math.round((d.visits/max)*100)}%"></div>
-      <div class="bar-label">${d.date.slice(5)}</div>
-    </div>`).join('');
-
-  document.getElementById('chart-summary').textContent =
-    `Total : ${total} visites sur ${days} jours · Moyenne : ${(total/days).toFixed(1)}/jour · Max : ${max} visites`;
-
-  const tbody = document.getElementById('visits-tbody');
-  const rows = [...data].reverse();
-  tbody.innerHTML = rows.map((d, idx) => {
-    const prev = rows[idx + 1];
-    let variation = '—';
-    if (prev !== undefined) {
-      const diff = d.visits - prev.visits;
-      variation = diff > 0 ? `<span style="color:var(--green)">+${diff}</span>`
-                : diff < 0 ? `<span style="color:var(--red)">${diff}</span>`
-                : `<span class="td-muted">0</span>`;
-    }
-    return `<tr>
-      <td>${d.date}</td>
-      <td><strong>${d.visits}</strong></td>
-      <td>${variation}</td>
-    </tr>`;
-  }).join('');
-}
-
-// ── Client Panel ──────────────────────────────────────────────
-async function openClient(id) {
-  currentClientId = id;
-  const res = await api('GET', '/clients/' + id);
-  if (!res.ok) return;
-  const c = res.data;
-
-  document.getElementById('panel-name').textContent = (c.prenom || '') + ' ' + (c.nom || '');
-  document.getElementById('panel-meta').textContent =
-    [c.email, c.tel, c.ville].filter(Boolean).join(' · ') || 'Aucune info contact';
-
-  document.getElementById('client-form').innerHTML = `
-    <div class="field"><label>Prénom</label><input id="ef-prenom" value="${esc(c.prenom)}" /></div>
-    <div class="field"><label>Nom</label><input id="ef-nom" value="${esc(c.nom)}" /></div>
-    <div class="field"><label>Email</label><input id="ef-email" type="email" value="${esc(c.email)}" /></div>
-    <div class="field"><label>Téléphone</label><input id="ef-tel" value="${esc(c.tel)}" /></div>
-    <div class="field"><label>Ville</label><input id="ef-ville" value="${esc(c.ville)}" /></div>
-    <div class="field"><label>Adresse</label><input id="ef-adresse" value="${esc(c.adresse)}" /></div>`;
-  document.getElementById('client-notes').value = c.notes || '';
-
-  const interDiv = document.getElementById('panel-inters');
-  if (!c.interventions.length) {
-    interDiv.innerHTML = '<div class="empty" style="padding:1rem 0">Aucune intervention</div>';
-  } else {
-    interDiv.innerHTML = c.interventions.map(i => `
-      <div class="inter-card">
-        <div class="inter-card__head">
-          ${badge(i.statut)}
-          <span class="inter-card__date">${fmtDate(i.created_at)}</span>
-        </div>
-        <div class="inter-card__body">
-          <strong>${esc(i.prestation||'—')}</strong> ·
-          ${[i.marque,i.modele].filter(Boolean).map(esc).join(' ')||'—'}
-          ${i.nb_jantes ? ` · ${i.nb_jantes} jante(s)${i.taille?' '+i.taille:''}` : ''}
-          ${i.mode ? ` · ${esc(i.mode)}` : ''}
-          ${i.adresse_intervention ? `<br><span style="font-size:11px">${esc(i.adresse_intervention)}</span>` : ''}
-        </div>
-        ${i.notes ? `<div style="margin-top:.5rem;font-size:12px;color:var(--muted);font-style:italic">${esc(i.notes)}</div>` : ''}
-        <div class="inter-card__foot">
-          <select class="mini-select" onchange="updateStatut(${i.id},this.value)">${statusOpts(i.statut)}</select>
-          <input class="mini-input" type="number" min="0" placeholder="Prix €" value="${i.montant||''}"
-            onchange="updateMontant(${i.id},this.value,'${i.statut}','${esc(i.notes)}')" />
-          <button class="btn btn-danger btn-sm" onclick="delIntervention(${i.id})">Suppr.</button>
-        </div>
-      </div>`).join('');
-  }
-  document.getElementById('client-panel').classList.add('open');
-}
-function closePanel() { document.getElementById('client-panel').classList.remove('open'); currentClientId = null; }
-function closePanelOut(e) { if (e.target.id === 'client-panel') closePanel(); }
-
-async function saveClient() {
-  await api('PUT', '/clients/' + currentClientId, {
-    prenom:  document.getElementById('ef-prenom').value,
-    nom:     document.getElementById('ef-nom').value,
-    email:   document.getElementById('ef-email').value,
-    tel:     document.getElementById('ef-tel').value,
-    ville:   document.getElementById('ef-ville').value,
-    adresse: document.getElementById('ef-adresse').value,
-    notes:   document.getElementById('client-notes').value,
-  });
-  toast('Client mis à jour');
-  loadClients(); openClient(currentClientId);
-}
-
-async function deleteClient() {
-  if (!confirm('Supprimer ce client et ses interventions ?')) return;
-  await api('DELETE', '/clients/' + currentClientId);
-  toast('Client supprimé'); closePanel(); loadClients(); loadDashboard();
-}
-
-async function updateStatut(id, statut) {
-  const res = await api('GET', '/clients/' + currentClientId);
-  const inter = res.data.interventions.find(i => i.id === id);
-  await api('PUT', '/interventions/' + id, { statut, montant: inter?.montant, notes: inter?.notes||'' });
-  toast('Statut mis à jour'); loadDashboard(); openClient(currentClientId);
-}
-
-async function updateMontant(id, montant, statut, notes) {
-  await api('PUT', '/interventions/' + id, { statut, montant: montant||null, notes });
-  toast('Montant enregistré'); loadDashboard();
-}
-
-async function delIntervention(id) {
-  if (!confirm('Supprimer ?')) return;
-  await api('DELETE', '/interventions/' + id);
-  toast('Supprimé'); openClient(currentClientId); loadInterventions();
-}
-
-// ── Modals ────────────────────────────────────────────────────
-function openNewClientModal() {
-  ['prenom','nom','email','tel','ville','adresse'].forEach(f => document.getElementById('nc-'+f).value = '');
-  document.getElementById('modal-client').classList.add('open');
-}
-async function createClient() {
-  const prenom = document.getElementById('nc-prenom').value.trim();
-  if (!prenom) { toast('Prénom requis', 'error'); return; }
-  const { id } = await api('POST', '/clients', {
-    prenom, nom: document.getElementById('nc-nom').value,
-    email: document.getElementById('nc-email').value,
-    tel: document.getElementById('nc-tel').value,
-    ville: document.getElementById('nc-ville').value,
-    adresse: document.getElementById('nc-adresse').value,
-    notes: '',
-  });
-  closeM('modal-client'); toast('Client créé');
-  await loadClients(); openClient(id);
-}
-
-function openNewInterModal() {
-  ['prestation','nb_jantes','marque','modele','mode','montant','notes'].forEach(f => {
-    const el = document.getElementById('ni-'+f); if (el) el.value = '';
-  });
-  document.getElementById('modal-inter').classList.add('open');
-}
-async function createIntervention() {
-  if (!currentClientId) return;
-  await api('POST', '/interventions', {
-    client_id: currentClientId,
-    prestation: document.getElementById('ni-prestation').value,
-    nb_jantes:  document.getElementById('ni-nb_jantes').value,
-    marque:     document.getElementById('ni-marque').value,
-    modele:     document.getElementById('ni-modele').value,
-    mode:       document.getElementById('ni-mode').value,
-    montant:    document.getElementById('ni-montant').value || null,
-    notes:      document.getElementById('ni-notes').value,
-    statut: 'confirme',
-  });
-  closeM('modal-inter'); toast('Intervention ajoutée');
-  openClient(currentClientId); loadDashboard();
-}
-
-function closeM(id) { document.getElementById(id).classList.remove('open'); }
-function closeMOut(e, id) { if (e.target.id === id) closeM(id); }
-</script>
+<div id="toasts" aria-live="polite"></div>
+<script src="crm.js"></script>
 </body>
 </html>

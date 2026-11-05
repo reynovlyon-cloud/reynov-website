@@ -6,13 +6,15 @@ if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 const DB_FILE = path.join(DATA_DIR, 'crm.json');
 
-let _db = { clients: [], interventions: [], visits: {}, _cid: 1, _iid: 1 };
+let _db = { clients: [], interventions: [], visits: {}, leads: [], _cid: 1, _iid: 1, _lid: 1 };
 
 if (fs.existsSync(DB_FILE)) {
   try {
     const loaded = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
     _db = { ..._db, ...loaded };
     if (!_db.visits) _db.visits = {};
+    if (!Array.isArray(_db.leads)) _db.leads = [];
+    if (!_db._lid) _db._lid = 1 + _db.leads.reduce((m, l) => Math.max(m, l.id || 0), 0);
   } catch(e) { console.error('CRM load error:', e.message); }
 }
 
@@ -162,6 +164,132 @@ function deleteIntervention(id) {
   save();
 }
 
+
+// ── Leads (demandes entrantes : devis, contact, pages publicitaires) ──
+const LEAD_STATUS = ['nouveau', 'a_rappeler', 'contacte', 'rdv', 'gagne', 'perdu'];
+
+function addEventRaw(l, type, text) {
+  l.events = l.events || [];
+  l.events.push({ ts: now(), type, text: String(text || '').slice(0, 600) });
+  if (l.events.length > 200) l.events = l.events.slice(-200);
+}
+
+function createLead(data) {
+  const id = _db._lid++;
+  const l = {
+    id, created_at: now(), updated_at: now(), source: 'manuel',
+    prenom: '', nom: '', email: '', tel: '', ville: '', adresse: '', sujet: '', message: '', form: {},
+    status: 'nouveau', contacted: false, contacted_at: null, first_contact_at: null, last_channel: null,
+    reminder_at: null, client_id: null, intervention_id: null, triage: null, notes: '', events: [],
+    ...data,
+  };
+  if (!l.events.length) addEventRaw(l, 'created', 'Demande reçue (' + l.source + ')');
+  _db.leads.push(l);
+  save();
+  return l;
+}
+
+function leadById(id) { return _db.leads.find(l => l.id === Number(id)) || null; }
+
+function updateLead(id, patch) {
+  const l = leadById(id);
+  if (!l) return null;
+  const allowed = ['prenom', 'nom', 'email', 'tel', 'ville', 'adresse', 'sujet', 'message', 'notes', 'form', 'reminder_at', 'client_id', 'intervention_id'];
+  allowed.forEach(k => { if (patch[k] !== undefined) l[k] = patch[k]; });
+  if (patch.status !== undefined && LEAD_STATUS.includes(patch.status) && patch.status !== l.status) {
+    addEventRaw(l, 'status', 'Statut : ' + l.status + ' → ' + patch.status);
+    l.status = patch.status;
+    if (patch.status === 'contacte' || patch.status === 'rdv') markContactedRaw(l, null, true);
+    if (patch.status !== 'a_rappeler') l.reminder_at = patch.reminder_at !== undefined ? patch.reminder_at : null;
+  }
+  if (patch.triage) l.triage = patch.triage;
+  if (patch.categories && l.triage) l.triage.categories = patch.categories;
+  l.updated_at = now();
+  save();
+  return l;
+}
+
+function markContactedRaw(l, channel, silent) {
+  const t = now();
+  if (!l.first_contact_at) l.first_contact_at = t;
+  l.contacted = true; l.contacted_at = t;
+  if (channel) l.last_channel = channel;
+  if (!silent) addEventRaw(l, 'contact', 'Contact : ' + (channel || 'autre'));
+}
+
+function logContact(id, channel, note) {
+  const l = leadById(id);
+  if (!l) return null;
+  markContactedRaw(l, channel, false);
+  if (note) addEventRaw(l, 'note', note);
+  if (l.status === 'nouveau' || l.status === 'a_rappeler') { addEventRaw(l, 'status', 'Statut : ' + l.status + ' → contacte'); l.status = 'contacte'; l.reminder_at = null; }
+  l.updated_at = now();
+  save();
+  return l;
+}
+
+function addLeadEvent(id, type, text) {
+  const l = leadById(id);
+  if (!l) return null;
+  addEventRaw(l, type, text);
+  l.updated_at = now();
+  save();
+  return l;
+}
+
+function deleteLead(id) {
+  const n = _db.leads.length;
+  _db.leads = _db.leads.filter(l => l.id !== Number(id));
+  if (_db.leads.length !== n) save();
+  return _db.leads.length !== n;
+}
+
+function leadsList({ status, q, cat } = {}) {
+  const s = (q || '').toLowerCase();
+  return [..._db.leads]
+    .filter(l => !status || l.status === status)
+    .filter(l => !cat || (l.triage && (l.triage.categories || []).includes(cat)))
+    .filter(l => !s || [l.prenom, l.nom, l.email, l.tel, l.ville, l.message, (l.form || {}).marque, (l.form || {}).modele, l.triage && l.triage.summary].some(v => v && String(v).toLowerCase().includes(s)))
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
+}
+
+function findRecentDuplicate(email, message, minutes = 10) {
+  const e = (email || '').toLowerCase();
+  const m = (message || '').trim();
+  const since = Date.now() - minutes * 60000;
+  return _db.leads.find(l => (l.email || '').toLowerCase() === e && (l.message || '').trim() === m && Date.parse(l.created_at) > since) || null;
+}
+
+function leadStats() {
+  const L = _db.leads;
+  const byStatus = {}; LEAD_STATUS.forEach(s => { byStatus[s] = 0; });
+  L.forEach(l => { byStatus[l.status] = (byStatus[l.status] || 0) + 1; });
+  const d7 = Date.now() - 7 * 86400000;
+  const d30 = Date.now() - 30 * 86400000;
+  const delays = L.filter(l => l.first_contact_at && Date.parse(l.created_at) > d30).map(l => (Date.parse(l.first_contact_at) - Date.parse(l.created_at)) / 60000).filter(x => x >= 0);
+  const perDay = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+    perDay.push({ date: d, leads: L.filter(l => l.created_at.startsWith(d)).length });
+  }
+  const cats = {};
+  L.filter(l => Date.parse(l.created_at) > d30).forEach(l => ((l.triage && l.triage.categories) || ['autre']).forEach(c => { cats[c] = (cats[c] || 0) + 1; }));
+  const sources = {};
+  L.filter(l => Date.parse(l.created_at) > d30).forEach(l => { sources[l.source] = (sources[l.source] || 0) + 1; });
+  const stale = L.filter(l => l.status === 'nouveau' && !l.contacted && Date.now() - Date.parse(l.created_at) > 24 * 3600000).length;
+  const due = L.filter(l => l.status === 'a_rappeler' && l.reminder_at && Date.parse(l.reminder_at) <= Date.now()).length;
+  const converted = L.filter(l => l.status === 'gagne' && Date.parse(l.created_at) > d30).length;
+  return {
+    total: L.length, by_status: byStatus,
+    last7: L.filter(l => Date.parse(l.created_at) > d7).length,
+    last30: L.filter(l => Date.parse(l.created_at) > d30).length,
+    avg_first_contact_min: delays.length ? Math.round(delays.reduce((a, b) => a + b, 0) / delays.length) : null,
+    uncontacted: L.filter(l => !l.contacted && !['gagne', 'perdu'].includes(l.status)).length,
+    stale_24h: stale, reminders_due: due, converted30: converted,
+    per_day: perDay, categories: cats, sources,
+  };
+}
+
 // ── Stats ─────────────────────────────────────────────────────
 function stats() {
   const ym   = new Date().toISOString().slice(0, 7);
@@ -179,11 +307,12 @@ function stats() {
 }
 
 function exportAll() {
-  return { clients: _db.clients, interventions: _db.interventions };
+  return { clients: _db.clients, interventions: _db.interventions, leads: _db.leads };
 }
 
 module.exports = {
-  exportAll,
+  exportAll, LEAD_STATUS,
+  createLead, leadById, updateLead, logContact, addLeadEvent, deleteLead, leadsList, findRecentDuplicate, leadStats,
   stats, visitsByDay, logVisit,
   clientsList, clientById, findByEmail,
   createClient, updateClient, deleteClient,

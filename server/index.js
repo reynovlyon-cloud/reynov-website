@@ -6,6 +6,7 @@ const multer      = require('multer');
 const path        = require('path');
 const crypto      = require('crypto');
 const db          = require('./db');
+const triage      = require('./triage');
 
 const app    = express();
 app.disable('x-powered-by');
@@ -61,14 +62,10 @@ app.use((_req, res, next) => {
 });
 
 // ── Zone d'administration : page jamais indexée ni mise en cache, jamais intégrable dans un cadre.
-// Le CRM utilise des gestionnaires d'événements en ligne (onclick=...) que la politique globale
-// interdit : on ne les autorise QUE sur /admin (l'API reste protégée par mot de passe).
 app.use('/admin', (_req, res, next) => {
   const csp = res.getHeader('Content-Security-Policy');
   if (csp) {
-    res.setHeader('Content-Security-Policy', String(csp)
-      .replace("script-src-attr 'none'", "script-src-attr 'unsafe-inline'")
-      .replace("frame-ancestors 'self'", "frame-ancestors 'none'"));
+    res.setHeader('Content-Security-Policy', String(csp).replace("frame-ancestors 'self'", "frame-ancestors 'none'"));
   }
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
@@ -407,6 +404,101 @@ app.get('/api/crm/export', (_req, res) => {
   res.json({ ok: true, exported_at: new Date().toISOString(), data: db.exportAll() });
 });
 
+// ── CRM : leads ──────────────────────────────────────────────
+const slimLead = (l) => {
+  const t = l.triage ? { ...l.triage } : null;
+  if (t) { delete t.drafts; delete t.reply; delete t.whatsapp; }
+  const { events, ...rest } = l;
+  return { ...rest, triage: t, events_count: (events || []).length };
+};
+const replyLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 60, standardHeaders: true, legacyHeaders: false, message: { ok: false, error: 'Trop d\'envois. Réessayez plus tard.' } });
+
+app.get('/api/crm/config', (_req, res) => {
+  res.json({ ok: true, data: { ai: triage.aiAvailable(), email: !!(GMAIL_USER && GMAIL_CLIENT_ID && GMAIL_CLIENT_SECRET && GMAIL_REFRESH_TOKEN) || process.env.CRM_TEST_MODE === '1', categories: triage.CATEGORIES, statuses: db.LEAD_STATUS } });
+});
+app.get('/api/crm/leads/stats', (_req, res) => res.json({ ok: true, data: db.leadStats() }));
+app.get('/api/crm/leads', (req, res) => {
+  res.json({ ok: true, data: db.leadsList({ status: req.query.status, q: req.query.q, cat: req.query.cat }).slice(0, 500).map(slimLead) });
+});
+app.get('/api/crm/leads/:id', (req, res) => {
+  const l = db.leadById(req.params.id);
+  if (!l) return res.status(404).json({ ok: false, error: 'Introuvable' });
+  const client = l.client_id ? db.clientById(l.client_id) : null;
+  res.json({ ok: true, data: { ...l, client: client ? { id: client.id, interventions: client.interventions.length } : null } });
+});
+app.post('/api/crm/leads', async (req, res) => {
+  const b = req.body || {};
+  if (!cleanLine(b.prenom, 80) && !cleanLine(b.nom, 80)) return res.status(400).json({ ok: false, error: 'Nom ou prénom requis.' });
+  const email = cleanLine(b.email, 200);
+  if (email && !EMAIL_RE.test(email)) return res.status(400).json({ ok: false, error: 'E-mail invalide.' });
+  const r = ingestLead({ source: 'manuel', prenom: b.prenom, nom: b.nom, email, tel: b.tel, ville: b.ville, message: b.message, sujet: b.sujet, form: b.form || {} });
+  if (r.duplicate) return res.json({ ok: true, data: r.lead, duplicate: true });
+  res.json({ ok: true, data: r.lead });
+});
+app.patch('/api/crm/leads/:id', (req, res) => {
+  const b = req.body || {};
+  const l = db.leadById(req.params.id);
+  if (!l) return res.status(404).json({ ok: false, error: 'Introuvable' });
+  const patch = {};
+  ['prenom', 'nom', 'tel', 'ville', 'adresse'].forEach(k => { if (b[k] !== undefined) patch[k] = cleanLine(b[k], 200); });
+  if (b.email !== undefined) {
+    const e = cleanLine(b.email, 200);
+    if (e && !EMAIL_RE.test(e)) return res.status(400).json({ ok: false, error: 'E-mail invalide.' });
+    patch.email = e;
+  }
+  if (b.notes !== undefined) patch.notes = clean(b.notes, 4000);
+  if (b.status !== undefined) {
+    if (!db.LEAD_STATUS.includes(b.status)) return res.status(400).json({ ok: false, error: 'Statut inconnu.' });
+    patch.status = b.status;
+  }
+  if (b.reminder_at !== undefined) patch.reminder_at = b.reminder_at ? new Date(b.reminder_at).toISOString() : null;
+  if (Array.isArray(b.categories)) patch.categories = b.categories.filter(c => triage.CATEGORIES[c]).slice(0, 4);
+  const out = db.updateLead(l.id, patch);
+  if (patch.categories && out.triage) {
+    out.triage = triage.withDrafts(out, { ...out.triage, categories: patch.categories, primary: patch.categories[0] || 'autre', engine: out.triage.engine === 'ia' ? 'regles' : out.triage.engine });
+    db.updateLead(l.id, { triage: out.triage });
+  }
+  res.json({ ok: true, data: db.leadById(l.id) });
+});
+app.post('/api/crm/leads/:id/analyze', async (req, res) => {
+  const l = db.leadById(req.params.id);
+  if (!l) return res.status(404).json({ ok: false, error: 'Introuvable' });
+  const engine = req.body && req.body.engine === 'regles' ? 'regles' : 'auto';
+  const tri = await triage.analyze(l, { engine });
+  db.updateLead(l.id, { triage: tri });
+  db.addLeadEvent(l.id, 'analysis', (tri.engine === 'ia' ? 'Analyse IA : ' : 'Analyse automatique : ') + tri.summary);
+  res.json({ ok: true, data: db.leadById(l.id), ai_error: tri.ai_error || null });
+});
+app.post('/api/crm/leads/:id/contact', (req, res) => {
+  const channel = ['appel', 'whatsapp', 'email', 'sms', 'autre'].includes((req.body || {}).channel) ? req.body.channel : 'autre';
+  const l = db.logContact(req.params.id, channel, cleanLine((req.body || {}).note, 300));
+  if (!l) return res.status(404).json({ ok: false, error: 'Introuvable' });
+  res.json({ ok: true, data: l });
+});
+app.post('/api/crm/leads/:id/reply', replyLimiter, async (req, res) => {
+  const l = db.leadById(req.params.id);
+  if (!l) return res.status(404).json({ ok: false, error: 'Introuvable' });
+  if (!l.email || !EMAIL_RE.test(l.email)) return res.status(400).json({ ok: false, error: 'Ce lead n\'a pas d\'adresse e-mail valide.' });
+  const subject = cleanLine((req.body || {}).subject, 160);
+  const body = clean((req.body || {}).body, 5000).replace(/\{\{prenom\}\}/g, l.prenom || '');
+  if (!subject || body.length < 10) return res.status(400).json({ ok: false, error: 'Objet et message requis.' });
+  try {
+    if (process.env.CRM_TEST_MODE !== '1') {
+      if (!GMAIL_USER) throw new Error('Gmail non configuré sur le serveur');
+      await sendEmail({ from: `"REYNOV" <${GMAIL_USER}>`, to: l.email, subject, html: replyEmail(body) });
+    }
+    db.logContact(l.id, 'email', null);
+    db.addLeadEvent(l.id, 'reply_sent', 'E-mail envoyé : ' + subject);
+    res.json({ ok: true, data: db.leadById(l.id) });
+  } catch (e) {
+    console.error('❌ Envoi réponse CRM:', e.message);
+    res.status(502).json({ ok: false, error: 'Envoi impossible : ' + e.message });
+  }
+});
+app.delete('/api/crm/leads/:id', (req, res) => {
+  res.json({ ok: db.deleteLead(req.params.id) });
+});
+
 // GET /api/crm/stats
 app.get('/api/crm/stats', (req, res) => {
   res.json({ ok: true, data: db.stats() });
@@ -517,6 +609,123 @@ function devisBudgetOk() {   // 150 demandes par jour maximum, tous visiteurs co
   devisCount++; return true;
 }
 
+
+// ── Leads : réception, tri automatique, notifications ─────────
+const clean = (v, max = 4000) => String(v == null ? '' : v).replace(/\r\n?/g, '\n').replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, ' ').trim().slice(0, max);
+const cleanLine = (v, max = 200) => clean(v, max).replace(/\n+/g, ' ');
+const escHtml = (v) => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function ensureClient(lead) {
+  try {
+    if (lead.client_id) return lead.client_id;
+    if (!lead.email) return null;
+    let c = db.findByEmail(lead.email);
+    const id = c ? c.id : db.createClient({ prenom: lead.prenom, nom: lead.nom, email: lead.email, tel: lead.tel, adresse: lead.adresse || '', ville: lead.ville || '', notes: '' });
+    db.updateLead(lead.id, { client_id: id });
+    return id;
+  } catch (e) { console.error('⚠️ ensureClient:', e.message); return null; }
+}
+
+// Enregistre une demande, la trie tout de suite (règles) puis l'enrichit par IA en arrière-plan si disponible.
+function ingestLead(src) {
+  const email = cleanLine(src.email, 200);
+  const message = clean(src.message, 4000);
+  const dup = db.findRecentDuplicate(email, message);
+  if (dup) return { lead: dup, duplicate: true };
+  const f = src.form || {};
+  const lead = db.createLead({
+    source: cleanLine(src.source || 'devis', 40) || 'devis',
+    prenom: cleanLine(src.prenom, 80), nom: cleanLine(src.nom, 80), email, tel: cleanLine(src.tel, 40),
+    ville: cleanLine(src.ville, 120), adresse: cleanLine(src.adresse, 200), sujet: cleanLine(src.sujet, 120), message,
+    form: {
+      prestation: cleanLine(f.prestation, 100), problemes: cleanLine(f.problemes, 200), nb_jantes: cleanLine(f.nb_jantes, 10),
+      taille: cleanLine(f.taille, 40), marque: cleanLine(f.marque, 60), modele: cleanLine(f.modele, 60), finition: cleanLine(f.finition, 60),
+      mode: cleanLine(f.mode, 60), delai: cleanLine(f.delai, 60), photos: Number(f.photos) || 0,
+    },
+    client_id: src.client_id || null, intervention_id: src.intervention_id || null,
+  });
+  const tri = triage.withDrafts(lead, triage.analyzeRules(lead));
+  db.updateLead(lead.id, { triage: tri });
+  db.addLeadEvent(lead.id, 'analysis', 'Analyse automatique : ' + tri.summary);
+  ensureClient(lead);
+  if (triage.aiAvailable()) {
+    triage.analyze(lead).then(r => {
+      if (r.engine === 'ia') { db.updateLead(lead.id, { triage: r }); db.addLeadEvent(lead.id, 'analysis', 'Analyse IA : ' + r.summary); }
+    }).catch(() => {});
+  }
+  return { lead: db.leadById(lead.id), duplicate: false };
+}
+
+function contactOwnerEmail(l) {
+  const t = l.triage || {};
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;background:#f2f2f2;font-family:Arial,sans-serif;">
+<div style="max-width:620px;margin:24px auto;background:#fff;border-radius:6px;overflow:hidden;">
+  <div style="background:#060606;padding:22px 32px;"><span style="color:#fff;font-size:18px;font-weight:700;letter-spacing:4px;">REYNOV</span><span style="color:#999;font-size:12px;margin-left:12px;">Nouveau message de contact</span></div>
+  <div style="padding:28px 32px;font-size:14px;color:#333;line-height:1.7;">
+    <p style="margin:0 0 4px;font-size:18px;color:#111;"><strong>${escHtml(l.prenom)} ${escHtml(l.nom)}</strong></p>
+    <p style="margin:0 0 16px;color:#666;">${l.email ? `<a href="mailto:${escHtml(l.email)}">${escHtml(l.email)}</a>` : ''}${l.tel ? ' · ' + escHtml(l.tel) : ''}${l.sujet ? ' · ' + escHtml(l.sujet) : ''}</p>
+    <div style="background:#f7f7f7;border-left:3px solid #111;padding:14px 18px;white-space:pre-wrap;">${escHtml(l.message)}</div>
+    <p style="margin:18px 0 4px;"><strong>Analyse :</strong> ${escHtml(t.summary || '')}${t.urgency === 'haute' ? ' <span style="color:#c00;">· urgent</span>' : ''}</p>
+    <p style="margin:0 0 4px;color:#555;">${(t.price_hint || []).map(escHtml).join('<br>')}</p>
+    <p style="margin:18px 0 0;"><a href="https://www.reynov-jantes.fr/admin/crm.html#/leads" style="display:inline-block;background:#060606;color:#fff;padding:10px 18px;text-decoration:none;font-size:13px;">Ouvrir dans le CRM (réponse prête)</a></p>
+  </div>
+</div></body></html>`;
+}
+
+function contactAckEmail(l) {
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;background:#f2f2f2;font-family:Arial,sans-serif;">
+<div style="max-width:620px;margin:32px auto;background:#fff;border-radius:4px;overflow:hidden;">
+  <div style="background:#060606;padding:26px 36px;"><span style="color:#fff;font-size:20px;font-weight:700;letter-spacing:4px;">REYNOV</span></div>
+  <div style="padding:34px 36px;font-size:15px;color:#444;line-height:1.7;">
+    <h2 style="margin:0 0 12px;font-size:21px;color:#111;">Bonjour ${escHtml(l.prenom)},</h2>
+    <p style="margin:0 0 16px;">Nous avons bien reçu votre message et vous répondons sous 24 h.</p>
+    <p style="margin:0 0 16px;">Pour un devis précis, vous pouvez aussi nous envoyer deux photos de vos jantes sur WhatsApp au <strong>06 61 45 35 27</strong>.</p>
+    <p style="margin:0;color:#888;font-size:13px;">REYNOV · 47 chemin du Pras, 69350 La Mulatière</p>
+  </div>
+</div></body></html>`;
+}
+
+function replyEmail(body) {
+  const paras = String(body).split(/\n{2,}/).map(p => `<p style="margin:0 0 14px;">${escHtml(p).replace(/\n/g, '<br>')}</p>`).join('');
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;background:#ffffff;">
+<div style="max-width:620px;margin:0 auto;padding:24px;font-family:Arial,sans-serif;font-size:15px;line-height:1.7;color:#222;">${paras}</div></body></html>`;
+}
+
+// ── POST /api/contact : formulaire de la page Contact ─────────
+const contactLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, max: 8, standardHeaders: true, legacyHeaders: false,
+  message: { ok: false, error: 'Trop de messages. Réessayez dans une heure ou appelez le 06 61 45 35 27.' },
+});
+app.post('/api/contact', contactLimiter, express.json({ limit: '20kb' }), async (req, res) => {
+  try {
+    const b = req.body || {};
+    if (b.website) return res.status(400).json({ ok: false, error: 'Requête invalide.' });
+    const t0 = Number(b._t);
+    if (t0 && Date.now() - t0 < 3000) return res.status(400).json({ ok: false, error: 'Requête invalide.' });
+    if (!devisBudgetOk()) return res.status(429).json({ ok: false, error: 'Service momentanément saturé. Appelez le 06 61 45 35 27.' });
+    const email = typeof b.email === 'string' ? b.email.trim() : '';
+    if (!email || email.length > 200 || !EMAIL_RE.test(email)) return res.status(400).json({ ok: false, error: 'Adresse email invalide.' });
+    if (!cleanLine(b.prenom, 80)) return res.status(400).json({ ok: false, error: 'Prénom requis.' });
+    const message = clean(b.message, 4000);
+    if (message.length < 5) return res.status(400).json({ ok: false, error: 'Merci de décrire votre demande.' });
+    if (!emailBudgetOk(email)) return res.status(429).json({ ok: false, error: 'Un message a déjà été reçu pour cette adresse. Appelez-nous au 06 61 45 35 27.' });
+
+    const { lead, duplicate } = ingestLead({ source: 'contact', prenom: b.prenom, nom: b.nom, email, tel: b.tel, sujet: b.sujet, message, form: {} });
+    if (duplicate) return res.json({ ok: true });
+    console.log('📩 Message de contact enregistré (lead #' + lead.id + ')');
+    // Notifications : n'empêchent jamais l'enregistrement
+    sendEmail({ from: `"REYNOV Site" <${GMAIL_USER}>`, to: GMAIL_USER, subject: `Nouveau message - ${lead.prenom} ${lead.nom}`.trim(), html: contactOwnerEmail(lead) })
+      .catch(e => console.error('⚠️ Mail owner (contact) non envoyé:', e.message));
+    sendEmail({ from: `"REYNOV" <${GMAIL_USER}>`, to: email, subject: 'Votre message à REYNOV a bien été reçu', html: contactAckEmail(lead) })
+      .catch(e => console.error('⚠️ Accusé (contact) non envoyé:', e.message));
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('❌ /api/contact:', err.message);
+    res.status(500).json({ ok: false, error: 'Erreur serveur. Appelez le 06 61 45 35 27.' });
+  }
+});
+
 // ── POST /api/devis ───────────────────────────────────────────
 app.post('/api/devis', devisLimiter, (req, res, next) => {
   upload.array('photos', 8)(req, res, (err) => {
@@ -606,15 +815,23 @@ app.post('/api/devis', devisLimiter, (req, res, next) => {
       const clientId = client
         ? client.id
         : db.createClient({ prenom: d.prenom, nom: d.nom, email: d.email, tel: d.tel, adresse: d.adresse || '', ville: d.adresse || '', notes: '' });
-      db.createIntervention({
+      const interId = db.createIntervention({
         client_id: clientId,
         prestation: d.prestation, problemes: d.problemes,
         nb_jantes: d.nb_jantes, taille: d.taille,
         marque: d.marque, modele: d.modele,
         finition: d.finition, mode: d.mode,
         adresse_intervention: d.adresse_client || d.adresse,
-        statut: 'devis_envoye', montant: null, notes: d.source ? `Source : ${d.source}` : '',
+        statut: 'nouveau', montant: null, notes: d.source ? `Source : ${d.source}` : '',
       });
+      const un = triage.entitiesToText;
+      const r = ingestLead({
+        source: d.source || 'devis', prenom: un(d.prenom), nom: un(d.nom), email: d.email, tel: un(d.tel),
+        ville: un(d.adresse), adresse: un(d.adresse_client), message: un(d.description),
+        form: { prestation: un(d.prestation), problemes: un(d.problemes), nb_jantes: d.nb_jantes, taille: un(d.taille), marque: un(d.marque), modele: un(d.modele), finition: un(d.finition), mode: un(d.mode), delai: un(d.delai), photos: attachments.length },
+        client_id: clientId, intervention_id: interId,
+      });
+      if (r.lead) db.updateLead(r.lead.id, { client_id: clientId, intervention_id: interId });
       saved = true;
       console.log('✅ CRM mis à jour');
     } catch (e) {

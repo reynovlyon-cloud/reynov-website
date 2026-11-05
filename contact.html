@@ -165,7 +165,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <!-- Formulaire contact -->
       <div data-reveal data-reveal-delay="2">
         <p class="label mb-3">Formulaire de contact</p>
-        <form>
+        <form id="contact-form">
+          <input type="text" name="website" value="" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" />
           <div class="form-grid">
             <div class="form-row"><label class="form-label" for="c-prenom">Prénom *</label><input class="form-input" type="text" id="c-prenom" name="prenom" required placeholder="Votre prénom" /></div>
             <div class="form-row"><label class="form-label" for="c-nom">Nom *</label><input class="form-input" type="text" id="c-nom" name="nom" required placeholder="Votre nom" /></div>
@@ -187,7 +188,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <span>Envoyer le message</span>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
           </button>
+          <p id="contact-status" role="alert" style="margin:1rem 0 0;font-size:0.85rem;color:rgba(248,248,246,0.85);min-height:1.2em;"></p>
         </form>
+        <div id="contact-done" hidden style="padding:2.5rem 0;">
+          <p class="label mb-2">Message envoyé</p>
+          <h2 class="h2" style="margin-bottom:1rem;">Merci,<br /><em>nous vous répondons sous 24&nbsp;h.</em></h2>
+          <p class="body-lg" style="margin-bottom:1.5rem;">Pour un devis précis, envoyez-nous deux photos de vos jantes sur WhatsApp.</p>
+          <div style="display:flex;gap:1rem;flex-wrap:wrap;"><a href="https://wa.me/33661453527" class="btn btn-primary" target="_blank" rel="noopener"><span>WhatsApp</span></a><a href="tel:+33661453527" class="btn btn-outline"><span>06 61 45 35 27</span></a></div>
+        </div>
       </div>
     </div>
   </div>
@@ -253,6 +261,35 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </div>
 </footer>
 <script src="assets/js/main.js?v=11"></script>
+<script>
+(function () {
+  var f = document.getElementById('contact-form');
+  if (!f) return;
+  var t0 = Date.now();
+  function done(ok, msg) {
+    var btn = f.querySelector('button[type=submit]');
+    btn.disabled = false; btn.querySelector('span').textContent = 'Envoyer le message';
+    if (!ok) document.getElementById('contact-status').textContent = msg;
+  }
+  f.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var btn = f.querySelector('button[type=submit]');
+    var data = {}; new FormData(f).forEach(function (v, k) { data[k] = v; }); data._t = t0;
+    btn.disabled = true; btn.querySelector('span').textContent = 'Envoi en cours…';
+    document.getElementById('contact-status').textContent = '';
+    fetch('/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+      .then(function (r) { return r.json().catch(function () { return { ok: false }; }); })
+      .then(function (j) {
+        if (j.ok) {
+          f.hidden = true; document.getElementById('contact-done').hidden = false;
+          if (typeof gtag === 'function') gtag('event', 'contact_submit');
+          window.scrollTo({ top: Math.max(0, document.getElementById('contact-done').getBoundingClientRect().top + window.scrollY - 140), behavior: 'smooth' });
+        } else done(false, j.error || 'Une erreur est survenue. Appelez-nous au 06 61 45 35 27.');
+      })
+      .catch(function () { done(false, 'Erreur réseau. Réessayez ou appelez le 06 61 45 35 27.'); });
+  });
+})();
+</script>
 <a href="https://wa.me/33661453527" class="whatsapp-float" target="_blank" rel="noopener" aria-label="Contacter sur WhatsApp">
   <span class="whatsapp-float__label">Envoyer un message</span>
   <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.12 1.531 5.849L.057 23.571a.75.75 0 0 0 .921.921l5.668-1.485A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.713 9.713 0 0 1-4.953-1.354l-.355-.213-3.664.961.977-3.572-.232-.368A9.712 9.712 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>
