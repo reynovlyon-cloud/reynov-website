@@ -346,11 +346,12 @@
         <div class="field"><label>Modèle</label><select class="input" id="reply-tpl" data-id="${l.id}">${options}</select></div>
         <div class="field"><label>Objet</label><input class="input" id="reply-subject" value="${esc(fill(cur.subject, l))}" /></div>
         <div class="voice-box">
-          <label for="ai-instr">${ico('mic')} Dites à l'assistant ce que vous voulez</label>
+          <label for="ai-instr">${ico('mic')} Parlez, l'assistant rédige</label>
+          <p class="faint" style="font-size:12px;margin:0 0 8px">Cliquez sur « Dicter mon message », dites par exemple « propose un rendez-vous jeudi à 10 h, 130 € HT la jante », puis cliquez sur « Arrêter » : le message se rédige tout seul. Relisez-le avant d'envoyer.</p>
           <textarea class="input" id="ai-instr" rows="2" placeholder="Ex. : propose-lui un rendez-vous jeudi à 10 h, précise que c'est 130 € la jante, ton plus chaleureux"></textarea>
           <div class="dr-actions">
-            <button class="btn sm mic" data-action="mic" data-target="ai-instr">${ico('mic')}<span class="lbl">Dicter</span></button>
-            <button class="btn primary sm" data-action="ai-rewrite" data-id="${l.id}" ${S.cfg.ai ? '' : 'disabled title="Assistant IA non activé"'}>Réécrire le message</button>
+            <button class="btn primary sm mic" data-action="mic" data-target="ai-instr" data-auto="1">${ico('mic')}<span class="lbl">Dicter mon message</span></button>
+            <button class="btn sm" data-action="ai-rewrite" data-id="${l.id}" ${S.cfg.ai ? '' : 'disabled title="Assistant IA non activé"'}>Réécrire</button>
             <button class="btn sm" data-action="draft-undo" id="draft-undo" hidden>Revenir au texte précédent</button>
           </div>
           ${S.cfg.ai ? '' : '<p class="faint" style="font-size:12px;margin:8px 0 0">L\'assistant IA n\'est pas activé : la dictée directe dans le message ci-dessous fonctionne quand même (voir Paramètres pour l\'activer).</p>'}
@@ -493,6 +494,7 @@
     stopMic();
     const target = $('#' + btn.dataset.target); if (!target) return;
     const forMessage = btn.dataset.target === 'reply-body';
+    const startVal = target.value;
     const base = target.value + (target.value && !/\s$/.test(target.value) ? ' ' : '');
     const r = new SR(); r.lang = 'fr-FR'; r.continuous = true; r.interimResults = true;
     btn.dataset.lbl = btn.dataset.lbl || (btn.querySelector('.lbl') || {}).textContent || '';
@@ -501,7 +503,11 @@
       target.value = base + speechFix(txt.trim(), forMessage);
     };
     r.onerror = (e) => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') toast('Micro refusé. Cliquez sur le cadenas à côté de l\'adresse du site, autorisez le micro, puis réessayez.', true); else if (e.error === 'no-speech') toast('Je n\'ai rien entendu. Réessayez.', true); else if (e.error !== 'aborted') toast('Dictée interrompue (' + e.error + ').', true); };
-    r.onend = () => { resetMicBtn(btn); if (rec === r) { rec = null; recBtn = null; } };
+    r.onend = () => {
+      resetMicBtn(btn); if (rec === r) { rec = null; recBtn = null; }
+      // dictée de la consigne terminée : l'assistant rédige le message tout seul
+      if (btn.dataset.auto && target.value.trim().length >= 4 && target.value !== startVal) { const rb = document.querySelector('[data-action="ai-rewrite"]'); if (rb && !rb.disabled) rb.click(); }
+    };
     try { r.start(); } catch (e) { return toast('Impossible de démarrer le micro.', true); }
     rec = r; recBtn = btn; btn.classList.add('rec'); const lb = btn.querySelector('.lbl'); if (lb) lb.textContent = 'Arrêter';
   }
