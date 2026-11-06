@@ -38,6 +38,7 @@
     alert: P('<path d="M12 3 2 20h20zM12 10v4M12 17.5v.1"/>'),
     copy: P('<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>'),
     send: P('<path d="M21 3 3 10.5l7 2.5 2.5 7zM21 3 10 13"/>'),
+    mic: P('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>'),
     trash: P('<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>'),
     close: P('<path d="M6 6l12 12M18 6 6 18"/>'),
   };
@@ -296,6 +297,7 @@
     } catch (e) { toast(e.message, true); }
   }
   function closeDrawer() {
+    stopMic(); S.undo = null;
     S.openId = null;
     $('#drawer').classList.remove('on'); $('#drawer').setAttribute('aria-hidden', 'true'); $('#overlay').classList.remove('on');
   }
@@ -343,7 +345,19 @@
       <div class="card"><h4>${ico('mail')} Réponse proposée</h4>
         <div class="field"><label>Modèle</label><select class="input" id="reply-tpl" data-id="${l.id}">${options}</select></div>
         <div class="field"><label>Objet</label><input class="input" id="reply-subject" value="${esc(fill(cur.subject, l))}" /></div>
+        <div class="voice-box">
+          <label for="ai-instr">${ico('mic')} Dites à l'assistant ce que vous voulez</label>
+          <textarea class="input" id="ai-instr" rows="2" placeholder="Ex. : propose-lui un rendez-vous jeudi à 10 h, précise que c'est 130 € la jante, ton plus chaleureux"></textarea>
+          <div class="dr-actions">
+            <button class="btn sm mic" data-action="mic" data-target="ai-instr">${ico('mic')}<span class="lbl">Dicter</span></button>
+            <button class="btn primary sm" data-action="ai-rewrite" data-id="${l.id}" ${S.cfg.ai ? '' : 'disabled title="Assistant IA non activé"'}>Réécrire le message</button>
+            <button class="btn sm" data-action="draft-undo" id="draft-undo" hidden>Revenir au texte précédent</button>
+          </div>
+          ${S.cfg.ai ? '' : '<p class="faint" style="font-size:12px;margin:8px 0 0">L\'assistant IA n\'est pas activé : la dictée directe dans le message ci-dessous fonctionne quand même (voir Paramètres pour l\'activer).</p>'}
+        </div>
         <div class="field"><label>Message (modifiable)</label><textarea class="input reply" id="reply-body">${esc(fill(cur.body, l))}</textarea></div>
+        <div class="dr-actions" style="margin-top:-4px"><button class="btn sm mic" data-action="mic" data-target="reply-body">${ico('mic')}<span class="lbl">Dicter dans le message</span></button><button class="btn sm" data-action="check-reply" data-id="${l.id}">${ico('check')}Vérifier le message</button></div>
+        <div id="reply-checks" aria-live="polite"></div>
         <div class="dr-actions">
           <button class="btn primary sm" data-action="send-reply" data-id="${l.id}" ${canMail ? '' : 'disabled'}>${ico('send')}Envoyer par e-mail</button>
           <button class="btn sm" data-action="copy-reply">${ico('copy')}Copier</button>
@@ -461,6 +475,41 @@
     const nb = $('#notif-btn'); if (window.Notification && Notification.permission === 'granted') nb.innerHTML = ico('bell') + 'Notifications activées';
   }
 
+  // ── Dictée vocale (navigateur) et contrôle des messages ──
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let rec = null, recBtn = null;
+  function stopMic() {
+    if (rec) { try { rec.stop(); } catch (e) { /* déjà arrêté */ } }
+  }
+  function resetMicBtn(btn) { if (btn) { btn.classList.remove('rec'); const l = btn.querySelector('.lbl'); if (l && btn.dataset.lbl) l.textContent = btn.dataset.lbl; } }
+  function speechFix(t, forMessage) {
+    t = t.replace(/\s+/g, ' ');
+    if (forMessage) t = t.replace(/\s*\bpoint d'interrogation\b/gi, ' ?').replace(/\s*\bpoint final\b/gi, '.').replace(/\s*\bdeux points\b/gi, ' :').replace(/\s*\bvirgule\b/gi, ',').replace(/\s*\b(?:à la ligne|nouvelle ligne)\b\s*/gi, '\n').replace(/\s*\bnouveau paragraphe\b\s*/gi, '\n\n');
+    return t;
+  }
+  function micToggle(btn) {
+    if (!SR) return toast('La dictée n\'est pas disponible sur ce navigateur. Utilisez Chrome ou Safari.', true);
+    if (rec && recBtn === btn) { stopMic(); return; }
+    stopMic();
+    const target = $('#' + btn.dataset.target); if (!target) return;
+    const forMessage = btn.dataset.target === 'reply-body';
+    const base = target.value + (target.value && !/\s$/.test(target.value) ? ' ' : '');
+    const r = new SR(); r.lang = 'fr-FR'; r.continuous = true; r.interimResults = true;
+    btn.dataset.lbl = btn.dataset.lbl || (btn.querySelector('.lbl') || {}).textContent || '';
+    r.onresult = (e) => {
+      let txt = ''; for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript + ' ';
+      target.value = base + speechFix(txt.trim(), forMessage);
+    };
+    r.onerror = (e) => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') toast('Micro refusé. Cliquez sur le cadenas à côté de l\'adresse du site, autorisez le micro, puis réessayez.', true); else if (e.error === 'no-speech') toast('Je n\'ai rien entendu. Réessayez.', true); else if (e.error !== 'aborted') toast('Dictée interrompue (' + e.error + ').', true); };
+    r.onend = () => { resetMicBtn(btn); if (rec === r) { rec = null; recBtn = null; } };
+    try { r.start(); } catch (e) { return toast('Impossible de démarrer le micro.', true); }
+    rec = r; recBtn = btn; btn.classList.add('rec'); const lb = btn.querySelector('.lbl'); if (lb) lb.textContent = 'Arrêter';
+  }
+  function showChecks(list, announce) {
+    const box = $('#reply-checks'); if (!box) return;
+    box.innerHTML = list.length ? list.map((c) => `<div class="chk ${c.level === 'warn' ? 'warn' : 'info'}">${ico(c.level === 'warn' ? 'alert' : 'check')}<span>${esc(c.text)}</span></div>`).join('') : (announce ? `<div class="chk ok">${ico('check')}<span>Rien à signaler : prix, garantie et prénom sont cohérents.</span></div>` : '');
+  }
+
   // ── Actions (délégation) ──────────────────────────────────
   async function setStatus(id, status) {
     const l = S.leads.find((x) => x.id === Number(id));
@@ -507,10 +556,28 @@
       const id = Number(el.dataset.id); const l = S.leads.find((x) => x.id === id);
       const subject = $('#reply-subject').value.trim(); const body = $('#reply-body').value.trim();
       if (!subject || body.length < 10) return toast('Objet et message requis.', true);
-      if (!confirm('Envoyer cet e-mail à ' + (l && l.email) + ' ?')) return;
+      let warns = [];
+      try { warns = (await api('POST', '/leads/' + id + '/check', { subject, body, instruction: ($('#ai-instr') || {}).value || '' })).data.filter((c) => c.level === 'warn'); showChecks(await Promise.resolve(warns)); } catch (e) { /* contrôle facultatif */ }
+      if (!confirm((warns.length ? 'Attention, ' + warns.length + ' point(s) à vérifier :\n- ' + warns.map((c) => c.text).join('\n- ') + '\n\n' : '') + 'Envoyer cet e-mail à ' + (l && l.email) + ' ?')) return;
       el.disabled = true;
       try { const j = await api('POST', '/leads/' + id + '/reply', { subject, body }); replaceLead(j.data); toast('E-mail envoyé'); openLead(id); render(); } catch (e) { toast(e.message, true); el.disabled = false; }
     },
+    mic: (el) => micToggle(el),
+    'check-reply': async (el) => { try { const j = await api('POST', '/leads/' + el.dataset.id + '/check', { subject: $('#reply-subject').value, body: $('#reply-body').value, instruction: $('#ai-instr').value }); showChecks(j.data, true); } catch (e) { toast(e.message, true); } },
+    'ai-rewrite': async (el) => {
+      const instruction = $('#ai-instr').value.trim();
+      if (instruction.length < 4) return toast('Dites ou écrivez d\'abord ce que vous voulez changer.', true);
+      stopMic(); el.disabled = true; const old = el.textContent; el.textContent = 'Réécriture…';
+      try {
+        const prev = { subject: $('#reply-subject').value, body: $('#reply-body').value };
+        const j = await api('POST', '/leads/' + el.dataset.id + '/draft', { instruction, subject: prev.subject, body: prev.body });
+        S.undo = prev; $('#reply-subject').value = j.data.subject; $('#reply-body').value = j.data.body;
+        $('#draft-undo').hidden = false; showChecks((j.data.notes || []).map((n) => ({ level: 'info', text: 'Assistant : ' + n })).concat(j.data.checks || []), true);
+        toast('Message réécrit : relisez-le avant d\'envoyer');
+      } catch (e) { toast(e.message, true); }
+      el.disabled = false; el.textContent = old;
+    },
+    'draft-undo': (el) => { if (!S.undo) return; $('#reply-subject').value = S.undo.subject; $('#reply-body').value = S.undo.body; S.undo = null; el.hidden = true; showChecks([], false); },
     'copy-reply': async () => { try { await navigator.clipboard.writeText($('#reply-body').value); toast('Texte copié'); } catch (e) { $('#reply-body').select(); document.execCommand('copy'); toast('Texte copié'); } },
     'wa-reply': (el) => { const l = S.leads.find((x) => x.id === Number(el.dataset.id)); if (!l) return; window.open('https://wa.me/' + waNum(l.tel) + '?text=' + encodeURIComponent($('#reply-body').value), '_blank', 'noopener'); logContact(l.id, 'whatsapp'); },
     'set-reminder': async (el) => {

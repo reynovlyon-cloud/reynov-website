@@ -232,3 +232,15 @@ dialog::backdrop { background: rgba(8,8,10,.5); }
 .tl.mail_in { --c: var(--rose); } .tl.mail_out { --c: var(--blue); }
 .contact-state.wait { color: var(--rose); font-weight: 600; }
 .chip.wait { cursor: pointer; border-color: var(--rose); color: var(--rose); } .chip.wait.on { background: var(--rose); color: #fff; }
+
+.voice-box { background: var(--bg-soft, rgba(127,127,127,.08)); border: 1px dashed var(--line); border-radius: 12px; padding: 12px; margin-bottom: 14px; }
+.voice-box > label { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; margin-bottom: 8px; }
+.voice-box .input { min-height: 56px; resize: vertical; }
+.btn.mic.rec { background: var(--rose); border-color: var(--rose); color: #fff; animation: micpulse 1.2s ease-in-out infinite; }
+@keyframes micpulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(225,29,72,.45); } 50% { box-shadow: 0 0 0 7px rgba(225,29,72,0); } }
+#reply-checks { display: grid; gap: 6px; margin: 4px 0 10px; }
+.chk { display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; padding: 8px 10px; border-radius: 8px; line-height: 1.45; }
+.chk svg { flex: none; margin-top: 1px; width: 15px; height: 15px; }
+.chk.warn { background: rgba(217,119,6,.12); color: var(--amber); }
+.chk.info { background: rgba(100,116,139,.12); color: var(--muted, inherit); }
+.chk.ok { background: rgba(22,163,74,.12); color: var(--green); }

@@ -57,7 +57,9 @@ app.use((_req, res, next) => {
 
 // ── Permissions-Policy ────────────────────────────────────────
 app.use((_req, res, next) => {
-  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()');
+  // Micro autorisé uniquement dans l'administration (dictée des messages) ; fermé partout ailleurs
+  const mic = _req.path.startsWith('/admin') ? 'microphone=(self)' : 'microphone=()';
+  res.setHeader('Permissions-Policy', `camera=(), ${mic}, geolocation=(), payment=(), usb=(), interest-cohort=()`);
   next();
 });
 
@@ -75,6 +77,14 @@ app.use('/admin', (_req, res, next) => {
 app.use((req, res, next) => {
   if (/^\/(ads|lp|api)(\/|$)|^\/email-prospection-pro\.html$/.test(req.path)) {
     res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+  }
+  next();
+});
+
+// ── /index.html et /dossier/index.html -> adresse propre (/ et /dossier/) ──
+app.use((req, res, next) => {
+  if ((req.method === 'GET' || req.method === 'HEAD') && /\/index\.html$/.test(req.path)) {
+    return res.redirect(301, req.originalUrl.replace(/index\.html(?=\?|$)/, ''));
   }
   next();
 });
@@ -532,6 +542,30 @@ app.post('/api/crm/leads/:id/contact', (req, res) => {
   const l = db.logContact(req.params.id, channel, cleanLine((req.body || {}).note, 300));
   if (!l) return res.status(404).json({ ok: false, error: 'Introuvable' });
   res.json({ ok: true, data: l });
+});
+const draftLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 60, standardHeaders: true, legacyHeaders: false, message: { ok: false, error: 'Trop de demandes à l\'assistant. Réessayez dans un moment.' } });
+// Contrôle d'un message avant envoi (sans IA)
+app.post('/api/crm/leads/:id/check', (req, res) => {
+  const l = db.leadById(req.params.id);
+  if (!l) return res.status(404).json({ ok: false, error: 'Introuvable' });
+  res.json({ ok: true, data: triage.checkDraft(l, cleanLine((req.body || {}).subject, 160), clean((req.body || {}).body, 5000), clean((req.body || {}).instruction, 1500)) });
+});
+// Réécriture à partir d'une consigne (dictée ou écrite) : rien n'est envoyé, le texte revient dans le champ du message
+app.post('/api/crm/leads/:id/draft', draftLimiter, async (req, res) => {
+  const l = db.leadById(req.params.id);
+  if (!l) return res.status(404).json({ ok: false, error: 'Introuvable' });
+  const instruction = clean((req.body || {}).instruction, 1500);
+  if (instruction.length < 4) return res.status(400).json({ ok: false, error: 'Dites ou écrivez ce que vous voulez changer.' });
+  const subject = cleanLine((req.body || {}).subject, 160), body = clean((req.body || {}).body, 5000);
+  try {
+    const d = await triage.reviseDraft(l, { instruction, subject, body });
+    db.addLeadEvent(l.id, 'analysis', 'Message retravaillé avec l\'assistant (consigne : ' + instruction.slice(0, 120) + ')');
+    res.json({ ok: true, data: { ...d, checks: triage.checkDraft(l, d.subject, d.body, instruction) } });
+  } catch (e) {
+    if (e.code === 'no_ai') return res.status(409).json({ ok: false, error: e.message });
+    console.error('⚠️ Assistant IA (réécriture) :', e.message);
+    res.status(502).json({ ok: false, error: 'L\'assistant n\'a pas pu répondre (' + e.message.slice(0, 80) + '). Réessayez.' });
+  }
 });
 app.post('/api/crm/leads/:id/reply', replyLimiter, async (req, res) => {
   const l = db.leadById(req.params.id);
