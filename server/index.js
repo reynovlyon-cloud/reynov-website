@@ -514,6 +514,143 @@ app.post('/api/crm/calendar/select', async (req, res) => {
   try { res.json({ ok: true, data: await calsync.select(cleanLine((req.body || {}).id, 200)) }); } catch (e) { res.status(e.status === 400 ? 400 : 502).json({ ok: false, error: e.message.slice(0, 150) }); }
 });
 
+// ── CRM : devis ──
+const QUOTE_LABEL = { brouillon: 'Brouillon', envoye: 'Envoyé', accepte: 'Accepté', refuse: 'Refusé' };
+const eur = (n) => Number(n || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+function quoteLinesFromLead(l) {
+  const t = l.triage || {}, cats = t.categories || [], f = l.form || {};
+  const n = Number(t.wheels) || Number(String(f.nb_jantes || '').replace(/\D/g, '')) || 0, qty = n >= 1 && n <= 8 ? n : 1;
+  const lines = [];
+  if (cats.includes('fissure')) lines.push({ label: 'Soudure de jante fissurée (TIG) et reprise', qty, unit_ht: triage.PRIX.fissure });
+  if (cats.includes('devoilage')) lines.push({ label: 'Dévoilage de jante', qty, unit_ht: triage.PRIX.devoilage });
+  const perso = cats.filter(c => ['biton', 'diamantee', 'epoxy', 'perso'].includes(c));
+  if (cats.some(c => ['renovation', 'monochrome'].includes(c)) || perso.length || !lines.length) lines.push({ label: 'Rénovation de jante : décapage, préparation, peinture et vernis', qty, unit_ht: triage.PRIX.renovation });
+  if (perso.length) lines.push({ label: 'Option finition personnalisée (' + perso.map(c => triage.CATEGORIES[c].label.toLowerCase()).join(', ') + ') : à chiffrer', qty: 1, unit_ht: 0 });
+  return lines;
+}
+function quoteNotesFor(l) {
+  const cats = ((l.triage || {}).categories) || [];
+  const delai = cats.includes('epoxy') ? '3 jours' : (cats.some(c => ['biton', 'diamantee', 'perso'].includes(c)) ? '2 à 4 jours (jusqu\'à 5 pour une finition poli diamant ou bi-ton)' : '24 à 48 h par jante');
+  return 'Délai indicatif : ' + delai + ' en atelier à La Mulatière.\nGarantie 30 jours sur la prestation.\nDevis valable 30 jours. Règlement à la livraison.';
+}
+function cleanLines(raw) {
+  if (!Array.isArray(raw)) return null;
+  return raw.slice(0, 30).map(x => ({ label: cleanLine(x && x.label, 200), qty: Math.min(100, Math.max(0, Number(x && x.qty) || 0)), unit_ht: Math.min(100000, Math.max(0, Math.round((Number(x && x.unit_ht) || 0) * 100) / 100)) })).filter(x => x.label);
+}
+function quoteHtml(q, l) {
+  const t = db.quoteTotals(q);
+  const name = l ? [l.prenom, l.nom].filter(Boolean).join(' ') : '';
+  const rows = (q.lines || []).map(x => `<tr><td style="padding:10px 8px;border-bottom:1px solid #eee;">${escHtml(x.label)}</td><td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:center;">${escHtml(x.qty)}</td><td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:right;">${x.unit_ht ? eur(x.unit_ht) : 'sur devis'}</td><td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:right;">${x.unit_ht ? eur(x.qty * x.unit_ht) : '—'}</td></tr>`).join('');
+  const date = (iso) => new Date(iso).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris', day: '2-digit', month: 'long', year: 'numeric' });
+  return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Devis ${escHtml(q.number)} — REYNOV</title></head>
+<body style="margin:0;background:#f2f2f2;font-family:Arial,Helvetica,sans-serif;color:#222;">
+<div style="max-width:760px;margin:24px auto;background:#fff;border-radius:6px;overflow:hidden;">
+  <div style="background:#060606;padding:24px 32px;"><span style="color:#fff;font-size:20px;font-weight:700;letter-spacing:5px;">REYNOV</span><span style="color:#aaa;font-size:12px;margin-left:14px;">Rénovation de jantes · Lyon</span></div>
+  <div style="padding:30px 32px;font-size:14px;line-height:1.6;">
+    <table style="width:100%;border-collapse:collapse;"><tr>
+      <td style="vertical-align:top;"><p style="margin:0;font-size:22px;font-weight:700;">Devis ${escHtml(q.number)}</p><p style="margin:4px 0 0;color:#666;">Émis le ${date(q.created_at)} · valable jusqu'au ${date(q.valid_until + 'T12:00:00Z')}</p></td>
+      <td style="vertical-align:top;text-align:right;color:#444;font-size:13px;"><strong>${escHtml(name) || 'Client'}</strong><br>${l && l.adresse ? escHtml(l.adresse) + '<br>' : ''}${l && l.ville ? escHtml(l.ville) + '<br>' : ''}${l && l.email ? escHtml(l.email) + '<br>' : ''}${l && l.tel ? escHtml(l.tel) : ''}</td>
+    </tr></table>
+    <table style="width:100%;border-collapse:collapse;margin-top:26px;font-size:14px;"><thead><tr style="background:#f6f6f6;"><th style="padding:10px 8px;text-align:left;">Prestation</th><th style="padding:10px 8px;text-align:center;">Qté</th><th style="padding:10px 8px;text-align:right;">Prix HT</th><th style="padding:10px 8px;text-align:right;">Total HT</th></tr></thead><tbody>${rows || '<tr><td colspan="4" style="padding:14px;color:#888;">Aucune ligne</td></tr>'}</tbody></table>
+    <table style="margin:18px 0 0 auto;border-collapse:collapse;font-size:14px;"><tr><td style="padding:4px 18px;color:#666;">Total HT</td><td style="padding:4px 0;text-align:right;">${eur(t.ht)}</td></tr><tr><td style="padding:4px 18px;color:#666;">TVA ${t.rate} %</td><td style="padding:4px 0;text-align:right;">${eur(t.tva)}</td></tr><tr><td style="padding:8px 18px;font-weight:700;font-size:16px;">Total TTC</td><td style="padding:8px 0;text-align:right;font-weight:700;font-size:16px;">${eur(t.ttc)}</td></tr></table>
+    ${q.notes ? `<div style="margin-top:26px;padding:14px 18px;background:#f7f7f7;border-left:3px solid #111;white-space:pre-wrap;font-size:13px;color:#444;">${escHtml(q.notes)}</div>` : ''}
+    <p style="margin:26px 0 0;font-size:13px;color:#444;">Pour accepter ce devis, répondez simplement à cet e-mail ou écrivez-nous sur WhatsApp au 06 61 45 35 27.</p>
+  </div>
+  <div style="background:#fafafa;border-top:1px solid #eee;padding:16px 32px;font-size:11.5px;color:#777;line-height:1.6;">REYNOV SAS · SIRET 105 819 098 00016 · 47 chemin du Pras, 69350 La Mulatière · 06 61 45 35 27 · reynov.lyon@gmail.com · www.reynov-jantes.fr</div>
+</div></body></html>`;
+}
+const fullQuote = (q) => ({ ...q, totals: db.quoteTotals(q) });
+app.get('/api/crm/quotes', (req, res) => res.json({ ok: true, data: db.quotesList({ lead_id: req.query.lead_id }) }));
+app.get('/api/crm/quotes/:id', (req, res) => { const q = db.quoteById(req.params.id); if (!q) return res.status(404).json({ ok: false, error: 'Introuvable' }); res.json({ ok: true, data: fullQuote(q) }); });
+app.post('/api/crm/quotes', (req, res) => {
+  const b = req.body || {}; const l = b.lead_id ? db.leadById(b.lead_id) : null;
+  if (b.lead_id && !l) return res.status(404).json({ ok: false, error: 'Lead introuvable' });
+  const lines = cleanLines(b.lines) || (l ? quoteLinesFromLead(l) : []);
+  const q = db.createQuote({ lead_id: l ? l.id : null, client_id: l ? ensureClient(l) : null, lines, notes: l ? quoteNotesFor(l) : 'Devis valable 30 jours. Garantie 30 jours sur la prestation.' });
+  if (l) db.addLeadEvent(l.id, 'status', 'Devis ' + q.number + ' créé');
+  res.json({ ok: true, data: fullQuote(q) });
+});
+app.put('/api/crm/quotes/:id', (req, res) => {
+  const cur = db.quoteById(req.params.id); if (!cur) return res.status(404).json({ ok: false, error: 'Introuvable' });
+  const b = req.body || {}; const patch = {};
+  if (b.lines !== undefined) { const ln = cleanLines(b.lines); if (!ln) return res.status(400).json({ ok: false, error: 'Lignes invalides.' }); patch.lines = ln; }
+  if (b.notes !== undefined) patch.notes = clean(b.notes, 2000);
+  if (b.tva_rate !== undefined) patch.tva_rate = [0, 10, 20].includes(Number(b.tva_rate)) ? Number(b.tva_rate) : 20;
+  if (b.valid_until !== undefined && /^\d{4}-\d{2}-\d{2}$/.test(b.valid_until)) patch.valid_until = b.valid_until;
+  if (b.status !== undefined) patch.status = b.status;
+  const was = cur.status; const q = db.updateQuote(cur.id, patch);
+  const l = q.lead_id ? db.leadById(q.lead_id) : null;
+  if (l && patch.status && patch.status !== was) {
+    db.addLeadEvent(l.id, 'status', 'Devis ' + q.number + ' : ' + QUOTE_LABEL[patch.status].toLowerCase());
+    if (patch.status === 'accepte') {
+      db.updateLead(l.id, { status: 'gagne' });
+      const cid = ensureClient(db.leadById(l.id)); const f = l.form || {}; const t = db.quoteTotals(q);
+      if (cid) db.createIntervention({ client_id: cid, prestation: (q.lines[0] && q.lines[0].label) || f.prestation || 'Rénovation', nb_jantes: f.nb_jantes || '', marque: f.marque || '', modele: f.modele || '', mode: f.mode || '', montant: t.ttc, statut: 'confirme', notes: 'Devis ' + q.number });
+    } else if (patch.status === 'refuse') db.updateLead(l.id, { status: 'perdu' });
+  }
+  res.json({ ok: true, data: fullQuote(q) });
+});
+app.delete('/api/crm/quotes/:id', (req, res) => res.json({ ok: db.deleteQuote(req.params.id) }));
+app.get('/api/crm/quotes/:id/html', (req, res) => {
+  const q = db.quoteById(req.params.id); if (!q) return res.status(404).send('Introuvable');
+  res.type('html').send(quoteHtml(q, q.lead_id ? db.leadById(q.lead_id) : null));
+});
+const quoteSendLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 60, standardHeaders: true, legacyHeaders: false, message: { ok: false, error: 'Trop d\'envois. Réessayez plus tard.' } });
+app.post('/api/crm/quotes/:id/send', quoteSendLimiter, async (req, res) => {
+  const q = db.quoteById(req.params.id); if (!q) return res.status(404).json({ ok: false, error: 'Introuvable' });
+  const l = q.lead_id ? db.leadById(q.lead_id) : null;
+  if (!l || !l.email || !EMAIL_RE.test(l.email)) return res.status(400).json({ ok: false, error: 'Ce devis n\'est lié à aucun client avec une adresse e-mail valide.' });
+  if (!(q.lines || []).length || db.quoteTotals(q).ht <= 0) return res.status(400).json({ ok: false, error: 'Ajoutez au moins une ligne avec un prix avant d\'envoyer.' });
+  try {
+    if (process.env.CRM_TEST_MODE !== '1') {
+      if (!GMAIL_USER) throw new Error('Gmail non configuré sur le serveur');
+      await sendEmail({ from: `"REYNOV" <${GMAIL_USER}>`, to: l.email, subject: 'Votre devis REYNOV n° ' + q.number, html: quoteHtml(q, l), origin: 'crm' });
+    }
+    db.updateQuote(q.id, { status: 'envoye' });
+    db.logContact(l.id, 'email', null);
+    db.addLeadEvent(l.id, 'reply_sent', 'Devis ' + q.number + ' envoyé par e-mail (' + eur(db.quoteTotals(q).ttc) + ' TTC)');
+    res.json({ ok: true, data: fullQuote(db.quoteById(q.id)) });
+  } catch (e) { console.error('❌ Envoi devis:', e.message); res.status(502).json({ ok: false, error: 'Envoi impossible : ' + e.message }); }
+});
+
+// ── CRM : programme du jour ──
+const TZ_PARIS = 'Europe/Paris';
+const parisDay = (d) => new Date(d).toLocaleDateString('sv-SE', { timeZone: TZ_PARIS });
+const parisTime = (d) => new Date(d).toLocaleTimeString('fr-FR', { timeZone: TZ_PARIS, hour: '2-digit', minute: '2-digit' }).replace(':', ' h ').replace(/ h 00$/, ' h');
+function dailyProgram() {
+  const now = new Date(), today = parisDay(now), tomorrow = parisDay(now.getTime() + 86400000);
+  const evs = db.eventsList({ from: new Date(now.getTime() - 2 * 86400000).toISOString(), to: new Date(now.getTime() + 3 * 86400000).toISOString() });
+  const covers = (e, day) => e.all_day ? (e.start.slice(0, 10) <= day && (e.end || e.start).slice(0, 10) >= day) : parisDay(e.start) === day;
+  const nameOf = (l) => l ? ([l.prenom, l.nom].filter(Boolean).join(' ') || l.email || 'Client') : '';
+  const mapEv = (e) => { const l = e.lead_id ? db.leadById(e.lead_id) : null; return { id: e.id, title: e.title, all_day: e.all_day, time: e.all_day ? null : parisTime(e.start), end_time: e.all_day ? null : parisTime(e.end || e.start), location: e.location || '', lead_id: e.lead_id, client: nameOf(l), tel: l ? l.tel : '', maps: e.location ? 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(e.location) : '' }; };
+  const events = evs.filter(e => covers(e, today)).map(mapEv);
+  const tomorrowN = evs.filter(e => covers(e, tomorrow)).length;
+  const L = db.allLeads();
+  const brief = (l) => { const t = l.triage || {}; return { id: l.id, name: nameOf(l), tel: l.tel, summary: t.summary || '', urgent: t.urgency === 'haute', since_h: Math.round((Date.now() - Date.parse(l.created_at)) / 3600000) }; };
+  const toCall = L.filter(l => (l.status === 'nouveau' && !l.contacted) || (l.status === 'a_rappeler' && l.reminder_at && Date.parse(l.reminder_at) <= Date.now()))
+    .sort((a, b) => ((b.triage && b.triage.urgency === 'haute') - (a.triage && a.triage.urgency === 'haute')) || a.created_at.localeCompare(b.created_at)).slice(0, 8).map(brief);
+  const waiting = L.map(l => ({ l, r: db.replyState(l) })).filter(x => x.r.waiting && !toCall.some(c => c.id === x.l.id) && x.l.status !== 'nouveau')
+    .sort((a, b) => Date.parse(a.r.since) - Date.parse(b.r.since));
+  const waitingList = waiting.slice(0, 6).map(x => ({ ...brief(x.l), days: Math.max(0, Math.floor((Date.now() - Date.parse(x.r.since)) / 86400000)) }));
+  const quotes = db.quotesList();
+  const qFollow = quotes.filter(q => q.status === 'envoye' && Date.now() - Date.parse(q.sent_at) > 3 * 86400000).map(q => ({ id: q.id, number: q.number, client: nameOf(q.lead_id ? db.leadById(q.lead_id) : null), ttc: q.totals.ttc, days: Math.floor((Date.now() - Date.parse(q.sent_at)) / 86400000) }));
+  const qDraft = quotes.filter(q => q.status === 'brouillon').length;
+  // Texte du programme (règles locales : aucune donnée client n'est envoyée à un service externe)
+  const jour = new Date().toLocaleDateString('fr-FR', { timeZone: TZ_PARIS, weekday: 'long', day: 'numeric', month: 'long' });
+  const parts = ['Bonjour ! Nous sommes ' + jour + '.'];
+  if (events.length) parts.push('Au planning aujourd\'hui : ' + events.map(e => (e.time ? 'à ' + e.time + ' ' : 'toute la journée ') + e.title + (e.location ? ' (' + e.location + ')' : '')).join(' ; ') + '.');
+  else parts.push('Aucun rendez-vous au planning aujourd\'hui.');
+  if (tomorrowN) parts.push('Demain : ' + tomorrowN + ' rendez-vous.');
+  if (toCall.length) parts.push((toCall.length > 1 ? toCall.length + ' demandes à traiter en priorité : ' : 'Une demande à traiter en priorité : ') + toCall.slice(0, 4).map(c => c.name + (c.urgent ? ' (urgent)' : '')).join(', ') + '.');
+  else parts.push('Aucune nouvelle demande en attente.');
+  if (waiting.length) parts.push(waiting.length + ' client' + (waiting.length > 1 ? 's attendent' : ' attend') + ' une réponse, le plus ancien depuis ' + waitingList[0].days + ' jour' + (waitingList[0].days > 1 ? 's' : '') + '.');
+  if (qFollow.length) parts.push(qFollow.length + ' devis envoyé' + (qFollow.length > 1 ? 's' : '') + ' sans réponse depuis plus de 3 jours : ' + qFollow.slice(0, 3).map(q => q.client).join(', ') + '. Pensez à les relancer.');
+  if (qDraft) parts.push(qDraft + ' devis en brouillon à terminer.');
+  parts.push('Bonne journée !');
+  return { date: today, events, tomorrow: tomorrowN, to_call: toCall, waiting: waitingList, waiting_total: waiting.length, quotes_follow: qFollow, quotes_draft: qDraft, brief: parts.join(' ') };
+}
+app.get('/api/crm/today', (_req, res) => res.json({ ok: true, data: dailyProgram() }));
+
 // ── CRM : suivi des e-mails (lecture de la boîte Gmail) ──
 app.get('/api/crm/mail/status', (_req, res) => res.json({ ok: true, data: mailsync.status() }));
 app.get('/api/crm/mail/report', (_req, res) => res.json({ ok: true, data: mailsync.report() }));

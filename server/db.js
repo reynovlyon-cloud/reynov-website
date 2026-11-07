@@ -6,7 +6,7 @@ if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 const DB_FILE = path.join(DATA_DIR, 'crm.json');
 
-let _db = { clients: [], interventions: [], visits: {}, leads: [], events: [], event_tombs: [], _cid: 1, _iid: 1, _lid: 1, _eid: 1 };
+let _db = { clients: [], interventions: [], visits: {}, leads: [], events: [], event_tombs: [], quotes: [], _qid: 1, _cid: 1, _iid: 1, _lid: 1, _eid: 1 };
 
 if (fs.existsSync(DB_FILE)) {
   try {
@@ -16,6 +16,8 @@ if (fs.existsSync(DB_FILE)) {
     if (!Array.isArray(_db.leads)) _db.leads = [];
     if (!Array.isArray(_db.events)) _db.events = [];
     if (!Array.isArray(_db.event_tombs)) _db.event_tombs = [];
+    if (!Array.isArray(_db.quotes)) _db.quotes = [];
+    if (!_db._qid) _db._qid = 1 + _db.quotes.reduce((m, q) => Math.max(m, q.id || 0), 0);
     if (!_db._eid) _db._eid = 1 + _db.events.reduce((m, e) => Math.max(m, e.id || 0), 0);
     if (!_db._lid) _db._lid = 1 + _db.leads.reduce((m, l) => Math.max(m, l.id || 0), 0);
   } catch(e) { console.error('CRM load error:', e.message); }
@@ -338,6 +340,39 @@ function deleteEvent(id, { remote = false } = {}) {
 function eventTombs() { return _db.event_tombs; }
 function clearTomb(gid) { _db.event_tombs = _db.event_tombs.filter(t => t.id !== gid); saveSoon(); }
 
+// ── Devis ──
+const QUOTE_STATUS = ['brouillon', 'envoye', 'accepte', 'refuse'];
+function quoteTotals(q) {
+  const ht = Math.round((q.lines || []).reduce((t, l) => t + (Number(l.qty) || 0) * (Number(l.unit_ht) || 0), 0) * 100) / 100;
+  const rate = q.tva_rate == null ? 20 : Number(q.tva_rate);
+  const tva = Math.round(ht * rate) / 100;
+  return { ht, tva, ttc: Math.round((ht + tva) * 100) / 100, rate };
+}
+function quotesList({ lead_id } = {}) {
+  return _db.quotes.filter(q => !lead_id || q.lead_id === Number(lead_id)).map(q => ({ ...q, totals: quoteTotals(q) })).sort((a, b) => b.created_at.localeCompare(a.created_at));
+}
+function quoteById(id) { return _db.quotes.find(q => q.id === Number(id)) || null; }
+function createQuote(data) {
+  const year = new Date().getFullYear();
+  const n = _db.quotes.filter(q => String(q.number).startsWith('DV-' + year)).length + 1;
+  const id = _db._qid++;
+  const q = { id, number: 'DV-' + year + '-' + String(n).padStart(3, '0'), created_at: now(), updated_at: now(), status: 'brouillon', lead_id: null, client_id: null, lines: [], notes: '', tva_rate: 20, valid_until: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10), sent_at: null, accepted_at: null, ...data };
+  _db.quotes.push(q); save();
+  return q;
+}
+function updateQuote(id, patch) {
+  const q = quoteById(id); if (!q) return null;
+  ['lines', 'notes', 'tva_rate', 'valid_until', 'lead_id', 'client_id'].forEach(k => { if (patch[k] !== undefined) q[k] = patch[k]; });
+  if (patch.status !== undefined && QUOTE_STATUS.includes(patch.status) && patch.status !== q.status) {
+    q.status = patch.status;
+    if (patch.status === 'envoye') q.sent_at = now();
+    if (patch.status === 'accepte') q.accepted_at = now();
+  }
+  q.updated_at = now(); save();
+  return q;
+}
+function deleteQuote(id) { const n = _db.quotes.length; _db.quotes = _db.quotes.filter(q => q.id !== Number(id)); if (_db.quotes.length !== n) save(); return _db.quotes.length !== n; }
+
 function leadsList({ status, q, cat } = {}) {
   const s = (q || '').toLowerCase();
   return [..._db.leads]
@@ -408,11 +443,11 @@ function stats() {
 }
 
 function exportAll() {
-  return { clients: _db.clients, interventions: _db.interventions, leads: _db.leads, events: _db.events };
+  return { clients: _db.clients, interventions: _db.interventions, leads: _db.leads, events: _db.events, quotes: _db.quotes };
 }
 
 module.exports = {
-  exportAll, LEAD_STATUS, DATA_DIR, onEventChange, eventsList, eventById, eventByGid, allEvents, createEvent, updateEvent, setEventLink, deleteEvent, eventTombs, clearTomb, replyState, leadsByEmail, addMailEvent, allLeads: () => _db.leads,
+  exportAll, LEAD_STATUS, DATA_DIR, QUOTE_STATUS, quoteTotals, quotesList, quoteById, createQuote, updateQuote, deleteQuote, onEventChange, eventsList, eventById, eventByGid, allEvents, createEvent, updateEvent, setEventLink, deleteEvent, eventTombs, clearTomb, replyState, leadsByEmail, addMailEvent, allLeads: () => _db.leads,
   createLead, leadById, updateLead, logContact, addLeadEvent, deleteLead, leadsList, findRecentDuplicate, leadExists, leadStats,
   stats, visitsByDay, logVisit,
   clientsList, clientById, findByEmail,

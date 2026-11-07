@@ -31,6 +31,9 @@
     check: P('<path d="m5 12 5 5 9-10"/>'),
     sparkle: P('<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/>'),
     trend: P('<path d="m3 17 6-6 4 4 8-8M15 7h6v6"/>'),
+    doc: P('<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/>'),
+    speaker: P('<path d="M4 10v4h4l5 4V6L8 10zM16.5 9a4 4 0 0 1 0 6M19 6.5a8 8 0 0 1 0 11"/>'),
+    route: P('<circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="6" r="2.2"/><path d="M8.2 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.8"/>'),
     calendar: P('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'),
     clock: P('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
     userplus: P('<circle cx="10" cy="8" r="3.4"/><path d="M3.5 20c.6-3.6 3.2-5.4 6.5-5.4M18 9v6M15 12h6"/>'),
@@ -57,7 +60,7 @@
   const INTER_ST = { nouveau: 'Nouveau devis', devis_envoye: 'Devis envoyé', confirme: 'Confirmé', en_cours: 'En cours', termine: 'Terminé', paye: 'Payé', annule: 'Annulé' };
   const AV_COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#14b8a6', '#16a34a', '#ca8a04', '#6366f1', '#ef4444', '#0ea5e9'];
 
-  const S = { token: '', cfg: { ai: false, email: false, categories: {}, statuses: [] }, leads: [], stats: null, biz: null, clients: [], inters: [], view: 'dashboard', cats: new Set(), q: '', openId: null, seen: new Set(), polled: false, visitDays: 30, lastNew: 0, wait: false, mail: null, events: [], cal: null, calStatus: null, calList: null };
+  const S = { token: '', cfg: { ai: false, email: false, categories: {}, statuses: [] }, leads: [], stats: null, biz: null, clients: [], inters: [], view: 'dashboard', cats: new Set(), q: '', openId: null, seen: new Set(), polled: false, visitDays: 30, lastNew: 0, wait: false, mail: null, events: [], cal: null, calStatus: null, calList: null, today: null, quotes: [], leadQuotes: [], qSel: null };
 
   // ── Utilitaires ───────────────────────────────────────────
   const fullName = (l) => ((l.prenom || '') + ' ' + (l.nom || '')).trim() || l.email || 'Sans nom';
@@ -174,7 +177,7 @@
   }
 
   // ── Navigation ────────────────────────────────────────────
-  const TITLES = { dashboard: 'Tableau de bord', leads: 'Leads', clients: 'Clients', interventions: 'Interventions', stats: 'Statistiques', planning: 'Planning', settings: 'Paramètres' };
+  const TITLES = { dashboard: 'Tableau de bord', leads: 'Leads', clients: 'Clients', interventions: 'Interventions', stats: 'Statistiques', planning: 'Planning', devis: 'Devis', settings: 'Paramètres' };
   function go(view) {
     if (!TITLES[view]) view = 'dashboard';
     S.view = view;
@@ -187,7 +190,7 @@
     render();
   }
   function render() {
-    ({ dashboard: renderDashboard, leads: renderLeads, clients: renderClients, interventions: renderInters, stats: renderStats, planning: renderPlanning, settings: renderSettings }[S.view] || renderDashboard)();
+    ({ dashboard: renderDashboard, leads: renderLeads, clients: renderClients, interventions: renderInters, stats: renderStats, planning: renderPlanning, devis: renderDevis, settings: renderSettings }[S.view] || renderDashboard)();
   }
 
   // ── Tableau de bord ───────────────────────────────────────
@@ -197,7 +200,10 @@
   function renderDashboard() {
     const st = S.stats || { by_status: {}, per_day: [], categories: {} };
     const nNew = S.leads.filter((l) => l.status === 'nouveau' && !l.contacted).length;
-    $('#dash-sub').textContent = nNew ? 'Voici votre journée : ' + nNew + ' lead' + (nNew > 1 ? 's' : '') + ' à traiter.' : 'Voici votre journée : tout est à jour.';
+    const hr = new Date().getHours();
+    $('#dash-hello').textContent = hr < 5 || hr >= 18 ? 'Bonsoir.' : (hr < 12 ? 'Bonjour.' : 'Bon après-midi.');
+    $('#dash-sub').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+    renderTodayCard(); loadToday().then(renderTodayCard);
     let alert = '';
     if (st.stale_24h) alert = `<div class="alert"><span>${ico('alert')}&nbsp; <strong>${st.stale_24h}</strong> lead${st.stale_24h > 1 ? 's' : ''} sans réponse depuis plus de 24 h.</span><button class="btn sm" data-nav="leads">Voir les leads</button></div>`;
     else if (st.reminders_due) alert = `<div class="alert"><span>${ico('clock')}&nbsp; <strong>${st.reminders_due}</strong> rappel${st.reminders_due > 1 ? 's' : ''} à faire aujourd'hui.</span><button class="btn sm" data-nav="leads">Voir les leads</button></div>`;
@@ -205,7 +211,7 @@
     else alert = `<div class="alert ok"><span>${ico('check')}&nbsp; Aucun lead en attente.</span></div>`;
     const rp = S.mail && S.mail.report, ms = S.mail && S.mail.status;
     if (rp && ms && ms.state === 'ok' && rp.waiting) alert += `<div class="alert" style="margin-top:10px"><span>${ico('mail')}&nbsp; <strong>${rp.waiting}</strong> client${rp.waiting > 1 ? 's' : ''} attend${rp.waiting > 1 ? 'ent' : ''} une réponse${rp.waiting_over_3d ? ' (dont <strong>' + rp.waiting_over_3d + '</strong> depuis plus de 3 jours)' : ''}.</span><button class="btn sm" data-action="show-wait">Voir</button></div>`;
-    $('#dash-alert').innerHTML = alert;
+    $('#dash-alert').innerHTML = '';   // tout est dans le « programme du jour »
     const avg = st.avg_first_contact_min;
     const avgTxt = avg == null ? '—' : (avg < 60 ? avg + ' min' : Math.round(avg / 60 * 10) / 10 + ' h');
     $('#dash-stats').innerHTML =
@@ -291,6 +297,7 @@
   async function openLead(id, focus) {
     try {
       const j = await api('GET', '/leads/' + id);
+      try { S.leadQuotes = (await api('GET', '/quotes?lead_id=' + id)).data; } catch (e) { S.leadQuotes = []; }
       S.openId = id;
       drawLead(j.data, focus);
       $('#drawer').classList.add('on'); $('#drawer').setAttribute('aria-hidden', 'false'); $('#overlay').classList.add('on');
@@ -369,7 +376,8 @@
       </div>
       <div class="card"><h4>${ico('calendar')} Rappel et notes</h4>
         <div class="field"><label>Me rappeler le</label><div style="display:flex;gap:8px"><input class="input" type="datetime-local" id="rem-at" value="${esc(l.reminder_at ? toLocalInput(l.reminder_at) : '')}" /><button class="btn sm" data-action="set-reminder" data-id="${l.id}">Programmer</button></div></div>
-        <div class="field"><button class="btn sm" data-action="new-event-lead" data-id="${l.id}">${ico('calendar')}Fixer un rendez-vous</button></div>
+        <div class="field" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-action="new-event-lead" data-id="${l.id}">${ico('calendar')}Fixer un rendez-vous</button><button class="btn sm primary" data-action="new-quote-lead" data-id="${l.id}">${ico('doc')}Créer un devis</button></div>
+        ${(S.leadQuotes || []).length ? '<div class="rows">' + S.leadQuotes.map((q) => `<div class="row" data-action="open-quote" data-id="${q.id}"><span class="time-pill">${esc(q.number.replace('DV-', ''))}</span><div class="grow"><div class="t">${esc(eur(q.totals.ttc))} TTC</div><div class="s">${esc(Q_LABEL[q.status])}</div></div></div>`).join('') + '</div>' : ''}
         <div class="field"><label>Notes internes</label><textarea class="input" id="lead-notes" data-id="${l.id}" rows="3" placeholder="Ex. : rappeler après 18 h, veut le noir mat…">${esc(l.notes || '')}</textarea></div>
         <div class="dr-actions"><button class="btn sm" data-action="set-status" data-status="rdv" data-id="${l.id}">Rendez-vous confirmé</button><button class="btn sm" data-action="set-status" data-status="gagne" data-id="${l.id}">Marquer gagné</button><button class="btn sm" data-action="set-status" data-status="perdu" data-id="${l.id}">Marquer perdu</button></div>
       </div>
@@ -525,6 +533,83 @@
     $('#dlg-event').showModal();
   }
 
+
+  // ── Programme du jour ─────────────────────────────────────
+  async function loadToday() { try { S.today = (await api('GET', '/today')).data; } catch (e) { /* facultatif */ } }
+  function renderTodayCard() {
+    const el = $('#today-card'); if (!el) return; const t = S.today;
+    if (!t) { el.innerHTML = '<div class="muted">Chargement du programme du jour…</div>'; return; }
+    const tel = (x) => (x ? `<a class="mini-btn" href="tel:${esc(String(x).replace(/[^\d+]/g, ''))}" aria-label="Appeler" data-action="noop">${ico('phone')}</a>` : '');
+    const wa = (x) => (x ? `<a class="mini-btn" href="https://wa.me/${esc(waNum(x))}" target="_blank" rel="noopener" aria-label="WhatsApp" data-action="noop">${ico('wa')}</a>` : '');
+    const ev = t.events.map((e) => `<div class="prog-item"${e.lead_id ? ` data-action="open" data-id="${e.lead_id}"` : ''}><span class="time-pill">${e.time ? esc(e.time) : 'Journée'}</span><div class="grow"><div class="t">${esc(e.title)}</div><div class="s">${esc([e.client, e.location].filter(Boolean).join(' · '))}</div></div><div class="acts">${e.maps ? `<a class="mini-btn" href="${esc(e.maps)}" target="_blank" rel="noopener" aria-label="Itinéraire" data-action="noop">${ico('route')}</a>` : ''}${tel(e.tel)}</div></div>`).join('') || '<div class="prog-empty">Aucun rendez-vous aujourd\'hui.</div>';
+    const call = t.to_call.map((c) => `<div class="prog-item" data-action="open" data-id="${c.id}"><span class="avatar" style="--c:${c.urgent ? 'var(--rose)' : 'var(--blue)'};width:30px;height:30px;font-size:11px">${esc(initials({ prenom: c.name.split(' ')[0], nom: c.name.split(' ')[1] || '' }))}</span><div class="grow"><div class="t">${esc(c.name)}${c.urgent ? ' · urgent' : ''}</div><div class="s">${esc(c.summary || ('reçu il y a ' + c.since_h + ' h'))}</div></div><div class="acts">${tel(c.tel)}${wa(c.tel)}</div></div>`).join('') || '<div class="prog-empty">Rien en attente.</div>';
+    const wait = t.waiting.map((c) => `<div class="prog-item" data-action="open" data-id="${c.id}" data-focus="reply"><span class="avatar" style="--c:var(--amber);width:30px;height:30px;font-size:11px">${esc(initials({ prenom: c.name.split(' ')[0], nom: c.name.split(' ')[1] || '' }))}</span><div class="grow"><div class="t">${esc(c.name)}</div><div class="s">attend une réponse depuis ${c.days} j</div></div><div class="acts">${wa(c.tel)}</div></div>`).join('') + (t.quotes_follow.length ? t.quotes_follow.map((q) => `<div class="prog-item" data-action="open-quote" data-id="${q.id}"><span class="time-pill">${esc(q.number.replace('DV-', ''))}</span><div class="grow"><div class="t">${esc(q.client)}</div><div class="s">devis sans réponse depuis ${q.days} j</div></div></div>`).join('') : '') || '<div class="prog-empty">Personne n\'attend de réponse.</div>';
+    el.innerHTML = `<div class="hero-head"><h3>Programme du jour</h3><span class="eng ia">${ico('sparkle')} Assistant</span><div class="sp"><button class="btn sm" data-action="speak-brief">${ico('speaker')}Écouter</button><button class="btn sm" data-action="today-refresh" aria-label="Actualiser">↻</button></div></div>
+      <p class="brief">${esc(t.brief)}</p>
+      <div class="prog-cols">
+        <div class="prog-col"><h4>${ico('calendar')} Rendez-vous<span class="n">${t.events.length}</span></h4>${ev}${t.tomorrow ? `<div class="prog-empty">Demain : ${t.tomorrow} rendez-vous</div>` : ''}</div>
+        <div class="prog-col"><h4>${ico('phone')} À traiter<span class="n">${t.to_call.length}</span></h4>${call}</div>
+        <div class="prog-col"><h4>${ico('mail')} Relances<span class="n">${t.waiting_total + t.quotes_follow.length}</span></h4>${wait}</div>
+      </div>`;
+  }
+  function speakBrief(btn) {
+    if (!window.speechSynthesis) return toast('La lecture vocale n\'est pas disponible sur ce navigateur.', true);
+    if (speechSynthesis.speaking) { speechSynthesis.cancel(); btn.classList.remove('speaking'); return; }
+    if (!S.today) return;
+    const u = new SpeechSynthesisUtterance(S.today.brief); u.lang = 'fr-FR'; u.rate = 1.02;
+    const v = speechSynthesis.getVoices().find((x) => x.lang && x.lang.toLowerCase().startsWith('fr')); if (v) u.voice = v;
+    u.onend = u.onerror = () => btn.classList.remove('speaking');
+    btn.classList.add('speaking'); speechSynthesis.speak(u);
+  }
+
+  // ── Devis ─────────────────────────────────────────────────
+  const Q_LABEL = { brouillon: 'Brouillon', envoye: 'Envoyé', accepte: 'Accepté', refuse: 'Refusé' };
+  const eur = (n) => Number(n || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+  const leadName = (id) => { const l = S.leads.find((x) => x.id === Number(id)); return l ? fullName(l) : '—'; };
+  async function loadQuotes() { try { S.quotes = (await api('GET', '/quotes')).data; } catch (e) { S.quotes = []; } }
+  async function renderDevis() {
+    await loadQuotes();
+    const sel = $('#quote-filter'); if (sel.options.length < 2) sel.innerHTML = '<option value="">Tous les statuts</option>' + Object.entries(Q_LABEL).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
+    const list = S.quotes.filter((q) => !sel.value || q.status === sel.value);
+    const sum = S.quotes.filter((q) => q.status === 'accepte').reduce((t, q) => t + q.totals.ttc, 0), pend = S.quotes.filter((q) => q.status === 'envoye').reduce((t, q) => t + q.totals.ttc, 0);
+    $('#quotes-hint').textContent = S.quotes.length ? 'Acceptés : ' + eur(sum) + ' TTC · en attente de réponse : ' + eur(pend) + ' TTC' : '';
+    $('#quotes-body').innerHTML = list.map((q) => `<tr class="click" data-action="open-quote" data-id="${q.id}"><td><strong>${esc(q.number)}</strong></td><td>${esc(leadName(q.lead_id))}</td><td class="muted">${esc((q.lines[0] && q.lines[0].label || '').slice(0, 46))}</td><td><strong>${esc(eur(q.totals.ttc))}</strong></td><td><span class="chip st-${esc(q.status)}"><span class="dot"></span>${esc(Q_LABEL[q.status])}</span></td><td class="muted">${esc(dt(q.created_at))}</td></tr>`).join('') || '<tr><td colspan="6" class="empty">AUCUN DEVIS — CRÉEZ-EN UN DEPUIS UNE FICHE CLIENT</td></tr>';
+  }
+  function qLineRow(l) {
+    return `<div class="qline"><input class="input" data-q="label" value="${esc(l.label || '')}" placeholder="Prestation" /><input class="input" data-q="qty" type="number" min="0" step="1" value="${esc(l.qty)}" /><input class="input" data-q="unit_ht" type="number" min="0" step="1" value="${esc(l.unit_ht)}" placeholder="Prix HT" /><button class="icon-btn" type="button" data-action="q-del-line" aria-label="Retirer" style="width:30px;height:30px">×</button></div>`;
+  }
+  function qCollect() {
+    return [...document.querySelectorAll('#q-lines .qline')].map((r) => ({ label: r.querySelector('[data-q=label]').value.trim(), qty: Number(r.querySelector('[data-q=qty]').value) || 0, unit_ht: Number(r.querySelector('[data-q=unit_ht]').value) || 0 })).filter((x) => x.label);
+  }
+  function qTotals() {
+    const f = $('#form-quote').elements; const rate = Number(f.tva_rate.value);
+    const lines = qCollect(); const ht = Math.round(lines.reduce((t, l) => t + l.qty * l.unit_ht, 0) * 100) / 100; const tva = Math.round(ht * rate) / 100;
+    $('#q-totals').innerHTML = `<span class="muted">Total HT ${esc(eur(ht))}</span><span class="muted">TVA ${rate} % : ${esc(eur(tva))}</span><strong>Total TTC ${esc(eur(ht + tva))}</strong>`;
+    const zero = lines.filter((l) => !l.unit_ht);
+    $('#q-warn').textContent = zero.length ? 'Une ou plusieurs lignes n\'ont pas de prix (« à chiffrer ») : complétez-les avant d\'envoyer.' : '';
+  }
+  function openQuoteDialog(q, preset) {
+    const f = $('#form-quote'); f.reset(); S.qSel = q || null;
+    $('#quote-title-h').textContent = q ? 'Devis ' + q.number : 'Nouveau devis';
+    f.elements.id.value = q ? q.id : '';
+    $('#q-lead').innerHTML = '<option value="">— choisir un client —</option>' + S.leads.slice().sort((a, b) => fullName(a).localeCompare(fullName(b))).map((l) => `<option value="${l.id}"${q && q.lead_id === l.id || (preset && preset.lead_id === l.id) ? ' selected' : ''}>${esc(fullName(l))}${l.form && l.form.marque ? ' — ' + esc(dec(l.form.marque)) : ''}</option>`).join('');
+    $('#q-status').innerHTML = Object.entries(Q_LABEL).map(([k, v]) => `<option value="${k}"${q && q.status === k ? ' selected' : ''}>${v}</option>`).join('');
+    f.elements.valid_until.value = q ? q.valid_until : new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+    f.elements.tva_rate.value = String(q ? q.tva_rate : 20);
+    f.elements.notes.value = q ? q.notes : '';
+    $('#q-lines').innerHTML = q ? q.lines.map(qLineRow).join('') : '';
+    ['q-del', 'q-print', 'q-send'].forEach((i) => { $('#' + i).hidden = !q; });
+    $('#q-lead').disabled = !!q;
+    qTotals(); $('#dlg-quote').showModal();
+  }
+  async function qSave(silent) {
+    const f = $('#form-quote').elements; const id = f.id.value; if (!id) { toast('Choisissez d\'abord un client.', true); return null; }
+    const body = { lines: qCollect(), notes: f.notes.value, tva_rate: Number(f.tva_rate.value), valid_until: f.valid_until.value };
+    if (f.status.value !== (S.qSel && S.qSel.status)) body.status = f.status.value;
+    if (body.status === 'accepte' && !confirm('Marquer ce devis comme accepté ? Le lead passera en « gagné » et une intervention sera créée.')) return null;
+    const j = await api('PUT', '/quotes/' + id, body); S.qSel = j.data; if (!silent) toast('Devis enregistré'); return j.data;
+  }
+
   // ── Paramètres ────────────────────────────────────────────
   function renderSettings() {
     $('#set-ai').innerHTML = S.cfg.ai
@@ -623,6 +708,33 @@
     'new-lead': () => { $('#form-lead').reset(); $('#dlg-lead').showModal(); },
     'close-dlg': (el) => el.closest('dialog').close(),
     'show-wait': () => { S.wait = true; go('leads'); },
+    noop: () => {},
+    'speak-brief': (el) => speakBrief(el),
+    'today-refresh': async () => { await loadToday(); renderTodayCard(); toast('Programme actualisé'); },
+    'new-quote': () => openQuoteDialog(null),
+    'new-quote-lead': async (el) => {
+      try { const j = await api('POST', '/quotes', { lead_id: Number(el.dataset.id) }); closeDrawer(); await loadQuotes(); openQuoteDialog(j.data); toast('Devis préparé d\'après la demande : vérifiez les lignes'); } catch (e) { toast(e.message, true); }
+    },
+    'open-quote': async (el) => { try { const j = await api('GET', '/quotes/' + el.dataset.id); if (S.openId) closeDrawer(); openQuoteDialog(j.data); } catch (e) { toast(e.message, true); } },
+    'q-add-line': () => { $('#q-lines').insertAdjacentHTML('beforeend', qLineRow({ label: '', qty: 1, unit_ht: 0 })); qTotals(); },
+    'q-del-line': (el) => { el.closest('.qline').remove(); qTotals(); },
+    'q-delete': async () => { const id = $('#form-quote').elements.id.value; if (!id || !confirm('Supprimer ce devis ?')) return; try { await api('DELETE', '/quotes/' + id); $('#dlg-quote').close(); if (S.view === 'devis') renderDevis(); toast('Devis supprimé'); } catch (e) { toast(e.message, true); } },
+    'q-print': async () => {
+      try {
+        const q = await qSave(true); if (!q) return;
+        const r = await fetch('/api/crm/quotes/' + q.id + '/html', { headers: { Authorization: 'Bearer ' + S.token } });
+        const url = URL.createObjectURL(new Blob([await r.text()], { type: 'text/html' })); const w = window.open(url, '_blank');
+        if (!w) toast('Autorisez les fenêtres pop-up pour imprimer le devis.', true); else setTimeout(() => { try { w.print(); } catch (e) { /* impression manuelle */ } }, 700);
+      } catch (e) { toast(e.message, true); }
+    },
+    'q-send': async (el) => {
+      const q = await qSave(true).catch((e) => { toast(e.message, true); return null; }); if (!q) return;
+      if (q.totals.ht <= 0 || (q.lines || []).some((l) => !l.unit_ht)) return toast('Complétez les prix de toutes les lignes avant d\'envoyer.', true);
+      if (!confirm('Envoyer le devis ' + q.number + ' (' + eur(q.totals.ttc) + ' TTC) à ' + leadName(q.lead_id) + ' ?')) return;
+      el.disabled = true;
+      try { const j = await api('POST', '/quotes/' + q.id + '/send'); S.qSel = j.data; $('#q-status').value = 'envoye'; toast('Devis envoyé'); await refreshAll(); if (S.view === 'devis') renderDevis(); } catch (e) { toast(e.message, true); }
+      el.disabled = false;
+    },
     'new-event': (el) => openEventDialog(null, { date: el.dataset.date }),
     'open-event': (el) => { const e = S.events.find((x) => x.id === Number(el.dataset.id)); if (e) openEventDialog(e); },
     'cal-prev': () => { S.cal.m--; if (S.cal.m < 0) { S.cal.m = 11; S.cal.y--; } renderPlanning(); },
@@ -733,6 +845,9 @@
   document.addEventListener('change', async (e) => {
     const t = e.target;
     if (t.id === 'dr-status') { try { await setStatus(Number(t.dataset.id), t.value); } catch (er) { toast(er.message, true); } }
+    else if (t.id === 'q-lead' && t.value && !$('#form-quote').elements.id.value) {
+      try { const j = await api('POST', '/quotes', { lead_id: Number(t.value) }); openQuoteDialog(j.data); toast('Devis préparé d\'après la demande : vérifiez les lignes'); if (S.view === 'devis') renderDevis(); } catch (er) { toast(er.message, true); }
+    }
     else if (t.id === 'ev-allday') setAllDay(t.checked);
     else if (t.id === 'cal-select') { try { await api('POST', '/calendar/select', { id: t.value }); toast('Agenda sélectionné : synchronisation en cours'); S.calList = null; setTimeout(async () => { await loadCal(); if (S.view === 'settings') renderSettings(); }, 4000); } catch (er) { toast(er.message, true); } }
     else if (t.id === 'reply-tpl') {
@@ -786,6 +901,12 @@
   $('#login-form').addEventListener('submit', async (e) => {
     e.preventDefault(); $('#login-err').textContent = '';
     try { await start($('#pwd').value.trim()); } catch (er) { $('#login-err').textContent = /Trop/.test(er.message) ? er.message : 'Mot de passe incorrect'; S.token = ''; }
+  });
+  $('#dlg-quote').addEventListener('input', () => qTotals());
+  $('#dlg-quote').addEventListener('change', (e) => { if (e.target.name === 'tva_rate') qTotals(); });
+  $('#form-quote').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try { const q = await qSave(false); if (q) { $('#dlg-quote').close(); await refreshAll(); if (S.view === 'devis') renderDevis(); if (S.view === 'dashboard') renderDashboard(); } } catch (er) { toast(er.message, true); }
   });
   $('#form-event').addEventListener('submit', async (e) => {
     e.preventDefault();

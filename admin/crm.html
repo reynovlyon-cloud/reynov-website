@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="crm.css" />
 </head>
 <body>
+<div class="bg" aria-hidden="true"></div>
 
 <!-- Connexion -->
 <div id="login">
@@ -31,6 +32,7 @@
     <button class="nav-item" data-nav="leads"><span data-ico="funnel"></span>Leads<span class="badge" id="nav-badge" hidden>0</span></button>
     <button class="nav-item" data-nav="clients"><span data-ico="users"></span>Clients</button>
     <button class="nav-item" data-nav="planning"><span data-ico="calendar"></span>Planning</button>
+    <button class="nav-item" data-nav="devis"><span data-ico="doc"></span>Devis</button>
     <button class="nav-item" data-nav="interventions"><span data-ico="wrench"></span>Interventions</button>
     <div class="side-label">Business</div>
     <button class="nav-item" data-nav="stats"><span data-ico="chart"></span>Statistiques</button>
@@ -47,7 +49,7 @@
       <h1 id="view-title">Tableau de bord</h1>
       <div class="search"><span data-ico="search"></span><input id="global-search" type="search" placeholder="Rechercher un client, un lead…" autocomplete="off" /></div>
       <div class="top-right">
-        <button class="btn primary" data-action="new-lead"><span data-ico="plus"></span>Nouveau lead</button>
+        <button class="btn primary" data-action="new-lead" aria-label="Nouveau lead"><span data-ico="plus"></span><span class="lbl">Nouveau lead</span></button>
         <button class="icon-btn" data-action="theme" aria-label="Changer de thème" title="Thème clair / sombre"><span data-ico="moon" id="theme-ico"></span></button>
       </div>
     </header>
@@ -55,9 +57,16 @@
     <main class="content">
       <!-- Tableau de bord -->
       <section class="view" id="view-dashboard" hidden>
-        <h2 class="hello">Bonjour.</h2>
-        <div class="muted" id="dash-sub"></div>
+        <div class="hello-row">
+          <div><h2 class="hello" id="dash-hello">Bonjour.</h2><div class="muted" id="dash-sub"></div></div>
+          <div class="quick">
+            <button class="btn" data-action="new-lead"><span data-ico="plus"></span>Lead</button>
+            <button class="btn" data-action="new-event"><span data-ico="calendar"></span>Rendez-vous</button>
+            <button class="btn primary" data-action="new-quote"><span data-ico="doc"></span>Devis</button>
+          </div>
+        </div>
         <div id="dash-alert"></div>
+        <div class="card hero" id="today-card" style="margin-top:16px"></div>
         <div class="grid stats" id="dash-stats"></div>
         <div class="grid two">
           <div class="card"><h3>Demandes reçues</h3><div class="muted">30 derniers jours</div><div id="dash-chart"></div></div>
@@ -102,6 +111,12 @@
         </div>
       </section>
 
+      <!-- Devis -->
+      <section class="view" id="view-devis" hidden>
+        <div class="toolbar"><button class="btn primary" data-action="new-quote"><span data-ico="plus"></span>Nouveau devis</button><select class="mini" id="quote-filter"><option value="">Tous les statuts</option></select><span class="hint" id="quotes-hint"></span></div>
+        <div class="card table-card"><table class="tbl"><thead><tr><th>N°</th><th>Client</th><th>Prestation</th><th>Total TTC</th><th>Statut</th><th>Date</th></tr></thead><tbody id="quotes-body"></tbody></table></div>
+      </section>
+
       <!-- Interventions -->
       <section class="view" id="view-interventions" hidden>
         <div class="toolbar"><button class="btn" data-action="new-inter"><span data-ico="plus"></span>Nouvelle intervention</button><select class="mini" id="inter-filter"><option value="">Tous les statuts</option></select></div>
@@ -129,6 +144,7 @@
             <input type="file" id="import-file" accept=".json,application/json" hidden />
             <button class="btn" data-action="import"><span data-ico="download"></span>Choisir le fichier…</button><div id="import-result" class="muted" style="margin-top:12px"></div></div>
           <div class="card"><h3>Planning Google Agenda</h3><div id="set-cal"></div></div>
+          <div class="card"><h3>Session</h3><p class="muted">Connecté à l'administration REYNOV.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="/" target="_blank" rel="noopener"><span data-ico="external"></span>Voir le site</a><button class="btn danger" data-action="logout"><span data-ico="logout"></span>Déconnexion</button></div></div>
           <div class="card"><h3>Notifications</h3><p class="muted">Un son discret et une notification du navigateur à chaque nouveau lead (onglet ouvert).</p><button class="btn" data-action="notif" id="notif-btn"><span data-ico="bell"></span>Activer les notifications</button></div>
         </div>
       </section>
@@ -170,6 +186,17 @@
   <div class="field"><label>Notes</label><textarea class="input" name="notes" rows="3"></textarea></div>
   <p class="faint" id="event-sync" style="font-size:12px;margin:0 0 6px"></p>
   <div class="foot"><button class="btn danger" type="button" data-action="delete-event" id="btn-del-event">Supprimer</button><button class="btn" type="button" data-action="close-dlg">Annuler</button><button class="btn primary" type="submit">Enregistrer</button></div>
+</form></dialog>
+
+<dialog id="dlg-quote"><form method="dialog" class="dlg" id="form-quote">
+  <h3 id="quote-title-h">Devis</h3><input type="hidden" name="id" />
+  <div class="two"><div class="field"><label>Client / lead *</label><select class="input" name="lead_id" id="q-lead"></select></div><div class="field"><label>Valable jusqu'au</label><input class="input" type="date" name="valid_until" /></div></div>
+  <div class="field"><label>Lignes du devis (prix HT)</label><div id="q-lines"></div><button class="btn sm" type="button" data-action="q-add-line">+ Ajouter une ligne</button></div>
+  <div class="two"><div class="field"><label>TVA</label><select class="input" name="tva_rate"><option value="20">20 %</option><option value="10">10 %</option><option value="0">0 % (non applicable)</option></select></div><div class="field"><label>Statut</label><select class="input" name="status" id="q-status"></select></div></div>
+  <div class="field"><label>Conditions et notes (visibles par le client)</label><textarea class="input" name="notes" rows="4"></textarea></div>
+  <div class="qtot" id="q-totals"></div>
+  <p class="faint" id="q-warn" style="font-size:12px;margin:0 0 8px"></p>
+  <div class="foot"><button class="btn danger" type="button" data-action="q-delete" id="q-del">Supprimer</button><button class="btn" type="button" data-action="q-print" id="q-print">Imprimer / PDF</button><button class="btn" type="button" data-action="q-send" id="q-send">Envoyer par e-mail</button><button class="btn primary" type="submit">Enregistrer</button></div>
 </form></dialog>
 
 <dialog id="dlg-inter"><form method="dialog" class="dlg" id="form-inter">
