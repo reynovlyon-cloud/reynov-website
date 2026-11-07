@@ -6,7 +6,7 @@ if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 const DB_FILE = path.join(DATA_DIR, 'crm.json');
 
-let _db = { clients: [], interventions: [], visits: {}, leads: [], _cid: 1, _iid: 1, _lid: 1 };
+let _db = { clients: [], interventions: [], visits: {}, leads: [], events: [], event_tombs: [], _cid: 1, _iid: 1, _lid: 1, _eid: 1 };
 
 if (fs.existsSync(DB_FILE)) {
   try {
@@ -14,6 +14,9 @@ if (fs.existsSync(DB_FILE)) {
     _db = { ..._db, ...loaded };
     if (!_db.visits) _db.visits = {};
     if (!Array.isArray(_db.leads)) _db.leads = [];
+    if (!Array.isArray(_db.events)) _db.events = [];
+    if (!Array.isArray(_db.event_tombs)) _db.event_tombs = [];
+    if (!_db._eid) _db._eid = 1 + _db.events.reduce((m, e) => Math.max(m, e.id || 0), 0);
     if (!_db._lid) _db._lid = 1 + _db.leads.reduce((m, l) => Math.max(m, l.id || 0), 0);
   } catch(e) { console.error('CRM load error:', e.message); }
 }
@@ -297,6 +300,44 @@ function addMailEvent(id, { gid, dir, ts, text }) {
   return true;
 }
 
+
+// ── Planning (rendez-vous et interventions), synchronisé avec Google Agenda ──
+// Dates : ISO UTC pour un horaire précis ; « AAAA-MM-JJ » (fin incluse) pour une journée entière.
+// dirty = modifié dans le CRM et pas encore envoyé à Google ; g = lien avec l'événement Google.
+let _evHook = null;
+function onEventChange(fn) { _evHook = fn; }
+function evTouch() { if (_evHook) { try { _evHook(); } catch (e) { /* synchro facultative */ } } }
+function eventsList({ from, to } = {}) {
+  const f = from ? Date.parse(from) : -Infinity, t = to ? Date.parse(to) : Infinity;
+  return _db.events.filter(e => { const s = Date.parse(e.start), en = Date.parse(e.end || e.start); return en >= f && s <= t; })
+    .sort((a, b) => String(a.start).localeCompare(String(b.start)));
+}
+function eventById(id) { return _db.events.find(e => e.id === Number(id)) || null; }
+function eventByGid(gid) { return _db.events.find(e => e.g && e.g.id === gid) || null; }
+function allEvents() { return _db.events; }
+function createEvent(data, { remote = false } = {}) {
+  const e = { id: _db._eid++, created_at: now(), updated_at: now(), title: '', start: now(), end: null, all_day: false, location: '', notes: '', lead_id: null, client_id: null, origin: remote ? 'google' : 'crm', g: null, dirty: !remote, ...data };
+  _db.events.push(e); save(); if (!remote) evTouch();
+  return e;
+}
+function updateEvent(id, patch, { remote = false } = {}) {
+  const e = eventById(id); if (!e) return null;
+  ['title', 'start', 'end', 'all_day', 'location', 'notes', 'lead_id', 'client_id'].forEach(k => { if (patch[k] !== undefined) e[k] = patch[k]; });
+  e.updated_at = now(); if (!remote) e.dirty = true;
+  save(); if (!remote) evTouch();
+  return e;
+}
+function setEventLink(id, g) { const e = eventById(id); if (e) { e.g = g; e.dirty = false; saveSoon(); } return e; }
+function deleteEvent(id, { remote = false } = {}) {
+  const e = eventById(id); if (!e) return false;
+  _db.events = _db.events.filter(x => x.id !== e.id);
+  if (!remote && e.g && e.g.id) _db.event_tombs.push({ cal: e.g.cal, id: e.g.id });
+  save(); if (!remote) evTouch();
+  return true;
+}
+function eventTombs() { return _db.event_tombs; }
+function clearTomb(gid) { _db.event_tombs = _db.event_tombs.filter(t => t.id !== gid); saveSoon(); }
+
 function leadsList({ status, q, cat } = {}) {
   const s = (q || '').toLowerCase();
   return [..._db.leads]
@@ -367,11 +408,11 @@ function stats() {
 }
 
 function exportAll() {
-  return { clients: _db.clients, interventions: _db.interventions, leads: _db.leads };
+  return { clients: _db.clients, interventions: _db.interventions, leads: _db.leads, events: _db.events };
 }
 
 module.exports = {
-  exportAll, LEAD_STATUS, DATA_DIR, replyState, leadsByEmail, addMailEvent, allLeads: () => _db.leads,
+  exportAll, LEAD_STATUS, DATA_DIR, onEventChange, eventsList, eventById, eventByGid, allEvents, createEvent, updateEvent, setEventLink, deleteEvent, eventTombs, clearTomb, replyState, leadsByEmail, addMailEvent, allLeads: () => _db.leads,
   createLead, leadById, updateLead, logContact, addLeadEvent, deleteLead, leadsList, findRecentDuplicate, leadExists, leadStats,
   stats, visitsByDay, logVisit,
   clientsList, clientById, findByEmail,

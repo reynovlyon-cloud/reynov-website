@@ -57,7 +57,7 @@
   const INTER_ST = { nouveau: 'Nouveau devis', devis_envoye: 'Devis envoyé', confirme: 'Confirmé', en_cours: 'En cours', termine: 'Terminé', paye: 'Payé', annule: 'Annulé' };
   const AV_COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#14b8a6', '#16a34a', '#ca8a04', '#6366f1', '#ef4444', '#0ea5e9'];
 
-  const S = { token: '', cfg: { ai: false, email: false, categories: {}, statuses: [] }, leads: [], stats: null, biz: null, clients: [], inters: [], view: 'dashboard', cats: new Set(), q: '', openId: null, seen: new Set(), polled: false, visitDays: 30, lastNew: 0, wait: false, mail: null };
+  const S = { token: '', cfg: { ai: false, email: false, categories: {}, statuses: [] }, leads: [], stats: null, biz: null, clients: [], inters: [], view: 'dashboard', cats: new Set(), q: '', openId: null, seen: new Set(), polled: false, visitDays: 30, lastNew: 0, wait: false, mail: null, events: [], cal: null, calStatus: null, calList: null };
 
   // ── Utilitaires ───────────────────────────────────────────
   const fullName = (l) => ((l.prenom || '') + ' ' + (l.nom || '')).trim() || l.email || 'Sans nom';
@@ -143,6 +143,7 @@
     S.leads = l.data; S.stats = st.data; S.biz = biz.data;
     S.leads.forEach((x) => S.seen.add(x.id));
     loadMail();
+    loadCal().then(() => { if (S.view === 'settings') renderSettings(); });
     updateBadge();
   }
   async function loadMail() {
@@ -173,7 +174,7 @@
   }
 
   // ── Navigation ────────────────────────────────────────────
-  const TITLES = { dashboard: 'Tableau de bord', leads: 'Leads', clients: 'Clients', interventions: 'Interventions', stats: 'Statistiques', settings: 'Paramètres' };
+  const TITLES = { dashboard: 'Tableau de bord', leads: 'Leads', clients: 'Clients', interventions: 'Interventions', stats: 'Statistiques', planning: 'Planning', settings: 'Paramètres' };
   function go(view) {
     if (!TITLES[view]) view = 'dashboard';
     S.view = view;
@@ -186,7 +187,7 @@
     render();
   }
   function render() {
-    ({ dashboard: renderDashboard, leads: renderLeads, clients: renderClients, interventions: renderInters, stats: renderStats, settings: renderSettings }[S.view] || renderDashboard)();
+    ({ dashboard: renderDashboard, leads: renderLeads, clients: renderClients, interventions: renderInters, stats: renderStats, planning: renderPlanning, settings: renderSettings }[S.view] || renderDashboard)();
   }
 
   // ── Tableau de bord ───────────────────────────────────────
@@ -368,6 +369,7 @@
       </div>
       <div class="card"><h4>${ico('calendar')} Rappel et notes</h4>
         <div class="field"><label>Me rappeler le</label><div style="display:flex;gap:8px"><input class="input" type="datetime-local" id="rem-at" value="${esc(l.reminder_at ? toLocalInput(l.reminder_at) : '')}" /><button class="btn sm" data-action="set-reminder" data-id="${l.id}">Programmer</button></div></div>
+        <div class="field"><button class="btn sm" data-action="new-event-lead" data-id="${l.id}">${ico('calendar')}Fixer un rendez-vous</button></div>
         <div class="field"><label>Notes internes</label><textarea class="input" id="lead-notes" data-id="${l.id}" rows="3" placeholder="Ex. : rappeler après 18 h, veut le noir mat…">${esc(l.notes || '')}</textarea></div>
         <div class="dr-actions"><button class="btn sm" data-action="set-status" data-status="rdv" data-id="${l.id}">Rendez-vous confirmé</button><button class="btn sm" data-action="set-status" data-status="gagne" data-id="${l.id}">Marquer gagné</button><button class="btn sm" data-action="set-status" data-status="perdu" data-id="${l.id}">Marquer perdu</button></div>
       </div>
@@ -453,6 +455,76 @@
     } catch (e) { /* ignoré */ }
   }
 
+
+  // ── Planning (rendez-vous) ────────────────────────────────
+  const pad2 = (n) => String(n).padStart(2, '0');
+  const dkey = (d) => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+  function evDays(e) {                       // jours (locaux) couverts par un rendez-vous
+    const a = e.all_day ? new Date(e.start + 'T00:00:00') : new Date(e.start);
+    let b = e.all_day ? new Date((e.end || e.start) + 'T00:00:00') : new Date(e.end || e.start);
+    if (!e.all_day && b > a && b.getHours() === 0 && b.getMinutes() === 0) b = new Date(b.getTime() - 60000);
+    const out = []; const d = new Date(a.getFullYear(), a.getMonth(), a.getDate());
+    for (let i = 0; i < 60 && d <= b; i++) { out.push(dkey(d)); d.setDate(d.getDate() + 1); }
+    return out;
+  }
+  const evTime = (e) => (e.all_day ? '' : new Date(e.start).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + ' ');
+  function monthRange() {
+    const c = S.cal || (S.cal = { y: new Date().getFullYear(), m: new Date().getMonth() });
+    const first = new Date(c.y, c.m, 1); const off = (first.getDay() + 6) % 7;
+    const start = new Date(c.y, c.m, 1 - off); const end = new Date(start); end.setDate(end.getDate() + 42);
+    return { start, end };
+  }
+  async function loadEvents() {
+    const { start, end } = monthRange();
+    try { S.events = (await api('GET', '/events?from=' + encodeURIComponent(start.toISOString()) + '&to=' + encodeURIComponent(end.toISOString()))).data; } catch (e) { S.events = []; }
+  }
+  async function renderPlanning() {
+    await Promise.all([loadEvents(), loadCal()]);
+    const c = S.cal; const { start } = monthRange(); const today = dkey(new Date());
+    $('#cal-title').textContent = MONTHS[c.m].charAt(0).toUpperCase() + MONTHS[c.m].slice(1) + ' ' + c.y;
+    $('#cal-head').innerHTML = ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim'].map((d) => `<span>${d}</span>`).join('');
+    const byDay = {}; S.events.forEach((e) => evDays(e).forEach((k) => { (byDay[k] = byDay[k] || []).push(e); }));
+    let cells = '';
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(start); d.setDate(start.getDate() + i); const k = dkey(d); const list = byDay[k] || [];
+      const chips = list.slice(0, 3).map((e) => `<button class="ev-chip${e.lead_id ? ' lead' : (e.origin === 'google' ? ' goog' : '')}" data-action="open-event" data-id="${e.id}" title="${esc(e.title)}">${esc(evTime(e))}${esc(e.title)}</button>`).join('');
+      cells += `<div class="cal-day${d.getMonth() !== c.m ? ' dim' : ''}${k === today ? ' today' : ''}" data-action="new-event" data-date="${k}"><span class="dn">${d.getDate()}</span>${chips}${list.length > 3 ? `<span class="more">+${list.length - 3} autre(s)</span>` : ''}</div>`;
+    }
+    $('#cal-grid').innerHTML = cells;
+    const cs = S.calStatus;
+    $('#cal-sync-hint').textContent = cs && cs.enabled ? (cs.state === 'ok' || cs.state === 'running' ? 'Synchronisé avec Google Agenda' + (cs.calendar_name ? ' (' + cs.calendar_name + ')' : '') + '.' : 'Google Agenda : ' + (cs.state === 'scope_missing' ? 'autorisation manquante (voir Paramètres)' : 'voir Paramètres')) : 'Google Agenda non connecté (voir Paramètres).';
+    const now = new Date().toISOString();
+    let up = S.events.filter((e) => (e.all_day ? e.end || e.start : e.end || e.start) >= (e.all_day ? now.slice(0, 10) : now)).slice(0, 10);
+    $('#cal-upcoming').innerHTML = up.length ? up.map((e) => `<div class="row" data-action="open-event" data-id="${e.id}"><span class="avatar" style="--c:${e.lead_id ? 'var(--violet)' : 'var(--blue)'};width:30px;height:30px;font-size:11px">${e.all_day ? 'J' : new Date(e.start).getDate()}</span><div class="grow"><div class="t">${esc(e.title)}</div><div class="s">${esc(e.all_day ? new Date(e.start + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · journée' : new Date(e.start).toLocaleString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))}${e.location ? ' · ' + esc(e.location) : ''}</div></div></div>`).join('') : '<div class="empty">AUCUN RENDEZ-VOUS À VENIR</div>';
+  }
+  async function loadCal() { try { S.calStatus = (await api('GET', '/calendar/status')).data; } catch (e) { /* facultatif */ } }
+  function fillLeadSelect(sel, cur) {
+    $('#ev-lead').innerHTML = '<option value="">— aucun —</option>' + S.leads.slice().sort((a, b) => fullName(a).localeCompare(fullName(b))).map((l) => `<option value="${l.id}"${l.id === cur ? ' selected' : ''}>${esc(fullName(l))}${l.form && l.form.marque ? ' — ' + esc(dec(l.form.marque)) : ''}</option>`).join('');
+  }
+  function setAllDay(on) {
+    const s = $('#ev-start'), e = $('#ev-end'); const ps = s.value, pe = e.value;
+    s.type = e.type = on ? 'date' : 'datetime-local';
+    s.value = on ? (ps || '').slice(0, 10) : (ps.length === 10 ? ps + 'T09:00' : ps);
+    e.value = on ? (pe || '').slice(0, 10) : (pe.length === 10 ? pe + 'T10:00' : pe);
+  }
+  function openEventDialog(ev, preset) {
+    const f = $('#form-event'); f.reset();
+    const e = ev || {};
+    f.elements.id.value = e.id || '';
+    $('#event-title-h').textContent = e.id ? 'Modifier le rendez-vous' : 'Nouveau rendez-vous';
+    f.elements.title.value = e.title || (preset && preset.title) || '';
+    f.elements.location.value = e.location || (preset && preset.location) || '';
+    f.elements.notes.value = e.notes || (preset && preset.notes) || '';
+    f.elements.all_day.checked = !!e.all_day; setAllDay(!!e.all_day);
+    if (e.id) { $('#ev-start').value = e.all_day ? e.start.slice(0, 10) : toLocalInput(e.start); $('#ev-end').value = e.all_day ? (e.end || e.start).slice(0, 10) : toLocalInput(e.end || e.start); }
+    else { const d = (preset && preset.date) || dkey(new Date()); $('#ev-start').value = d + 'T09:00'; $('#ev-end').value = d + 'T10:00'; }
+    fillLeadSelect(null, e.lead_id || (preset && preset.lead_id) || null);
+    $('#btn-del-event').hidden = !e.id;
+    const cs = S.calStatus; $('#event-sync').textContent = e.g ? 'Synchronisé avec Google Agenda.' : (cs && cs.enabled ? 'Sera envoyé dans Google Agenda.' : 'Google Agenda non connecté : ce rendez-vous reste dans le CRM.');
+    $('#dlg-event').showModal();
+  }
+
   // ── Paramètres ────────────────────────────────────────────
   function renderSettings() {
     $('#set-ai').innerHTML = S.cfg.ai
@@ -473,6 +545,17 @@
         (rp ? `<p class="muted"><strong>${rp.waiting}</strong> client(s) attendent une réponse · <strong>${rp.never_answered}</strong> jamais répondu(s)${rp.avg_first_reply_hours != null ? ' · délai moyen de 1re réponse : <strong>' + rp.avg_first_reply_hours + ' h</strong>' : ''}</p>` : '');
     }
     $('#set-sync').innerHTML = h + (ms && ms.enabled && ms.state !== 'scope_missing' ? `<button class="btn" data-action="sync-now">${ico('mail')}Synchroniser maintenant</button>` : '');
+    const cs = S.calStatus; let ch;
+    if (!cs) ch = '<p class="muted">Chargement…</p>';
+    else if (!cs.enabled) ch = '<p><span class="chip"><span class="dot" style="--c:var(--amber)"></span>Non connecté</span></p><p class="muted">Le planning du CRM n\'est pas encore relié à Google Agenda. Suivez le guide « Connecter le planning Google », puis ajoutez la variable <strong>GOOGLE_CALENDAR_REFRESH_TOKEN</strong> dans Railway.</p>';
+    else if (cs.state === 'scope_missing') ch = '<p><span class="chip"><span class="dot" style="--c:var(--amber)"></span>Autorisation manquante</span></p><p class="muted">Le jeton n\'a pas le droit « Google Agenda ». Refaites l\'autorisation avec le droit <strong>calendar</strong> (voir le guide).</p>';
+    else if (cs.state === 'api_disabled') ch = '<p><span class="chip"><span class="dot" style="--c:var(--amber)"></span>API non activée</span></p><p class="muted">Activez « Google Calendar API » dans Google Cloud (bibliothèque d\'API), puis réessayez.</p>';
+    else if (cs.state === 'token_error') ch = '<p><span class="chip"><span class="dot" style="--c:var(--rose)"></span>Connexion expirée</span></p><p class="muted">Générez un nouveau jeton (voir le guide) et remplacez <strong>GOOGLE_CALENDAR_REFRESH_TOKEN</strong>.</p>';
+    else ch = `<p><span class="chip st-rdv"><span class="dot"></span>${cs.state === 'error' ? 'Erreur temporaire' : 'Connecté'}</span></p><p class="muted">Les rendez-vous du CRM et de Google Agenda sont synchronisés dans les deux sens (toutes les 3 minutes, et tout de suite après une modification dans le CRM).${cs.last_ok ? ' Dernière synchro ' + esc(ago(cs.last_ok)) + '.' : ''}${cs.pending ? ' ' + cs.pending + ' en attente d\'envoi.' : ''}${cs.error ? '<br>' + esc(cs.error) : ''}</p>
+      <div class="field"><label>Agenda synchronisé</label><select class="input" id="cal-select">${S.calList ? S.calList.map((c) => `<option value="${esc(c.id)}"${(c.id === cs.calendar || (c.primary && cs.calendar === 'primary')) ? ' selected' : ''}>${esc(c.name)}${c.primary ? ' (principal)' : ''}</option>`).join('') : '<option>Chargement…</option>'}</select></div>
+      <button class="btn" data-action="cal-sync">${ico('calendar')}Synchroniser maintenant</button>`;
+    $('#set-cal').innerHTML = ch;
+    if (cs && cs.enabled && !S.calList && cs.state !== 'scope_missing' && cs.state !== 'api_disabled' && cs.state !== 'token_error') api('GET', '/calendar/list').then((j) => { S.calList = j.data; if (S.view === 'settings') renderSettings(); }).catch(() => { S.calList = []; });
     const nb = $('#notif-btn'); if (window.Notification && Notification.permission === 'granted') nb.innerHTML = ico('bell') + 'Notifications activées';
   }
 
@@ -540,6 +623,23 @@
     'new-lead': () => { $('#form-lead').reset(); $('#dlg-lead').showModal(); },
     'close-dlg': (el) => el.closest('dialog').close(),
     'show-wait': () => { S.wait = true; go('leads'); },
+    'new-event': (el) => openEventDialog(null, { date: el.dataset.date }),
+    'open-event': (el) => { const e = S.events.find((x) => x.id === Number(el.dataset.id)); if (e) openEventDialog(e); },
+    'cal-prev': () => { S.cal.m--; if (S.cal.m < 0) { S.cal.m = 11; S.cal.y--; } renderPlanning(); },
+    'cal-next': () => { S.cal.m++; if (S.cal.m > 11) { S.cal.m = 0; S.cal.y++; } renderPlanning(); },
+    'cal-today': () => { const n = new Date(); S.cal = { y: n.getFullYear(), m: n.getMonth() }; renderPlanning(); },
+    'delete-event': async () => {
+      const id = $('#form-event').elements.id.value; if (!id || !confirm('Supprimer ce rendez-vous' + (S.calStatus && S.calStatus.enabled ? ' (il sera aussi supprimé de Google Agenda)' : '') + ' ?')) return;
+      try { await api('DELETE', '/events/' + id); $('#dlg-event').close(); renderPlanning(); toast('Rendez-vous supprimé'); } catch (e) { toast(e.message, true); }
+    },
+    'new-event-lead': (el) => {
+      const l = S.leads.find((x) => x.id === Number(el.dataset.id)); if (!l) return; const f = l.form || {};
+      const veh = [dec(f.marque || ''), dec(f.modele || '')].filter(Boolean).join(' ');
+      closeDrawer();
+      go('planning');
+      openEventDialog(null, { title: 'RDV ' + fullName(l) + (veh ? ' — ' + veh : ''), lead_id: l.id, location: dec(l.adresse || l.ville || ''), notes: ((l.triage && l.triage.summary) || '') + (l.tel ? '\nTél. ' + l.tel : '') });
+    },
+    'cal-sync': async () => { try { await api('POST', '/calendar/sync'); toast('Synchronisation lancée'); setTimeout(async () => { await loadCal(); if (S.view === 'settings') renderSettings(); if (S.view === 'planning') renderPlanning(); }, 4000); } catch (e) { toast(e.message, true); } },
     'filter-wait': () => { S.wait = !S.wait; renderLeads(); },
     'sync-now': async () => { try { await api('POST', '/mail/sync'); toast('Synchronisation lancée'); setTimeout(async () => { await loadMail(); if (S.view === 'settings') renderSettings(); }, 4000); } catch (e) { toast(e.message, true); } },
     'filter-cat': (el) => { const c = el.dataset.cat; S.cats.has(c) ? S.cats.delete(c) : S.cats.add(c); renderLeads(); },
@@ -633,6 +733,8 @@
   document.addEventListener('change', async (e) => {
     const t = e.target;
     if (t.id === 'dr-status') { try { await setStatus(Number(t.dataset.id), t.value); } catch (er) { toast(er.message, true); } }
+    else if (t.id === 'ev-allday') setAllDay(t.checked);
+    else if (t.id === 'cal-select') { try { await api('POST', '/calendar/select', { id: t.value }); toast('Agenda sélectionné : synchronisation en cours'); S.calList = null; setTimeout(async () => { await loadCal(); if (S.view === 'settings') renderSettings(); }, 4000); } catch (er) { toast(er.message, true); } }
     else if (t.id === 'reply-tpl') {
       const l = await api('GET', '/leads/' + t.dataset.id).then((j) => j.data);
       const tri = l.triage || {}; const d = t.value === '__auto' ? (tri.reply || tri.drafts[tri.primary]) : tri.drafts[t.value];
@@ -684,6 +786,19 @@
   $('#login-form').addEventListener('submit', async (e) => {
     e.preventDefault(); $('#login-err').textContent = '';
     try { await start($('#pwd').value.trim()); } catch (er) { $('#login-err').textContent = /Trop/.test(er.message) ? er.message : 'Mot de passe incorrect'; S.token = ''; }
+  });
+  $('#form-event').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = $('#form-event').elements; const all = f.all_day.checked;
+    const body = { title: f.title.value.trim(), all_day: all, location: f.location.value.trim(), notes: f.notes.value.trim(), lead_id: f.lead_id.value ? Number(f.lead_id.value) : null,
+      start: all ? f.start.value : (f.start.value ? new Date(f.start.value).toISOString() : ''), end: all ? (f.end.value || f.start.value) : (f.end.value ? new Date(f.end.value).toISOString() : '') };
+    if (!body.start) return toast('Choisissez une date de début.', true);
+    try {
+      if (f.id.value) await api('PUT', '/events/' + f.id.value, body); else await api('POST', '/events', body);
+      $('#dlg-event').close(); toast('Rendez-vous enregistré');
+      if (body.lead_id) { await refreshAll(); }
+      if (S.view === 'planning') renderPlanning();
+    } catch (er) { toast(er.message, true); }
   });
   $('#form-lead').addEventListener('submit', async (e) => {
     e.preventDefault();

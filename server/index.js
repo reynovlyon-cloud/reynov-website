@@ -199,6 +199,8 @@ const GMAIL_CLIENT_SECRET = process.env.GMAIL_CLIENT_SECRET;
 const GMAIL_REFRESH_TOKEN = process.env.GMAIL_REFRESH_TOKEN;
 // Jeton séparé, en lecture seule, pour la synchronisation de la boîte (facultatif : sinon on réutilise le jeton d'envoi)
 const GMAIL_READ_TOKEN    = process.env.GMAIL_READ_REFRESH_TOKEN;
+// Jeton Google Agenda (droit « calendar »), pour synchroniser le planning du CRM
+const GOOGLE_CAL_TOKEN   = process.env.GOOGLE_CALENDAR_REFRESH_TOKEN;
 
 console.log('ENV CHECK — GMAIL_USER:', !!GMAIL_USER,
   '| CLIENT_ID:', !!GMAIL_CLIENT_ID,
@@ -459,7 +461,58 @@ const mailsync = require('./mailsync').create({
   enabled: () => !!(GMAIL_USER && GMAIL_CLIENT_ID && GMAIL_CLIENT_SECRET && (GMAIL_READ_TOKEN || GMAIL_REFRESH_TOKEN)) && process.env.CRM_TEST_MODE !== '1' && process.env.MAIL_SYNC !== '0',
 });
 
+const calsync = require('./calsync').create({
+  db, getAccessToken: () => getAccessToken(GOOGLE_CAL_TOKEN),
+  enabled: () => !!(GMAIL_CLIENT_ID && GMAIL_CLIENT_SECRET && GOOGLE_CAL_TOKEN) && process.env.CRM_TEST_MODE !== '1' && process.env.CAL_SYNC !== '0',
+});
+
 app.use('/api/crm', crmLimiter, express.json({ limit: '100kb' }), crmAuth);
+
+// ── CRM : planning (rendez-vous), synchronisé avec Google Agenda ──
+function eventFields(b, cur) {
+  const f = {};
+  const all = b.all_day !== undefined ? !!b.all_day : !!(cur && cur.all_day);
+  if (b.title !== undefined) f.title = cleanLine(b.title, 200);
+  if (b.location !== undefined) f.location = cleanLine(b.location, 200);
+  if (b.notes !== undefined) f.notes = clean(b.notes, 2000);
+  if (b.lead_id !== undefined) f.lead_id = b.lead_id && db.leadById(b.lead_id) ? Number(b.lead_id) : null;
+  const day = (v) => /^\d{4}-\d{2}-\d{2}/.test(String(v)) ? String(v).slice(0, 10) : null;
+  const iso = (v) => { const t = Date.parse(v); return isNaN(t) ? null : new Date(t).toISOString(); };
+  if (b.start !== undefined || b.end !== undefined || b.all_day !== undefined) {
+    const s0 = b.start !== undefined ? b.start : cur && cur.start, e0 = b.end !== undefined ? b.end : (cur && cur.end) || s0;
+    const s = all ? day(s0) : iso(s0), e = all ? day(e0) : iso(e0);
+    if (!s) return { error: 'Date de début invalide.' };
+    f.all_day = all; f.start = s; f.end = e && e >= s ? e : (all ? s : new Date(Date.parse(s) + 3600000).toISOString());
+  }
+  return { f };
+}
+app.get('/api/crm/events', (req, res) => res.json({ ok: true, data: db.eventsList({ from: req.query.from, to: req.query.to }) }));
+app.post('/api/crm/events', (req, res) => {
+  const b = req.body || {}; const r = eventFields({ title: 'Rendez-vous', ...b }, null);
+  if (r.error || !r.f.start) return res.status(400).json({ ok: false, error: r.error || 'Date de début requise.' });
+  if (!r.f.title) r.f.title = 'Rendez-vous';
+  const e = db.createEvent(r.f);
+  if (e.lead_id) {
+    const l = db.leadById(e.lead_id);
+    if (l && ['nouveau', 'a_rappeler', 'contacte'].includes(l.status)) db.updateLead(l.id, { status: 'rdv' });
+    db.addLeadEvent(e.lead_id, 'status', 'Rendez-vous fixé : ' + e.title + ' (' + (e.all_day ? e.start : new Date(e.start).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })) + ')');
+  }
+  res.json({ ok: true, data: e });
+});
+app.put('/api/crm/events/:id', (req, res) => {
+  const cur = db.eventById(req.params.id); if (!cur) return res.status(404).json({ ok: false, error: 'Introuvable' });
+  const r = eventFields(req.body || {}, cur); if (r.error) return res.status(400).json({ ok: false, error: r.error });
+  res.json({ ok: true, data: db.updateEvent(cur.id, r.f) });
+});
+app.delete('/api/crm/events/:id', (req, res) => res.json({ ok: db.deleteEvent(req.params.id) }));
+app.get('/api/crm/calendar/status', (_req, res) => res.json({ ok: true, data: calsync.status() }));
+app.post('/api/crm/calendar/sync', (_req, res) => { calsync.tick(true); res.json({ ok: true, data: calsync.status() }); });
+app.get('/api/crm/calendar/list', async (_req, res) => {
+  try { res.json({ ok: true, data: await calsync.calendars() }); } catch (e) { res.status(502).json({ ok: false, error: 'Lecture des agendas impossible : ' + e.message.slice(0, 120) }); }
+});
+app.post('/api/crm/calendar/select', async (req, res) => {
+  try { res.json({ ok: true, data: await calsync.select(cleanLine((req.body || {}).id, 200)) }); } catch (e) { res.status(e.status === 400 ? 400 : 502).json({ ok: false, error: e.message.slice(0, 150) }); }
+});
 
 // ── CRM : suivi des e-mails (lecture de la boîte Gmail) ──
 app.get('/api/crm/mail/status', (_req, res) => res.json({ ok: true, data: mailsync.status() }));
@@ -990,5 +1043,6 @@ process.on('unhandledRejection', err => console.error('💥 unhandledRejection:'
 
 app.listen(PORT, '0.0.0.0', () => {
   mailsync.start();
+  calsync.start();
   console.log(`🚀 REYNOV server démarré sur le port ${PORT}`);
 });

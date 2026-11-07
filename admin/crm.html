@@ -30,6 +30,7 @@
     <button class="nav-item" data-nav="dashboard"><span data-ico="grid"></span>Tableau de bord</button>
     <button class="nav-item" data-nav="leads"><span data-ico="funnel"></span>Leads<span class="badge" id="nav-badge" hidden>0</span></button>
     <button class="nav-item" data-nav="clients"><span data-ico="users"></span>Clients</button>
+    <button class="nav-item" data-nav="planning"><span data-ico="calendar"></span>Planning</button>
     <button class="nav-item" data-nav="interventions"><span data-ico="wrench"></span>Interventions</button>
     <div class="side-label">Business</div>
     <button class="nav-item" data-nav="stats"><span data-ico="chart"></span>Statistiques</button>
@@ -85,6 +86,22 @@
         <div class="card table-card"><table class="tbl"><thead><tr><th>Client</th><th>E-mail</th><th>Téléphone</th><th>Ville</th><th>Interventions</th><th>Dernier statut</th></tr></thead><tbody id="clients-body"></tbody></table></div>
       </section>
 
+      <!-- Planning -->
+      <section class="view" id="view-planning" hidden>
+        <div class="toolbar">
+          <button class="btn primary" data-action="new-event"><span data-ico="plus"></span>Nouveau rendez-vous</button>
+          <button class="btn sm" data-action="cal-prev" aria-label="Mois précédent">‹</button>
+          <strong id="cal-title" style="min-width:150px;text-align:center"></strong>
+          <button class="btn sm" data-action="cal-next" aria-label="Mois suivant">›</button>
+          <button class="btn sm" data-action="cal-today">Aujourd'hui</button>
+          <span class="hint" id="cal-sync-hint"></span>
+        </div>
+        <div class="grid two" style="grid-template-columns:minmax(0,2.4fr) minmax(260px,1fr)">
+          <div class="card" style="padding:12px"><div class="cal-head" id="cal-head"></div><div class="cal-grid" id="cal-grid"></div></div>
+          <div class="card"><h3>À venir</h3><div class="muted">les prochains rendez-vous</div><div class="rows" id="cal-upcoming"></div></div>
+        </div>
+      </section>
+
       <!-- Interventions -->
       <section class="view" id="view-interventions" hidden>
         <div class="toolbar"><button class="btn" data-action="new-inter"><span data-ico="plus"></span>Nouvelle intervention</button><select class="mini" id="inter-filter"><option value="">Tous les statuts</option></select></div>
@@ -111,6 +128,7 @@
             <div class="field"><label>Classer les demandes importées dans</label><select class="input" id="import-status"><option value="a_rappeler">À rappeler</option><option value="contacte">Déjà contactés</option><option value="perdu">Terminés (perdus)</option></select></div>
             <input type="file" id="import-file" accept=".json,application/json" hidden />
             <button class="btn" data-action="import"><span data-ico="download"></span>Choisir le fichier…</button><div id="import-result" class="muted" style="margin-top:12px"></div></div>
+          <div class="card"><h3>Planning Google Agenda</h3><div id="set-cal"></div></div>
           <div class="card"><h3>Notifications</h3><p class="muted">Un son discret et une notification du navigateur à chaque nouveau lead (onglet ouvert).</p><button class="btn" data-action="notif" id="notif-btn"><span data-ico="bell"></span>Activer les notifications</button></div>
         </div>
       </section>
@@ -140,6 +158,18 @@
   <div class="field"><label>Notes</label><textarea class="input" name="notes" rows="3"></textarea></div>
   <div id="client-inters" class="muted"></div>
   <div class="foot"><button class="btn danger" type="button" data-action="delete-client" id="btn-del-client">Supprimer</button><button class="btn" type="button" data-action="close-dlg">Fermer</button><button class="btn primary" type="submit">Enregistrer</button></div>
+</form></dialog>
+
+<dialog id="dlg-event"><form method="dialog" class="dlg" id="form-event">
+  <h3 id="event-title-h">Rendez-vous</h3><input type="hidden" name="id" />
+  <div class="field"><label>Titre *</label><input class="input" name="title" required placeholder="Ex. : RDV Marc — jantes RS3" /></div>
+  <div class="field"><label style="display:flex;gap:8px;align-items:center;text-transform:none"><input type="checkbox" name="all_day" id="ev-allday" /> Toute la journée</label></div>
+  <div class="two"><div class="field"><label>Début</label><input class="input" name="start" id="ev-start" type="datetime-local" required /></div><div class="field"><label>Fin</label><input class="input" name="end" id="ev-end" type="datetime-local" /></div></div>
+  <div class="field"><label>Lieu</label><input class="input" name="location" placeholder="Atelier, adresse du client…" /></div>
+  <div class="field"><label>Client / lead lié</label><select class="input" name="lead_id" id="ev-lead"></select></div>
+  <div class="field"><label>Notes</label><textarea class="input" name="notes" rows="3"></textarea></div>
+  <p class="faint" id="event-sync" style="font-size:12px;margin:0 0 6px"></p>
+  <div class="foot"><button class="btn danger" type="button" data-action="delete-event" id="btn-del-event">Supprimer</button><button class="btn" type="button" data-action="close-dlg">Annuler</button><button class="btn primary" type="submit">Enregistrer</button></div>
 </form></dialog>
 
 <dialog id="dlg-inter"><form method="dialog" class="dlg" id="form-inter">
