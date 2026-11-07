@@ -17,6 +17,7 @@
   <form class="login-box" id="login-form" autocomplete="on">
     <div class="brand-mark">REYNOV</div>
     <div class="login-sub">Administration</div>
+    <input type="text" id="usr" placeholder="Identifiant (vide pour l'administrateur)" autocomplete="username" autocapitalize="none" spellcheck="false" />
     <input type="password" id="pwd" placeholder="Mot de passe" autocomplete="current-password" required />
     <button class="btn primary" style="width:100%;justify-content:center;" type="submit">Connexion</button>
     <p class="login-err" id="login-err" role="alert"></p>
@@ -32,12 +33,14 @@
     <button class="nav-item" data-nav="leads"><span data-ico="funnel"></span>Leads<span class="badge" id="nav-badge" hidden>0</span></button>
     <button class="nav-item" data-nav="clients"><span data-ico="users"></span>Clients</button>
     <button class="nav-item" data-nav="planning"><span data-ico="calendar"></span>Planning</button>
-    <button class="nav-item" data-nav="devis"><span data-ico="doc"></span>Devis</button>
-    <button class="nav-item" data-nav="interventions"><span data-ico="wrench"></span>Interventions</button>
+    <button class="nav-item" data-nav="chantiers"><span data-ico="wrench"></span>Chantiers</button>
+    <button class="nav-item admin-only" data-nav="devis"><span data-ico="doc"></span>Devis</button>
+    <button class="nav-item admin-only" data-nav="interventions"><span data-ico="bag"></span>Interventions</button>
     <div class="side-label">Business</div>
-    <button class="nav-item" data-nav="stats"><span data-ico="chart"></span>Statistiques</button>
-    <button class="nav-item" data-nav="settings"><span data-ico="gear"></span>Paramètres</button>
+    <button class="nav-item admin-only" data-nav="stats"><span data-ico="chart"></span>Statistiques</button>
+    <button class="nav-item admin-only" data-nav="settings"><span data-ico="gear"></span>Paramètres</button>
     <div class="side-bottom">
+      <div class="who-me" id="who-me"></div>
       <a class="nav-item" href="/" target="_blank" rel="noopener"><span data-ico="external"></span>Voir le site</a>
       <button class="nav-item" data-action="logout"><span data-ico="logout"></span>Déconnexion</button>
     </div>
@@ -62,7 +65,7 @@
           <div class="quick">
             <button class="btn" data-action="new-lead"><span data-ico="plus"></span>Lead</button>
             <button class="btn" data-action="new-event"><span data-ico="calendar"></span>Rendez-vous</button>
-            <button class="btn primary" data-action="new-quote"><span data-ico="doc"></span>Devis</button>
+            <button class="btn primary admin-only" data-action="new-quote"><span data-ico="doc"></span>Devis</button>
           </div>
         </div>
         <div id="dash-alert"></div>
@@ -76,7 +79,7 @@
           <div class="card"><h3>À traiter en priorité</h3><div class="muted">nouveaux leads et rappels du jour</div><div class="rows" id="dash-todo"></div></div>
           <div class="card"><h3>Derniers leads</h3><div class="muted">les plus récents</div><div class="rows" id="dash-recent"></div></div>
         </div>
-        <div class="grid stats" id="dash-biz"></div>
+        <div class="grid stats admin-only" id="dash-biz"></div>
       </section>
 
       <!-- Leads -->
@@ -111,6 +114,12 @@
         </div>
       </section>
 
+      <!-- Chantiers -->
+      <section class="view" id="view-chantiers" hidden>
+        <div class="toolbar"><button class="btn primary" data-action="new-inter"><span data-ico="plus"></span>Nouveau chantier</button><span class="filters"><span class="chip" id="ch-mine" data-action="ch-mine">Mes chantiers</span></span><span class="hint">Glissez une carte d'une colonne à l'autre, ou utilisez le bouton de la carte.</span></div>
+        <div class="board" id="chantier-board" style="grid-template-columns:repeat(4,minmax(260px,1fr))"></div>
+      </section>
+
       <!-- Devis -->
       <section class="view" id="view-devis" hidden>
         <div class="toolbar"><button class="btn primary" data-action="new-quote"><span data-ico="plus"></span>Nouveau devis</button><select class="mini" id="quote-filter"><option value="">Tous les statuts</option></select><span class="hint" id="quotes-hint"></span></div>
@@ -130,6 +139,7 @@
           <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><h3>Visites du site</h3><div class="muted">pages vues par jour</div></div><div class="filters" id="visit-range"></div></div><div id="visit-chart"></div></div>
           <div class="card"><h3>Origine des demandes</h3><div class="muted">30 derniers jours</div><div id="stats-sources"></div></div>
         </div>
+        <div class="card table-card" style="margin-top:16px"><h3 style="padding:14px 14px 0">Rentabilité par origine</h3><div class="muted" style="padding:0 14px">de la demande au devis accepté (depuis toujours)</div><table class="tbl"><thead><tr><th>Origine</th><th>Demandes</th><th>Gagnées</th><th>Conversion</th><th>Devis envoyés</th><th>Devis acceptés</th><th>CA accepté TTC</th></tr></thead><tbody id="stats-roi"></tbody></table></div>
       </section>
 
       <!-- Paramètres -->
@@ -144,6 +154,7 @@
             <input type="file" id="import-file" accept=".json,application/json" hidden />
             <button class="btn" data-action="import"><span data-ico="download"></span>Choisir le fichier…</button><div id="import-result" class="muted" style="margin-top:12px"></div></div>
           <div class="card"><h3>Planning Google Agenda</h3><div id="set-cal"></div></div>
+          <div class="card"><h3>Équipe</h3><p class="muted">Chaque personne a son identifiant. Un « employé » voit les demandes, le planning et les chantiers, mais ni les chiffres, ni les devis, ni les réglages.</p><div id="set-team"></div><button class="btn" data-action="new-user"><span data-ico="plus"></span>Ajouter une personne</button></div>
           <div class="card"><h3>Session</h3><p class="muted">Connecté à l'administration REYNOV.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="/" target="_blank" rel="noopener"><span data-ico="external"></span>Voir le site</a><button class="btn danger" data-action="logout"><span data-ico="logout"></span>Déconnexion</button></div></div>
           <div class="card"><h3>Notifications</h3><p class="muted">Un son discret et une notification du navigateur à chaque nouveau lead (onglet ouvert).</p><button class="btn" data-action="notif" id="notif-btn"><span data-ico="bell"></span>Activer les notifications</button></div>
         </div>
@@ -182,7 +193,7 @@
   <div class="field"><label style="display:flex;gap:8px;align-items:center;text-transform:none"><input type="checkbox" name="all_day" id="ev-allday" /> Toute la journée</label></div>
   <div class="two"><div class="field"><label>Début</label><input class="input" name="start" id="ev-start" type="datetime-local" required /></div><div class="field"><label>Fin</label><input class="input" name="end" id="ev-end" type="datetime-local" /></div></div>
   <div class="field"><label>Lieu</label><input class="input" name="location" placeholder="Atelier, adresse du client…" /></div>
-  <div class="field"><label>Client / lead lié</label><select class="input" name="lead_id" id="ev-lead"></select></div>
+  <div class="two"><div class="field"><label>Client / lead lié</label><select class="input" name="lead_id" id="ev-lead"></select></div><div class="field"><label>Responsable</label><select class="input" name="assigned_to" id="ev-assign"></select></div></div>
   <div class="field"><label>Notes</label><textarea class="input" name="notes" rows="3"></textarea></div>
   <p class="faint" id="event-sync" style="font-size:12px;margin:0 0 6px"></p>
   <div class="foot"><button class="btn danger" type="button" data-action="delete-event" id="btn-del-event">Supprimer</button><button class="btn" type="button" data-action="close-dlg">Annuler</button><button class="btn primary" type="submit">Enregistrer</button></div>
@@ -197,6 +208,26 @@
   <div class="qtot" id="q-totals"></div>
   <p class="faint" id="q-warn" style="font-size:12px;margin:0 0 8px"></p>
   <div class="foot"><button class="btn danger" type="button" data-action="q-delete" id="q-del">Supprimer</button><button class="btn" type="button" data-action="q-print" id="q-print">Imprimer / PDF</button><button class="btn" type="button" data-action="q-send" id="q-send">Envoyer par e-mail</button><button class="btn primary" type="submit">Enregistrer</button></div>
+</form></dialog>
+
+<dialog id="dlg-chantier"><form method="dialog" class="dlg" id="form-chantier">
+  <h3 id="ch-title">Chantier</h3><input type="hidden" name="id" />
+  <p class="muted" id="ch-sub" style="margin:-8px 0 14px"></p>
+  <div class="two"><div class="field"><label>Étape</label><select class="input" name="statut" id="ch-statut"></select></div><div class="field"><label>Responsable</label><select class="input" name="assigned_to" id="ch-assign"></select></div></div>
+  <div class="two"><div class="field"><label>Date prévue</label><input class="input" type="date" name="date_prevue" /></div><div class="field admin-only"><label>Montant TTC (€)</label><input class="input" type="number" min="0" name="montant" /></div></div>
+  <div class="field"><label>Notes internes</label><textarea class="input" name="notes" rows="3" placeholder="Ex. : clé de la voiture au bureau, jante AV droite très abîmée…"></textarea></div>
+  <div class="field"><label>Photos</label><div class="ch-photos" id="ch-photos"></div>
+    <div class="dr-actions" style="margin-top:8px"><button class="btn sm" type="button" data-action="ch-photo" data-kind="avant">Photo avant</button><button class="btn sm" type="button" data-action="ch-photo" data-kind="apres">Photo après</button><button class="btn sm" type="button" data-action="ch-photo" data-kind="autre">Autre</button></div>
+    <input type="file" id="ch-file" accept="image/*" multiple hidden /></div>
+  <div class="dr-actions" id="ch-msgs" style="margin-bottom:12px"></div>
+  <div class="foot"><button class="btn danger admin-only" type="button" data-action="ch-delete">Supprimer</button><button class="btn" type="button" data-action="close-dlg">Fermer</button><button class="btn primary" type="submit">Enregistrer</button></div>
+</form></dialog>
+
+<dialog id="dlg-user"><form method="dialog" class="dlg" id="form-user">
+  <h3 id="user-title">Nouvelle personne</h3><input type="hidden" name="id" />
+  <div class="two"><div class="field"><label>Nom affiché *</label><input class="input" name="name" required placeholder="Ex. : Karim" /></div><div class="field"><label>Identifiant *</label><input class="input" name="username" autocapitalize="none" placeholder="Ex. : karim" /></div></div>
+  <div class="two"><div class="field"><label id="user-pw-l">Mot de passe * (8 caractères minimum)</label><input class="input" type="password" name="password" autocomplete="new-password" /></div><div class="field"><label>Rôle</label><select class="input" name="role"><option value="employe">Employé</option><option value="admin">Administrateur</option></select></div></div>
+  <div class="foot"><button class="btn danger" type="button" data-action="user-delete" id="user-del">Supprimer</button><button class="btn" type="button" data-action="close-dlg">Annuler</button><button class="btn primary" type="submit">Enregistrer</button></div>
 </form></dialog>
 
 <dialog id="dlg-inter"><form method="dialog" class="dlg" id="form-inter">

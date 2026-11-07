@@ -60,7 +60,7 @@
   const INTER_ST = { nouveau: 'Nouveau devis', devis_envoye: 'Devis envoyé', confirme: 'Confirmé', en_cours: 'En cours', termine: 'Terminé', paye: 'Payé', annule: 'Annulé' };
   const AV_COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#14b8a6', '#16a34a', '#ca8a04', '#6366f1', '#ef4444', '#0ea5e9'];
 
-  const S = { token: '', cfg: { ai: false, email: false, categories: {}, statuses: [] }, leads: [], stats: null, biz: null, clients: [], inters: [], view: 'dashboard', cats: new Set(), q: '', openId: null, seen: new Set(), polled: false, visitDays: 30, lastNew: 0, wait: false, mail: null, events: [], cal: null, calStatus: null, calList: null, today: null, quotes: [], leadQuotes: [], qSel: null };
+  const S = { token: '', cfg: { ai: false, email: false, categories: {}, statuses: [] }, leads: [], stats: null, biz: null, clients: [], inters: [], view: 'dashboard', cats: new Set(), q: '', openId: null, seen: new Set(), polled: false, visitDays: 30, lastNew: 0, wait: false, mail: null, events: [], cal: null, calStatus: null, calList: null, today: null, quotes: [], leadQuotes: [], qSel: null, user: null, users: [], mine: false, chMine: false, chantiers: [], chSel: null, photoCache: {}, team: [] };
 
   // ── Utilitaires ───────────────────────────────────────────
   const fullName = (l) => ((l.prenom || '') + ' ' + (l.nom || '')).trim() || l.email || 'Sans nom';
@@ -124,12 +124,15 @@
     S.token = '';
     try { sessionStorage.removeItem('crm_token'); } catch (e) { /* ignoré */ }
     $('#app').hidden = true; $('#login').hidden = false;
-    if (!silent) $('#pwd').value = '';
+    if (!silent) { $('#pwd').value = ''; $('#usr').value = ''; }
   }
   async function start(token) {
     S.token = token;
     const cfg = await api('GET', '/config');
-    S.cfg = cfg.data;
+    S.cfg = cfg.data; S.user = S.cfg.user || { id: 0, name: 'Administrateur', role: 'admin' };
+    document.body.classList.toggle('role-employe', S.user.role !== 'admin');
+    $('#who-me').textContent = S.user.name + (S.user.role === 'admin' ? ' · administrateur' : '');
+    try { S.users = (await api('GET', '/users/basic')).data; } catch (e) { S.users = []; }
     try { sessionStorage.setItem('crm_token', token); } catch (e) { /* ignoré */ }
     $('#login').hidden = true; $('#app').hidden = false;
     $$('[data-ico]').forEach((n) => { n.innerHTML = ico(n.getAttribute('data-ico')); });
@@ -142,7 +145,7 @@
 
   // ── Données ───────────────────────────────────────────────
   async function refreshAll() {
-    const [l, st, biz] = await Promise.all([api('GET', '/leads'), api('GET', '/leads/stats'), api('GET', '/stats')]);
+    const [l, st, biz] = await Promise.all([api('GET', '/leads'), api('GET', '/leads/stats'), isAdmin() ? api('GET', '/stats') : Promise.resolve({ data: null })]);
     S.leads = l.data; S.stats = st.data; S.biz = biz.data;
     S.leads.forEach((x) => S.seen.add(x.id));
     loadMail();
@@ -150,6 +153,7 @@
     updateBadge();
   }
   async function loadMail() {
+    if (!isAdmin()) return;
     try { const [a, b] = await Promise.all([api('GET', '/mail/status'), api('GET', '/mail/report')]); S.mail = { status: a.data, report: b.data }; } catch (e) { /* facultatif */ }
   }
   async function poll() {
@@ -177,9 +181,11 @@
   }
 
   // ── Navigation ────────────────────────────────────────────
-  const TITLES = { dashboard: 'Tableau de bord', leads: 'Leads', clients: 'Clients', interventions: 'Interventions', stats: 'Statistiques', planning: 'Planning', devis: 'Devis', settings: 'Paramètres' };
+  const ADMIN_VIEWS = ['devis', 'interventions', 'stats', 'settings'];
+  const isAdmin = () => !S.user || S.user.role === 'admin';
+  const TITLES = { dashboard: 'Tableau de bord', leads: 'Leads', clients: 'Clients', interventions: 'Interventions', stats: 'Statistiques', planning: 'Planning', chantiers: 'Chantiers', devis: 'Devis', settings: 'Paramètres' };
   function go(view) {
-    if (!TITLES[view]) view = 'dashboard';
+    if (!TITLES[view] || (ADMIN_VIEWS.includes(view) && !isAdmin())) view = 'dashboard';
     S.view = view;
     if (location.hash !== '#/' + view) history.replaceState(null, '', '#/' + view);
     $$('.view').forEach((v) => { v.hidden = v.id !== 'view-' + view; });
@@ -190,7 +196,7 @@
     render();
   }
   function render() {
-    ({ dashboard: renderDashboard, leads: renderLeads, clients: renderClients, interventions: renderInters, stats: renderStats, planning: renderPlanning, devis: renderDevis, settings: renderSettings }[S.view] || renderDashboard)();
+    ({ dashboard: renderDashboard, leads: renderLeads, clients: renderClients, interventions: renderInters, stats: renderStats, planning: renderPlanning, chantiers: renderChantiers, devis: renderDevis, settings: renderSettings }[S.view] || renderDashboard)();
   }
 
   // ── Tableau de bord ───────────────────────────────────────
@@ -232,7 +238,7 @@
     $('#dash-todo').innerHTML = due.length ? due.map(rowHtml).join('') : '<div class="empty">RIEN À TRAITER — TOUT EST À JOUR</div>';
     $('#dash-recent').innerHTML = S.leads.slice(0, 6).map(rowHtml).join('') || '<div class="empty">AUCUN LEAD</div>';
     const b = S.biz || {};
-    $('#dash-biz').innerHTML =
+    if (isAdmin()) $('#dash-biz').innerHTML =
       statCard('var(--slate)', 'users', 'Clients', b.total_clients || 0, 'dans la base') +
       statCard('var(--rose)', 'wrench', 'Interventions en cours', b.en_cours || 0, (b.nouveaux || 0) + ' nouveau(x) devis') +
       statCard('var(--emerald)', 'bag', 'Chiffre d\'affaires (mois)', (b.ca_mois || 0).toLocaleString('fr-FR') + ' €', (b.ca_total || 0).toLocaleString('fr-FR') + ' € au total (payé)') +
@@ -248,6 +254,7 @@
     const q = S.q.toLowerCase();
     return S.leads.filter((l) => {
       if (S.wait && !waiting(l)) return false;
+      if (S.mine && S.user && l.assigned_to !== S.user.id) return false;
       if (S.cats.size && !((l.triage && l.triage.categories) || []).some((c) => S.cats.has(c))) return false;
       if (!q) return true;
       return [l.prenom, l.nom, l.email, l.tel, l.ville, l.message, (l.form || {}).marque, (l.form || {}).modele, l.triage && l.triage.summary].some((v) => v && String(v).toLowerCase().includes(q));
@@ -277,7 +284,7 @@
       <div class="lead-top"><span class="avatar" style="--c:${avColor(l)};width:32px;height:32px">${esc(initials(l))}</span><span class="nm">${esc(fullName(l))}</span><span class="when">${esc(ago(l.created_at))}</span></div>
       <div class="lead-sum">${esc(t.summary || (l.message || '').slice(0, 120) || 'Sans détail')}</div>
       <div class="chips">${cats}${urgent}<span class="chip src">${esc(SRC[l.source] || l.source)}</span></div>
-      ${state}${replyBadge(l)}${rem}<div class="card-actions">${actions}</div></article>`;
+      ${state}${replyBadge(l)}${rem}${l.assigned_to ? `<div style="margin-bottom:8px">${whoChip(l.assigned_to)}</div>` : ''}<div class="card-actions">${actions}</div></article>`;
   }
   function colHtml(c, list) {
     return `<div class="col" data-status="${c.id}" style="--c:${stColor(c.id)}"><div class="col-h"><span class="dot" style="--c:${stColor(c.id)}"></span>${esc(c.label)}<span class="count">${list.length}</span></div>${list.map(leadCard).join('') || `<div class="empty">${esc(c.empty)}</div>`}</div>`;
@@ -286,7 +293,7 @@
     const fl = filteredLeads();
     const present = Object.keys(S.cfg.categories).filter((c) => S.leads.some((l) => ((l.triage && l.triage.categories) || []).includes(c)));
     const nWait = S.leads.filter((l) => waiting(l)).length;
-    $('#lead-filters').innerHTML = `<span class="chip wait${S.wait ? ' on' : ''}" data-action="filter-wait">Sans réponse (${nWait})</span>` + present.map((c) => `<span class="chip cat-${esc(c)}${S.cats.has(c) ? ' on' : ''}" data-action="filter-cat" data-cat="${esc(c)}">${esc(catLabel(c))}</span>`).join('');
+    $('#lead-filters').innerHTML = `<span class="chip wait${S.wait ? ' on' : ''}" data-action="filter-wait">Sans réponse (${nWait})</span><span class="chip st-rdv${S.mine ? ' on' : ''}" data-action="filter-mine">Mes leads</span>` + present.map((c) => `<span class="chip cat-${esc(c)}${S.cats.has(c) ? ' on' : ''}" data-action="filter-cat" data-cat="${esc(c)}">${esc(catLabel(c))}</span>`).join('');
     $('#board').innerHTML = COLS.map((c) => colHtml(c, fl.filter((l) => l.status === c.id))).join('');
     const done = fl.filter((l) => l.status === 'gagne' || l.status === 'perdu');
     $('#archived-sum').textContent = 'Terminés (' + done.length + ')';
@@ -376,7 +383,8 @@
       </div>
       <div class="card"><h4>${ico('calendar')} Rappel et notes</h4>
         <div class="field"><label>Me rappeler le</label><div style="display:flex;gap:8px"><input class="input" type="datetime-local" id="rem-at" value="${esc(l.reminder_at ? toLocalInput(l.reminder_at) : '')}" /><button class="btn sm" data-action="set-reminder" data-id="${l.id}">Programmer</button></div></div>
-        <div class="field" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-action="new-event-lead" data-id="${l.id}">${ico('calendar')}Fixer un rendez-vous</button><button class="btn sm primary" data-action="new-quote-lead" data-id="${l.id}">${ico('doc')}Créer un devis</button></div>
+        <div class="field"><label>Responsable</label><select class="input" id="lead-assign" data-id="${l.id}">${userOptions(l.assigned_to)}</select></div>
+        <div class="field" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-action="new-event-lead" data-id="${l.id}">${ico('calendar')}Fixer un rendez-vous</button><button class="btn sm primary admin-only" data-action="new-quote-lead" data-id="${l.id}">${ico('doc')}Créer un devis</button></div>
         ${(S.leadQuotes || []).length ? '<div class="rows">' + S.leadQuotes.map((q) => `<div class="row" data-action="open-quote" data-id="${q.id}"><span class="time-pill">${esc(q.number.replace('DV-', ''))}</span><div class="grow"><div class="t">${esc(eur(q.totals.ttc))} TTC</div><div class="s">${esc(Q_LABEL[q.status])}</div></div></div>`).join('') + '</div>' : ''}
         <div class="field"><label>Notes internes</label><textarea class="input" id="lead-notes" data-id="${l.id}" rows="3" placeholder="Ex. : rappeler après 18 h, veut le noir mat…">${esc(l.notes || '')}</textarea></div>
         <div class="dr-actions"><button class="btn sm" data-action="set-status" data-status="rdv" data-id="${l.id}">Rendez-vous confirmé</button><button class="btn sm" data-action="set-status" data-status="gagne" data-id="${l.id}">Marquer gagné</button><button class="btn sm" data-action="set-status" data-status="perdu" data-id="${l.id}">Marquer perdu</button></div>
@@ -425,7 +433,12 @@
       const c = j.data;
       $('#client-title').textContent = fullName(c);
       ['id', 'prenom', 'nom', 'email', 'tel', 'ville', 'adresse', 'notes'].forEach((k) => { if (f.elements[k]) f.elements[k].value = dec(c[k] || ''); });
-      $('#client-inters').innerHTML = (c.interventions || []).length ? '<strong style="color:var(--text)">Interventions</strong><br>' + c.interventions.map((i) => `· ${esc(dec(i.prestation) || 'Intervention')} ${esc(dec([i.marque, i.modele].filter(Boolean).join(' ')))} — ${esc(INTER_ST[i.statut] || i.statut)}${i.montant ? ' — ' + esc(i.montant) + ' €' : ''}`).join('<br>') : '';
+      const bl = (t, arr) => (arr.length ? `<strong>${t}</strong>` + arr.join('') : '');
+      $('#client-inters').innerHTML = '<div class="c360">' +
+        bl('Demandes', (c.leads || []).map((l) => `<a data-action="open" data-id="${l.id}">· ${esc(dt(l.created_at))} — ${esc(ST_LABEL[l.status] || l.status)}${l.summary ? ' — ' + esc(l.summary.slice(0, 60)) : ''}</a>`)) +
+        bl('Devis', (c.quotes || []).map((q) => `<a data-action="open-quote" data-id="${q.id}">· ${esc(q.number)} — ${esc(eur(q.ttc))} — ${esc(Q_LABEL[q.status])}</a>`)) +
+        bl('Rendez-vous', (c.events || []).map((e) => `<span>· ${esc(e.all_day ? e.start : new Date(e.start).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }))} — ${esc(e.title)}</span>`)) +
+        bl('Chantiers', (c.interventions || []).map((i) => `<span>· ${esc(dec(i.prestation) || 'Intervention')} ${esc(dec([i.marque, i.modele].filter(Boolean).join(' ')))} — ${esc(INTER_ST[i.statut] || i.statut)}${i.montant ? ' — ' + esc(i.montant) + ' €' : ''}</span>`)) + '</div>';
       $('#btn-del-client').hidden = false;
     } else {
       $('#client-title').textContent = 'Nouveau client'; f.elements.id.value = ''; $('#client-inters').innerHTML = ''; $('#btn-del-client').hidden = true;
@@ -455,6 +468,7 @@
       statCard('var(--blue)', 'chart', 'Visites (total)', (b.visites_total || 0).toLocaleString('fr-FR'), (b.visites_aujourd_hui || 0) + ' aujourd\'hui');
     const src = Object.entries(st.sources || {}).sort((a, b2) => b2[1] - a[1]); const smax = Math.max(1, ...src.map((s) => s[1]));
     $('#stats-sources').innerHTML = src.length ? src.map(([k, n]) => `<div class="hbar" style="--c:var(--violet)"><span>${esc(SRC[k] || k)}</span><div class="track"><div class="fill" style="width:${Math.round(n / smax * 100)}%"></div></div><span class="n">${n}</span></div>`).join('') : '<div class="empty">Pas encore de données</div>';
+    renderRoi();
     $('#visit-range').innerHTML = [7, 30, 90].map((d) => `<span class="chip${S.visitDays === d ? ' on' : ''}" data-action="visit-range" data-days="${d}">${d} j</span>`).join('');
     try {
       const v = (await api('GET', '/visits?days=' + S.visitDays)).data;
@@ -528,6 +542,7 @@
     if (e.id) { $('#ev-start').value = e.all_day ? e.start.slice(0, 10) : toLocalInput(e.start); $('#ev-end').value = e.all_day ? (e.end || e.start).slice(0, 10) : toLocalInput(e.end || e.start); }
     else { const d = (preset && preset.date) || dkey(new Date()); $('#ev-start').value = d + 'T09:00'; $('#ev-end').value = d + 'T10:00'; }
     fillLeadSelect(null, e.lead_id || (preset && preset.lead_id) || null);
+    $('#ev-assign').innerHTML = userOptions(e.assigned_to || (!e.id && S.user && S.user.id) || null);
     $('#btn-del-event').hidden = !e.id;
     const cs = S.calStatus; $('#event-sync').textContent = e.g ? 'Synchronisé avec Google Agenda.' : (cs && cs.enabled ? 'Sera envoyé dans Google Agenda.' : 'Google Agenda non connecté : ce rendez-vous reste dans le CRM.');
     $('#dlg-event').showModal();
@@ -610,6 +625,106 @@
     const j = await api('PUT', '/quotes/' + id, body); S.qSel = j.data; if (!silent) toast('Devis enregistré'); return j.data;
   }
 
+
+  // ── Équipe et affectations ────────────────────────────────
+  const userName = (id) => { const u = S.users.find((x) => x.id === Number(id)); return u ? u.name : ''; };
+  const whoChip = (id) => { const n = userName(id); return n ? `<span class="who"><span class="avatar" style="--c:${avColor({ prenom: n })}">${esc(initials({ prenom: n }))}</span>${esc(n.split(' ')[0])}</span>` : ''; };
+  const userOptions = (cur, none) => `<option value="">${none || '— personne —'}</option>` + S.users.map((u) => `<option value="${u.id}"${u.id === cur ? ' selected' : ''}>${esc(u.name)}</option>`).join('');
+
+  // ── Chantiers (atelier) ───────────────────────────────────
+  const CH_COLS = [
+    { id: 'confirme', label: 'À faire', color: 'var(--blue)', next: 'en_cours', btn: 'Démarrer' },
+    { id: 'en_cours', label: 'En cours', color: 'var(--amber)', next: 'termine', btn: 'Terminé' },
+    { id: 'termine', label: 'Prêt à récupérer', color: 'var(--violet)', next: 'paye', btn: 'Livré' },
+    { id: 'paye', label: 'Livré', color: 'var(--emerald)', next: null, btn: '' },
+  ];
+  async function renderChantiers() {
+    try { S.chantiers = (await api('GET', '/interventions')).data; } catch (e) { toast(e.message, true); return; }
+    $('#ch-mine').classList.toggle('on', S.chMine);
+    const q = S.q.toLowerCase();
+    const list = S.chantiers.filter((i) => CH_COLS.some((c) => c.id === i.statut)).filter((i) => !S.chMine || i.assigned_to === (S.user && S.user.id))
+      .filter((i) => !q || [i.prenom, i.nom, i.marque, i.modele, i.prestation].some((v) => v && dec(v).toLowerCase().includes(q)));
+    $('#chantier-board').innerHTML = CH_COLS.map((c) => {
+      const items = list.filter((i) => i.statut === c.id).sort((a, b) => (a.date_prevue || '9').localeCompare(b.date_prevue || '9'));
+      return `<div class="ccol" data-status="${c.id}" style="--c:${c.color}"><div class="col-h"><span class="dot" style="--c:${c.color}"></span>${esc(c.label)}<span class="count">${items.length}</span></div>${items.map((i) => chCard(i, c)).join('') || '<div class="empty">Aucun</div>'}</div>`;
+    }).join('');
+  }
+  function chCard(i, c) {
+    const veh = dec([i.marque, i.modele].filter(Boolean).join(' '));
+    const d = i.date_prevue ? new Date(i.date_prevue + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
+    const late = i.date_prevue && i.date_prevue < new Date().toISOString().slice(0, 10) && i.statut !== 'paye' && i.statut !== 'termine';
+    return `<article class="chantier-card" draggable="true" data-id="${i.id}"><div class="nm">${txt(fullName(i))}</div><div class="meta">${esc(dec(i.prestation) || 'Intervention')}${veh ? ' · ' + esc(veh) : ''}${i.nb_jantes ? ' · ' + esc(i.nb_jantes) + ' jante(s)' : ''}</div>
+      <div class="line">${d ? `<span class="chip${late ? ' urgent' : ''}">${ico('calendar')}${esc(d)}${late ? ' · en retard' : ''}</span>` : ''}${whoChip(i.assigned_to)}${(i.photos || []).length ? `<span class="faint">${(i.photos || []).length} photo(s)</span>` : ''}</div>
+      <div class="card-actions">${c.next ? `<button class="btn sm primary" data-action="ch-next" data-id="${i.id}" data-next="${c.next}">${esc(c.btn)}</button>` : ''}<button class="btn sm" data-action="ch-open" data-id="${i.id}">Ouvrir</button></div></article>`;
+  }
+  async function chSetStatus(id, statut) {
+    await api('PUT', '/interventions/' + id, { statut });
+    const i = S.chantiers.find((x) => x.id === id); if (i) i.statut = statut;
+    renderChantiers();
+  }
+  function chMessage(i, kind) {
+    const pr = dec(i.prenom || '');
+    if (kind === 'ready') return 'Bonjour ' + pr + ', vos jantes sont prêtes ! Vous pouvez passer les récupérer à l\'atelier REYNOV (47 chemin du Pras, La Mulatière) du lundi au vendredi de 8 h à 18 h et le samedi de 9 h à 17 h. Merci de nous prévenir de votre heure de passage. L\'équipe REYNOV';
+    return 'Bonjour ' + pr + ', merci pour votre confiance ! Si vous êtes satisfait du résultat, un avis Google nous aiderait beaucoup (30 secondes) : ' + (S.cfg.review_url || '') + ' — L\'équipe REYNOV';
+  }
+  async function photoUrl(iid, file) {
+    const k = iid + '/' + file; if (S.photoCache[k]) return S.photoCache[k];
+    const r = await fetch('/api/crm/photos/' + k, { headers: { Authorization: 'Bearer ' + S.token } }); if (!r.ok) return '';
+    return (S.photoCache[k] = URL.createObjectURL(await r.blob()));
+  }
+  function drawChPhotos(i) {
+    const box = $('#ch-photos'); const ph = i.photos || [];
+    box.innerHTML = ph.length ? ph.map((p) => `<div class="ch-photo"><img alt="${esc(p.kind)}" data-p="${i.id}/${esc(p.file)}" /><span class="tag">${esc({ avant: 'Avant', apres: 'Après', autre: 'Autre' }[p.kind] || p.kind)}</span><button type="button" class="del" data-action="ch-photo-del" data-file="${esc(p.file)}" aria-label="Supprimer">×</button></div>`).join('') : '<div class="ch-empty">Aucune photo pour l\'instant.</div>';
+    box.querySelectorAll('img[data-p]').forEach(async (im) => { const [a, b] = im.dataset.p.split('/'); im.src = await photoUrl(a, b); });
+  }
+  function openChantier(i) {
+    S.chSel = i; const f = $('#form-chantier'); f.reset();
+    f.elements.id.value = i.id; $('#ch-title').textContent = fullName(i);
+    $('#ch-sub').textContent = [dec(i.prestation), dec([i.marque, i.modele].filter(Boolean).join(' ')), i.nb_jantes ? i.nb_jantes + ' jante(s)' : ''].filter(Boolean).join(' · ');
+    $('#ch-statut').innerHTML = Object.entries(INTER_ST).map(([k, v]) => `<option value="${k}"${k === i.statut ? ' selected' : ''}>${esc(v)}</option>`).join('');
+    $('#ch-assign').innerHTML = userOptions(i.assigned_to);
+    f.elements.date_prevue.value = i.date_prevue || ''; f.elements.notes.value = dec(i.notes || ''); if (f.elements.montant) f.elements.montant.value = i.montant || '';
+    const tel = i.tel ? waNum(i.tel) : '';
+    $('#ch-msgs').innerHTML = tel ? `<a class="btn sm wa" target="_blank" rel="noopener" href="https://wa.me/${esc(tel)}?text=${encodeURIComponent(chMessage(i, 'ready'))}">${ico('wa')}Prévenir : jantes prêtes</a>${S.cfg.review_url ? `<a class="btn sm wa" target="_blank" rel="noopener" href="https://wa.me/${esc(tel)}?text=${encodeURIComponent(chMessage(i, 'review'))}">${ico('wa')}Demander un avis Google</a>` : ''}<a class="btn sm call" href="tel:${esc(i.tel.replace(/[^\d+]/g, ''))}">${ico('phone')}Appeler</a>` : '<span class="faint" style="font-size:12px">Pas de téléphone pour ce client.</span>';
+    drawChPhotos(i); $('#dlg-chantier').showModal();
+  }
+  async function shrink(file) {   // réduit les photos de téléphone (plus rapide à envoyer, moins de place sur le volume)
+    try {
+      const bmp = await createImageBitmap(file); const k = Math.min(1, 1800 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k); c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+      const b = await new Promise((r) => c.toBlob(r, 'image/jpeg', 0.86)); return b && b.size < file.size ? new File([b], 'photo.jpg', { type: 'image/jpeg' }) : file;
+    } catch (e) { return file; }
+  }
+  async function uploadPhotos(files, kind) {
+    const i = S.chSel; if (!i || !files.length) return;
+    const fd = new FormData(); fd.append('kind', kind);
+    for (const f of files) fd.append('photos', await shrink(f));
+    toast('Envoi des photos…');
+    const r = await fetch('/api/crm/interventions/' + i.id + '/photos', { method: 'POST', headers: { Authorization: 'Bearer ' + S.token }, body: fd });
+    const j = await r.json().catch(() => ({ ok: false, error: 'Envoi impossible' }));
+    if (!j.ok) return toast(j.error || 'Envoi impossible', true);
+    S.chSel = j.data; const k = S.chantiers.findIndex((x) => x.id === j.data.id); if (k >= 0) S.chantiers[k] = Object.assign(S.chantiers[k], { photos: j.data.photos });
+    drawChPhotos(S.chSel); toast(j.added + ' photo(s) ajoutée(s)');
+  }
+
+  // ── Équipe (réglages) ─────────────────────────────────────
+  async function loadTeam() { try { S.team = (await api('GET', '/users')).data; } catch (e) { S.team = []; } const el = $('#set-team'); if (!el) return;
+    el.innerHTML = S.team.length ? S.team.map((u) => `<div class="team-row" data-action="edit-user" data-id="${u.id}"><span class="avatar" style="--c:${avColor({ prenom: u.name })};width:32px;height:32px;font-size:12px">${esc(initials({ prenom: u.name }))}</span><div class="grow"><div class="t">${esc(u.name)}${u.active === false ? ' · désactivé' : ''}</div><div class="s">@${esc(u.username)} · ${u.role === 'admin' ? 'administrateur' : 'employé'}</div></div></div>`).join('') : '<p class="muted">Personne pour l\'instant : ajoutez vos collègues.</p>'; }
+  function openUserDialog(u) {
+    const f = $('#form-user'); f.reset(); f.elements.id.value = u ? u.id : '';
+    $('#user-title').textContent = u ? u.name : 'Nouvelle personne';
+    f.elements.name.value = u ? u.name : ''; f.elements.username.value = u ? u.username : ''; f.elements.username.disabled = !!u; f.elements.role.value = u ? u.role : 'employe';
+    $('#user-pw-l').textContent = u ? 'Nouveau mot de passe (laisser vide pour ne pas changer)' : 'Mot de passe * (8 caractères minimum)'; f.elements.password.required = !u;
+    $('#user-del').hidden = !u; $('#dlg-user').showModal();
+  }
+  async function renderRoi() {
+    const body = $('#stats-roi'); if (!body) return;
+    try {
+      const rows = (await api('GET', '/stats/sources')).data;
+      body.innerHTML = rows.map((r) => `<tr><td><strong>${esc(SRC[r.source] || r.source)}</strong></td><td>${r.leads}<span class="faint"> (${r.leads30} sur 30 j)</span></td><td>${r.gagnes}</td><td>${r.conversion} %</td><td>${r.devis}</td><td>${r.acceptes}</td><td><strong>${esc(r.ca_ttc.toLocaleString('fr-FR'))} €</strong></td></tr>`).join('') || '<tr><td colspan="7" class="empty">PAS ENCORE DE DONNÉES</td></tr>';
+    } catch (e) { /* facultatif */ }
+  }
+
   // ── Paramètres ────────────────────────────────────────────
   function renderSettings() {
     $('#set-ai').innerHTML = S.cfg.ai
@@ -630,6 +745,7 @@
         (rp ? `<p class="muted"><strong>${rp.waiting}</strong> client(s) attendent une réponse · <strong>${rp.never_answered}</strong> jamais répondu(s)${rp.avg_first_reply_hours != null ? ' · délai moyen de 1re réponse : <strong>' + rp.avg_first_reply_hours + ' h</strong>' : ''}</p>` : '');
     }
     $('#set-sync').innerHTML = h + (ms && ms.enabled && ms.state !== 'scope_missing' ? `<button class="btn" data-action="sync-now">${ico('mail')}Synchroniser maintenant</button>` : '');
+    loadTeam();
     const cs = S.calStatus; let ch;
     if (!cs) ch = '<p class="muted">Chargement…</p>';
     else if (!cs.enabled) ch = '<p><span class="chip"><span class="dot" style="--c:var(--amber)"></span>Non connecté</span></p><p class="muted">Le planning du CRM n\'est pas encore relié à Google Agenda. Suivez le guide « Connecter le planning Google », puis ajoutez la variable <strong>GOOGLE_CALENDAR_REFRESH_TOKEN</strong> dans Railway.</p>';
@@ -709,6 +825,16 @@
     'close-dlg': (el) => el.closest('dialog').close(),
     'show-wait': () => { S.wait = true; go('leads'); },
     noop: () => {},
+    'filter-mine': () => { S.mine = !S.mine; renderLeads(); },
+    'ch-mine': () => { S.chMine = !S.chMine; renderChantiers(); },
+    'ch-open': (el) => { const i = S.chantiers.find((x) => x.id === Number(el.dataset.id)); if (i) openChantier(i); },
+    'ch-next': async (el) => { try { await chSetStatus(Number(el.dataset.id), el.dataset.next); toast('Chantier mis à jour'); } catch (e) { toast(e.message, true); } },
+    'ch-photo': (el) => { const f = $('#ch-file'); f.dataset.kind = el.dataset.kind; f.value = ''; f.click(); },
+    'ch-photo-del': async (el) => { if (!S.chSel || !confirm('Supprimer cette photo ?')) return; try { await api('DELETE', '/photos/' + S.chSel.id + '/' + el.dataset.file); S.chSel.photos = (S.chSel.photos || []).filter((p) => p.file !== el.dataset.file); drawChPhotos(S.chSel); } catch (e) { toast(e.message, true); } },
+    'ch-delete': async () => { if (!S.chSel || !confirm('Supprimer ce chantier et ses photos ?')) return; try { await api('DELETE', '/interventions/' + S.chSel.id); $('#dlg-chantier').close(); renderChantiers(); toast('Chantier supprimé'); } catch (e) { toast(e.message, true); } },
+    'new-user': () => openUserDialog(null),
+    'edit-user': (el) => { const u = S.team.find((x) => x.id === Number(el.dataset.id)); if (u) openUserDialog(u); },
+    'user-delete': async () => { const id = $('#form-user').elements.id.value; if (!id || !confirm('Supprimer cette personne ? Ses affectations seront retirées.')) return; try { await api('DELETE', '/users/' + id); $('#dlg-user').close(); S.users = (await api('GET', '/users/basic')).data; loadTeam(); toast('Compte supprimé'); } catch (e) { toast(e.message, true); } },
     'speak-brief': (el) => speakBrief(el),
     'today-refresh': async () => { await loadToday(); renderTodayCard(); toast('Programme actualisé'); },
     'new-quote': () => openQuoteDialog(null),
@@ -848,6 +974,8 @@
     else if (t.id === 'q-lead' && t.value && !$('#form-quote').elements.id.value) {
       try { const j = await api('POST', '/quotes', { lead_id: Number(t.value) }); openQuoteDialog(j.data); toast('Devis préparé d\'après la demande : vérifiez les lignes'); if (S.view === 'devis') renderDevis(); } catch (er) { toast(er.message, true); }
     }
+    else if (t.id === 'lead-assign') { try { const j = await api('PATCH', '/leads/' + t.dataset.id, { assigned_to: t.value || null }); replaceLead(j.data); toast(t.value ? 'Assigné à ' + userName(t.value) : 'Affectation retirée'); render(); } catch (er) { toast(er.message, true); } }
+    else if (t.id === 'ch-file') { try { await uploadPhotos([...t.files], t.dataset.kind || 'autre'); } catch (er) { toast(er.message, true); } t.value = ''; }
     else if (t.id === 'ev-allday') setAllDay(t.checked);
     else if (t.id === 'cal-select') { try { await api('POST', '/calendar/select', { id: t.value }); toast('Agenda sélectionné : synchronisation en cours'); S.calList = null; setTimeout(async () => { await loadCal(); if (S.view === 'settings') renderSettings(); }, 4000); } catch (er) { toast(er.message, true); } }
     else if (t.id === 'reply-tpl') {
@@ -883,6 +1011,14 @@
   });
 
   // Glisser-déposer des fiches
+  document.addEventListener('dragstart', (e) => { const c = e.target.closest && e.target.closest('.chantier-card'); if (!c) return; e.dataTransfer.setData('text/plain', 'ch:' + c.dataset.id); e.dataTransfer.effectAllowed = 'move'; c.classList.add('dragging'); });
+  document.addEventListener('dragend', (e) => { const c = e.target.closest && e.target.closest('.chantier-card'); if (c) c.classList.remove('dragging'); $$('.ccol.over').forEach((x) => x.classList.remove('over')); });
+  document.addEventListener('dragover', (e) => { const col = e.target.closest && e.target.closest('.ccol'); if (!col) return; e.preventDefault(); $$('.ccol.over').forEach((x) => { if (x !== col) x.classList.remove('over'); }); col.classList.add('over'); });
+  document.addEventListener('drop', async (e) => {
+    const col = e.target.closest && e.target.closest('.ccol'); if (!col) return; e.preventDefault(); col.classList.remove('over');
+    const m = /^ch:(\d+)$/.exec(e.dataTransfer.getData('text/plain')); if (!m) return;
+    try { await chSetStatus(Number(m[1]), col.dataset.status); } catch (er) { toast(er.message, true); }
+  });
   document.addEventListener('dragstart', (e) => { const c = e.target.closest && e.target.closest('.lead-card'); if (!c) return; e.dataTransfer.setData('text/plain', c.dataset.id); e.dataTransfer.effectAllowed = 'move'; c.classList.add('dragging'); });
   document.addEventListener('dragend', (e) => { const c = e.target.closest && e.target.closest('.lead-card'); if (c) c.classList.remove('dragging'); $$('.col.over').forEach((x) => x.classList.remove('over')); });
   document.addEventListener('dragover', (e) => { const col = e.target.closest && e.target.closest('.col'); if (!col) return; e.preventDefault(); $$('.col.over').forEach((x) => { if (x !== col) x.classList.remove('over'); }); col.classList.add('over'); });
@@ -900,7 +1036,13 @@
   // Formulaires
   $('#login-form').addEventListener('submit', async (e) => {
     e.preventDefault(); $('#login-err').textContent = '';
-    try { await start($('#pwd').value.trim()); } catch (er) { $('#login-err').textContent = /Trop/.test(er.message) ? er.message : 'Mot de passe incorrect'; S.token = ''; }
+    try {
+      const r = await fetch('/api/crm/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: $('#usr').value.trim(), password: $('#pwd').value }) });
+      if (r.status === 429) throw new Error('Trop de tentatives. Réessayez dans 15 minutes.');
+      const j = await r.json().catch(() => ({}));
+      if (!j.ok) throw new Error(j.error || 'Identifiant ou mot de passe incorrect');
+      await start(j.token);
+    } catch (er) { $('#login-err').textContent = er.message; S.token = ''; }
   });
   $('#dlg-quote').addEventListener('input', () => qTotals());
   $('#dlg-quote').addEventListener('change', (e) => { if (e.target.name === 'tva_rate') qTotals(); });
@@ -908,10 +1050,22 @@
     e.preventDefault();
     try { const q = await qSave(false); if (q) { $('#dlg-quote').close(); await refreshAll(); if (S.view === 'devis') renderDevis(); if (S.view === 'dashboard') renderDashboard(); } } catch (er) { toast(er.message, true); }
   });
+  $('#form-chantier').addEventListener('submit', async (e) => {
+    e.preventDefault(); const f = $('#form-chantier').elements;
+    const body = { statut: f.statut.value, assigned_to: f.assigned_to.value || null, date_prevue: f.date_prevue.value || null, notes: f.notes.value };
+    if (isAdmin() && f.montant) body.montant = f.montant.value;
+    try { await api('PUT', '/interventions/' + f.id.value, body); $('#dlg-chantier').close(); toast('Chantier enregistré'); if (S.view === 'chantiers') renderChantiers(); } catch (er) { toast(er.message, true); }
+  });
+  $('#form-user').addEventListener('submit', async (e) => {
+    e.preventDefault(); const f = $('#form-user').elements; const id = f.id.value;
+    const body = { name: f.name.value.trim(), role: f.role.value }; if (f.password.value) body.password = f.password.value;
+    if (!id) body.username = f.username.value.trim();
+    try { await api(id ? 'PUT' : 'POST', '/users' + (id ? '/' + id : ''), body); $('#dlg-user').close(); S.users = (await api('GET', '/users/basic')).data; loadTeam(); toast(id ? 'Compte mis à jour' : 'Compte créé : donnez l\'identifiant et le mot de passe à la personne'); } catch (er) { toast(er.message, true); }
+  });
   $('#form-event').addEventListener('submit', async (e) => {
     e.preventDefault();
     const f = $('#form-event').elements; const all = f.all_day.checked;
-    const body = { title: f.title.value.trim(), all_day: all, location: f.location.value.trim(), notes: f.notes.value.trim(), lead_id: f.lead_id.value ? Number(f.lead_id.value) : null,
+    const body = { title: f.title.value.trim(), all_day: all, location: f.location.value.trim(), notes: f.notes.value.trim(), lead_id: f.lead_id.value ? Number(f.lead_id.value) : null, assigned_to: f.assigned_to.value ? Number(f.assigned_to.value) : null,
       start: all ? f.start.value : (f.start.value ? new Date(f.start.value).toISOString() : ''), end: all ? (f.end.value || f.start.value) : (f.end.value ? new Date(f.end.value).toISOString() : '') };
     if (!body.start) return toast('Choisissez une date de début.', true);
     try {
@@ -935,7 +1089,7 @@
     e.preventDefault();
     const f = Object.fromEntries(new FormData(e.target).entries());
     if (!f.client_id) return toast('Choisissez un client.', true);
-    try { await api('POST', '/interventions', Object.assign({ statut: 'confirme' }, f)); $('#dlg-inter').close(); renderInters(); toast('Intervention créée'); } catch (er) { toast(er.message, true); }
+    try { await api('POST', '/interventions', Object.assign({ statut: 'confirme' }, f)); $('#dlg-inter').close(); if (S.view === 'chantiers') renderChantiers(); else renderInters(); toast('Chantier créé'); } catch (er) { toast(er.message, true); }
   });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && S.openId) closeDrawer(); });
   window.addEventListener('hashchange', () => { if (S.token) go(location.hash.replace(/^#\/?/, '')); });

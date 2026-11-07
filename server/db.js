@@ -6,7 +6,7 @@ if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 const DB_FILE = path.join(DATA_DIR, 'crm.json');
 
-let _db = { clients: [], interventions: [], visits: {}, leads: [], events: [], event_tombs: [], quotes: [], _qid: 1, _cid: 1, _iid: 1, _lid: 1, _eid: 1 };
+let _db = { clients: [], interventions: [], visits: {}, leads: [], events: [], event_tombs: [], quotes: [], users: [], _uid: 1, _qid: 1, _cid: 1, _iid: 1, _lid: 1, _eid: 1 };
 
 if (fs.existsSync(DB_FILE)) {
   try {
@@ -17,6 +17,8 @@ if (fs.existsSync(DB_FILE)) {
     if (!Array.isArray(_db.events)) _db.events = [];
     if (!Array.isArray(_db.event_tombs)) _db.event_tombs = [];
     if (!Array.isArray(_db.quotes)) _db.quotes = [];
+    if (!Array.isArray(_db.users)) _db.users = [];
+    if (!_db._uid) _db._uid = 1 + _db.users.reduce((m, u) => Math.max(m, u.id || 0), 0);
     if (!_db._qid) _db._qid = 1 + _db.quotes.reduce((m, q) => Math.max(m, q.id || 0), 0);
     if (!_db._eid) _db._eid = 1 + _db.events.reduce((m, e) => Math.max(m, e.id || 0), 0);
     if (!_db._lid) _db._lid = 1 + _db.leads.reduce((m, l) => Math.max(m, l.id || 0), 0);
@@ -199,7 +201,7 @@ function leadById(id) { return _db.leads.find(l => l.id === Number(id)) || null;
 function updateLead(id, patch) {
   const l = leadById(id);
   if (!l) return null;
-  const allowed = ['prenom', 'nom', 'email', 'tel', 'ville', 'adresse', 'sujet', 'message', 'notes', 'form', 'reminder_at', 'client_id', 'intervention_id', 'created_at'];
+  const allowed = ['prenom', 'nom', 'email', 'tel', 'ville', 'adresse', 'sujet', 'message', 'notes', 'form', 'reminder_at', 'client_id', 'intervention_id', 'created_at', 'assigned_to'];
   allowed.forEach(k => { if (patch[k] !== undefined) l[k] = patch[k]; });
   if (patch.status !== undefined && LEAD_STATUS.includes(patch.status) && patch.status !== l.status) {
     addEventRaw(l, 'status', 'Statut : ' + l.status + ' → ' + patch.status);
@@ -324,7 +326,7 @@ function createEvent(data, { remote = false } = {}) {
 }
 function updateEvent(id, patch, { remote = false } = {}) {
   const e = eventById(id); if (!e) return null;
-  ['title', 'start', 'end', 'all_day', 'location', 'notes', 'lead_id', 'client_id'].forEach(k => { if (patch[k] !== undefined) e[k] = patch[k]; });
+  ['title', 'start', 'end', 'all_day', 'location', 'notes', 'lead_id', 'client_id', 'assigned_to'].forEach(k => { if (patch[k] !== undefined) e[k] = patch[k]; });
   e.updated_at = now(); if (!remote) e.dirty = true;
   save(); if (!remote) evTouch();
   return e;
@@ -339,6 +341,29 @@ function deleteEvent(id, { remote = false } = {}) {
 }
 function eventTombs() { return _db.event_tombs; }
 function clearTomb(gid) { _db.event_tombs = _db.event_tombs.filter(t => t.id !== gid); saveSoon(); }
+
+// ── Équipe (comptes) ──
+function usersList() { return _db.users.map(({ pass, ...u }) => u); }
+function userById(id) { return _db.users.find(u => u.id === Number(id)) || null; }
+function userByUsername(name) { const n = String(name || '').trim().toLowerCase(); return _db.users.find(u => u.username === n) || null; }
+function createUser(data) { const u = { id: _db._uid++, created_at: now(), active: true, role: 'employe', ...data }; _db.users.push(u); save(); return u; }
+function updateUser(id, patch) {
+  const u = userById(id); if (!u) return null;
+  ['name', 'role', 'active', 'pass'].forEach(k => { if (patch[k] !== undefined) u[k] = patch[k]; });
+  save(); return u;
+}
+function deleteUser(id) {
+  const n = _db.users.length; _db.users = _db.users.filter(u => u.id !== Number(id));
+  if (_db.users.length === n) return false;
+  _db.leads.forEach(l => { if (l.assigned_to === Number(id)) l.assigned_to = null; });
+  _db.events.forEach(e => { if (e.assigned_to === Number(id)) e.assigned_to = null; });
+  _db.interventions.forEach(i => { if (i.assigned_to === Number(id)) i.assigned_to = null; });
+  save(); return true;
+}
+// ── Photos de chantier ──
+function addInterventionPhoto(id, photo) { const i = _db.interventions.find(x => x.id === Number(id)); if (!i) return null; i.photos = i.photos || []; i.photos.push(photo); i.updated_at = now(); save(); return i; }
+function removeInterventionPhoto(id, file) { const i = _db.interventions.find(x => x.id === Number(id)); if (!i) return false; const n = (i.photos || []).length; i.photos = (i.photos || []).filter(p => p.file !== file); if (i.photos.length !== n) { save(); return true; } return false; }
+function interventionById(id) { return _db.interventions.find(x => x.id === Number(id)) || null; }
 
 // ── Devis ──
 const QUOTE_STATUS = ['brouillon', 'envoye', 'accepte', 'refuse'];
@@ -443,11 +468,11 @@ function stats() {
 }
 
 function exportAll() {
-  return { clients: _db.clients, interventions: _db.interventions, leads: _db.leads, events: _db.events, quotes: _db.quotes };
+  return { clients: _db.clients, interventions: _db.interventions, leads: _db.leads, events: _db.events, quotes: _db.quotes, users: _db.users.map(({ pass, ...u }) => u) };
 }
 
 module.exports = {
-  exportAll, LEAD_STATUS, DATA_DIR, QUOTE_STATUS, quoteTotals, quotesList, quoteById, createQuote, updateQuote, deleteQuote, onEventChange, eventsList, eventById, eventByGid, allEvents, createEvent, updateEvent, setEventLink, deleteEvent, eventTombs, clearTomb, replyState, leadsByEmail, addMailEvent, allLeads: () => _db.leads,
+  exportAll, LEAD_STATUS, DATA_DIR, usersList, userById, userByUsername, createUser, updateUser, deleteUser, addInterventionPhoto, removeInterventionPhoto, interventionById, QUOTE_STATUS, quoteTotals, quotesList, quoteById, createQuote, updateQuote, deleteQuote, onEventChange, eventsList, eventById, eventByGid, allEvents, createEvent, updateEvent, setEventLink, deleteEvent, eventTombs, clearTomb, replyState, leadsByEmail, addMailEvent, allLeads: () => _db.leads,
   createLead, leadById, updateLead, logContact, addLeadEvent, deleteLead, leadsList, findRecentDuplicate, leadExists, leadStats,
   stats, visitsByDay, logVisit,
   clientsList, clientById, findByEmail,

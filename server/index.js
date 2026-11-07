@@ -4,6 +4,7 @@ const helmet      = require('helmet');
 const rateLimit   = require('express-rate-limit');
 const multer      = require('multer');
 const path        = require('path');
+const fs          = require('fs');
 const crypto      = require('crypto');
 const db          = require('./db');
 const triage      = require('./triage');
@@ -30,7 +31,7 @@ app.use(helmet({
       scriptSrcElem: ["'self'", "'unsafe-inline'", 'https://www.google-analytics.com', 'https://www.googletagmanager.com', 'https://googleads.g.doubleclick.net', 'https://www.googleadservices.com'],
       styleSrc:    ["'self'", "'unsafe-inline'"],
       fontSrc:     ["'self'"],
-      imgSrc:      ["'self'", 'data:', 'https:'],
+      imgSrc:      ["'self'", 'data:', 'blob:', 'https:'],
       mediaSrc:    ["'self'"],
       // Domaines nécessaires pour l'envoi effectif des conversions Google Ads (googletagmanager.com ne fait que charger le tag) — liste exacte donnée par le diagnostic "Balise Google" de Google Ads
       connectSrc:  ["'self'",
@@ -404,12 +405,38 @@ function safeEqual(a, b) {
   const hb = crypto.createHash('sha256').update(String(b)).digest();
   return crypto.timingSafeEqual(ha, hb);
 }
+// Sessions : jeton signé (HMAC) lié à un compte ; le mot de passe administrateur brut reste accepté (scripts, rétrocompatibilité).
+const MASTER = { id: 0, name: 'Administrateur', role: 'admin' };
+const SESSION_KEY = crypto.createHash('sha256').update('reynov-crm-session|' + (process.env.CRM_PASSWORD || '')).digest();
+const sessionSig = (body) => crypto.createHmac('sha256', SESSION_KEY).update(body).digest('hex').slice(0, 40);
+function signSession(uid) { const body = 'u.' + uid + '.' + (Date.now() + 12 * 3600 * 1000); return body + '.' + sessionSig(body); }
+function userFromToken(tok) {
+  if (!CRM_PASSWORD || !tok) return null;
+  if (safeEqual(tok, CRM_PASSWORD)) return MASTER;
+  const m = /^(u\.(\d+)\.(\d+))\.([0-9a-f]{40})$/.exec(tok);
+  if (!m || !safeEqual(m[4], sessionSig(m[1])) || Number(m[3]) < Date.now()) return null;
+  if (Number(m[2]) === 0) return MASTER;
+  const u = db.userById(m[2]);
+  return u && u.active !== false ? { id: u.id, name: u.name, role: u.role === 'admin' ? 'admin' : 'employe' } : null;
+}
 function crmAuth(req, res, next) {
   const auth = req.headers['authorization'] || '';
   const key  = auth.startsWith('Bearer ') ? auth.slice(7) : req.headers['x-crm-key'] || '';
-  if (!CRM_PASSWORD || !safeEqual(key, CRM_PASSWORD)) return res.status(401).json({ ok: false, error: 'Non autorisé' });
+  const user = userFromToken(key);
+  if (!user) return res.status(401).json({ ok: false, error: 'Non autorisé' });
+  req.user = user;
   next();
 }
+// Droits : un « employé » ne voit ni les chiffres d'affaires, ni les devis, ni les réglages, et ne supprime rien (sauf ses rendez-vous et photos).
+function roleGuard(req, res, next) {
+  if (req.user && req.user.role === 'admin') return next();
+  const blocked = /^\/(stats|export|users(?!\/basic)|mail\/|calendar\/(list|select|sync)|quotes|leads\/import)/.test(req.path)
+    || (req.method === 'DELETE' && !/^\/(events|photos)\//.test(req.path));
+  if (blocked) return res.status(403).json({ ok: false, error: 'Réservé à l\'administrateur.' });
+  next();
+}
+const hashPass = (pw) => { const salt = crypto.randomBytes(16).toString('hex'); return salt + '$' + crypto.scryptSync(String(pw), salt, 64).toString('hex'); };
+const checkPass = (pw, stored) => { const [salt, h] = String(stored || '').split('$'); if (!salt || !h) return false; try { return crypto.timingSafeEqual(Buffer.from(h, 'hex'), crypto.scryptSync(String(pw), salt, 64)); } catch (e) { return false; } };
 // Anti brute-force : 20 tentatives ratées par 15 min et par IP (les connexions réussies ne comptent pas)
 const crmLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, skipSuccessfulRequests: true,
   standardHeaders: true, legacyHeaders: false, message: { ok: false, error: 'Trop de tentatives. Réessayez dans 15 minutes.' } });
@@ -445,6 +472,7 @@ function importLeadItem(it, status, note) {
 }
 // Déclaré AVANT le montage général : authentification d'abord, puis lecture d'un corps plus volumineux.
 app.post('/api/crm/leads/import', crmLimiter, crmAuth, express.json({ limit: '8mb' }), (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ ok: false, error: 'Réservé à l\'administrateur.' });
   const b = req.body || {};
   const items = Array.isArray(b.leads) ? b.leads : (Array.isArray(b) ? b : null);
   if (!items || !items.length) return res.status(400).json({ ok: false, error: 'Aucune demande dans le fichier.' });
@@ -466,7 +494,21 @@ const calsync = require('./calsync').create({
   enabled: () => !!(GMAIL_CLIENT_ID && GMAIL_CLIENT_SECRET && GOOGLE_CAL_TOKEN) && process.env.CRM_TEST_MODE !== '1' && process.env.CAL_SYNC !== '0',
 });
 
-app.use('/api/crm', crmLimiter, express.json({ limit: '100kb' }), crmAuth);
+// Connexion : identifiant vide (ou « admin ») + mot de passe administrateur, ou identifiant + mot de passe d'un membre de l'équipe
+app.post('/api/crm/login', crmLimiter, express.json({ limit: '10kb' }), (req, res) => {
+  const b = req.body || {}; const name = String(b.username || '').trim().toLowerCase(); const pw = String(b.password || '');
+  const fail = () => res.status(401).json({ ok: false, error: 'Identifiant ou mot de passe incorrect' });
+  if (!pw) return fail();
+  if (!name || name === 'admin') {
+    if (!CRM_PASSWORD || !safeEqual(pw, CRM_PASSWORD)) return fail();
+    return res.json({ ok: true, token: signSession(0), user: MASTER });
+  }
+  const u = db.userByUsername(name);
+  if (!u || u.active === false || !checkPass(pw, u.pass)) return fail();
+  res.json({ ok: true, token: signSession(u.id), user: { id: u.id, name: u.name, role: u.role === 'admin' ? 'admin' : 'employe' } });
+});
+
+app.use('/api/crm', crmLimiter, express.json({ limit: '100kb' }), crmAuth, roleGuard);
 
 // ── CRM : planning (rendez-vous), synchronisé avec Google Agenda ──
 function eventFields(b, cur) {
@@ -476,6 +518,7 @@ function eventFields(b, cur) {
   if (b.location !== undefined) f.location = cleanLine(b.location, 200);
   if (b.notes !== undefined) f.notes = clean(b.notes, 2000);
   if (b.lead_id !== undefined) f.lead_id = b.lead_id && db.leadById(b.lead_id) ? Number(b.lead_id) : null;
+  if (b.assigned_to !== undefined) f.assigned_to = assignee(b.assigned_to);
   const day = (v) => /^\d{4}-\d{2}-\d{2}/.test(String(v)) ? String(v).slice(0, 10) : null;
   const iso = (v) => { const t = Date.parse(v); return isNaN(t) ? null : new Date(t).toISOString(); };
   if (b.start !== undefined || b.end !== undefined || b.all_day !== undefined) {
@@ -617,22 +660,24 @@ app.post('/api/crm/quotes/:id/send', quoteSendLimiter, async (req, res) => {
 const TZ_PARIS = 'Europe/Paris';
 const parisDay = (d) => new Date(d).toLocaleDateString('sv-SE', { timeZone: TZ_PARIS });
 const parisTime = (d) => new Date(d).toLocaleTimeString('fr-FR', { timeZone: TZ_PARIS, hour: '2-digit', minute: '2-digit' }).replace(':', ' h ').replace(/ h 00$/, ' h');
-function dailyProgram() {
+function dailyProgram(user) {
+  const mine = user && user.role !== 'admin' ? user.id : null;
+  const mineOk = (x) => !mine || x.assigned_to == null || x.assigned_to === mine;
   const now = new Date(), today = parisDay(now), tomorrow = parisDay(now.getTime() + 86400000);
   const evs = db.eventsList({ from: new Date(now.getTime() - 2 * 86400000).toISOString(), to: new Date(now.getTime() + 3 * 86400000).toISOString() });
   const covers = (e, day) => e.all_day ? (e.start.slice(0, 10) <= day && (e.end || e.start).slice(0, 10) >= day) : parisDay(e.start) === day;
   const nameOf = (l) => l ? ([l.prenom, l.nom].filter(Boolean).join(' ') || l.email || 'Client') : '';
   const mapEv = (e) => { const l = e.lead_id ? db.leadById(e.lead_id) : null; return { id: e.id, title: e.title, all_day: e.all_day, time: e.all_day ? null : parisTime(e.start), end_time: e.all_day ? null : parisTime(e.end || e.start), location: e.location || '', lead_id: e.lead_id, client: nameOf(l), tel: l ? l.tel : '', maps: e.location ? 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(e.location) : '' }; };
-  const events = evs.filter(e => covers(e, today)).map(mapEv);
+  const events = evs.filter(e => mineOk(e) && covers(e, today)).map(mapEv);
   const tomorrowN = evs.filter(e => covers(e, tomorrow)).length;
-  const L = db.allLeads();
+  const L = db.allLeads().filter(mineOk);
   const brief = (l) => { const t = l.triage || {}; return { id: l.id, name: nameOf(l), tel: l.tel, summary: t.summary || '', urgent: t.urgency === 'haute', since_h: Math.round((Date.now() - Date.parse(l.created_at)) / 3600000) }; };
   const toCall = L.filter(l => (l.status === 'nouveau' && !l.contacted) || (l.status === 'a_rappeler' && l.reminder_at && Date.parse(l.reminder_at) <= Date.now()))
     .sort((a, b) => ((b.triage && b.triage.urgency === 'haute') - (a.triage && a.triage.urgency === 'haute')) || a.created_at.localeCompare(b.created_at)).slice(0, 8).map(brief);
   const waiting = L.map(l => ({ l, r: db.replyState(l) })).filter(x => x.r.waiting && !toCall.some(c => c.id === x.l.id) && x.l.status !== 'nouveau')
     .sort((a, b) => Date.parse(a.r.since) - Date.parse(b.r.since));
   const waitingList = waiting.slice(0, 6).map(x => ({ ...brief(x.l), days: Math.max(0, Math.floor((Date.now() - Date.parse(x.r.since)) / 86400000)) }));
-  const quotes = db.quotesList();
+  const quotes = mine ? [] : db.quotesList();
   const qFollow = quotes.filter(q => q.status === 'envoye' && Date.now() - Date.parse(q.sent_at) > 3 * 86400000).map(q => ({ id: q.id, number: q.number, client: nameOf(q.lead_id ? db.leadById(q.lead_id) : null), ttc: q.totals.ttc, days: Math.floor((Date.now() - Date.parse(q.sent_at)) / 86400000) }));
   const qDraft = quotes.filter(q => q.status === 'brouillon').length;
   // Texte du programme (règles locales : aucune donnée client n'est envoyée à un service externe)
@@ -649,7 +694,87 @@ function dailyProgram() {
   parts.push('Bonne journée !');
   return { date: today, events, tomorrow: tomorrowN, to_call: toCall, waiting: waitingList, waiting_total: waiting.length, quotes_follow: qFollow, quotes_draft: qDraft, brief: parts.join(' ') };
 }
-app.get('/api/crm/today', (_req, res) => res.json({ ok: true, data: dailyProgram() }));
+app.get('/api/crm/today', (req, res) => res.json({ ok: true, data: dailyProgram(req.user) }));
+
+// ── CRM : équipe ──
+app.get('/api/crm/users/basic', (_req, res) => res.json({ ok: true, data: db.usersList().filter(u => u.active !== false).map(u => ({ id: u.id, name: u.name, role: u.role })) }));
+app.get('/api/crm/users', (_req, res) => res.json({ ok: true, data: db.usersList() }));
+function userBody(b, creating) {
+  const name = cleanLine(b.name, 60), username = cleanLine(b.username, 40).toLowerCase().replace(/[^a-z0-9._-]/g, '');
+  if (creating && (name.length < 2 || username.length < 3)) return { error: 'Nom (2 caractères minimum) et identifiant (3 caractères minimum, lettres/chiffres) requis.' };
+  if (b.password !== undefined && b.password !== '' && String(b.password).length < 8) return { error: 'Mot de passe : 8 caractères minimum.' };
+  if (creating && !b.password) return { error: 'Mot de passe requis.' };
+  return { name, username, role: b.role === 'admin' ? 'admin' : 'employe' };
+}
+app.post('/api/crm/users', (req, res) => {
+  const r = userBody(req.body || {}, true); if (r.error) return res.status(400).json({ ok: false, error: r.error });
+  if (r.username === 'admin' || db.userByUsername(r.username)) return res.status(409).json({ ok: false, error: 'Cet identifiant existe déjà.' });
+  const u = db.createUser({ name: r.name, username: r.username, role: r.role, pass: hashPass(req.body.password) });
+  const { pass, ...pub } = u; res.json({ ok: true, data: pub });
+});
+app.put('/api/crm/users/:id', (req, res) => {
+  const cur = db.userById(req.params.id); if (!cur) return res.status(404).json({ ok: false, error: 'Introuvable' });
+  const b = req.body || {}; const r = userBody(b, false); if (r.error) return res.status(400).json({ ok: false, error: r.error });
+  const patch = {}; if (b.name !== undefined && r.name) patch.name = r.name; if (b.role !== undefined) patch.role = r.role; if (b.active !== undefined) patch.active = !!b.active;
+  if (b.password) patch.pass = hashPass(b.password);
+  const u = db.updateUser(cur.id, patch); const { pass, ...pub } = u; res.json({ ok: true, data: pub });
+});
+app.delete('/api/crm/users/:id', (req, res) => res.json({ ok: db.deleteUser(req.params.id) }));
+
+// ── CRM : photos de chantier (avant / après), stockées sur le volume ──
+const PHOTO_DIR = path.join(db.DATA_DIR, 'photos');
+const photoUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024, files: 6 } });
+function imageExt(buf) {
+  if (buf.length > 12 && buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF) return 'jpg';
+  if (buf.length > 12 && buf.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]))) return 'png';
+  if (buf.length > 12 && buf.slice(0, 4).toString() === 'RIFF' && buf.slice(8, 12).toString() === 'WEBP') return 'webp';
+  return null;
+}
+app.post('/api/crm/interventions/:id/photos', (req, res) => {
+  const it = db.interventionById(req.params.id); if (!it) return res.status(404).json({ ok: false, error: 'Chantier introuvable' });
+  photoUpload.array('photos', 6)(req, res, (err) => {
+    if (err) return res.status(400).json({ ok: false, error: err.code === 'LIMIT_FILE_SIZE' ? 'Photo trop lourde (10 Mo maximum).' : 'Envoi impossible.' });
+    const files = req.files || []; if (!files.length) return res.status(400).json({ ok: false, error: 'Aucune photo reçue.' });
+    if ((it.photos || []).length + files.length > 40) return res.status(400).json({ ok: false, error: 'Maximum 40 photos par chantier.' });
+    const kind = ['avant', 'apres', 'autre'].includes(req.body && req.body.kind) ? req.body.kind : 'autre';
+    const dir = path.join(PHOTO_DIR, String(it.id)); fs.mkdirSync(dir, { recursive: true });
+    let added = 0, refused = 0;
+    for (const f of files) {
+      const ext = imageExt(f.buffer); if (!ext) { refused++; continue; }
+      const name = Date.now() + '-' + crypto.randomBytes(4).toString('hex') + '.' + ext;
+      fs.writeFileSync(path.join(dir, name), f.buffer);
+      db.addInterventionPhoto(it.id, { file: name, kind, at: new Date().toISOString(), by: req.user.name });
+      added++;
+    }
+    if (!added) return res.status(400).json({ ok: false, error: 'Format non reconnu : utilisez des photos JPEG, PNG ou WebP.' });
+    res.json({ ok: true, added, refused, data: db.interventionById(it.id) });
+  });
+});
+const photoPath = (iid, file) => (/^[0-9]+-[0-9a-f]{8}\.(jpg|png|webp)$/.test(file) && /^\d+$/.test(String(iid))) ? path.join(PHOTO_DIR, String(iid), file) : null;
+app.get('/api/crm/photos/:iid/:file', (req, res) => {
+  const it = db.interventionById(req.params.iid); const p = photoPath(req.params.iid, req.params.file);
+  if (!it || !p || !(it.photos || []).some(x => x.file === req.params.file) || !fs.existsSync(p)) return res.status(404).end();
+  res.setHeader('Cache-Control', 'private, max-age=86400');
+  res.sendFile(p);
+});
+app.delete('/api/crm/photos/:iid/:file', (req, res) => {
+  const p = photoPath(req.params.iid, req.params.file); if (!p) return res.status(400).json({ ok: false, error: 'Photo invalide' });
+  const ok = db.removeInterventionPhoto(req.params.iid, req.params.file);
+  if (ok) { try { fs.unlinkSync(p); } catch (e) { /* déjà supprimée */ } }
+  res.json({ ok });
+});
+
+// ── CRM : rentabilité par origine des demandes (administrateur) ──
+app.get('/api/crm/stats/sources', (_req, res) => {
+  const quotes = db.quotesList(); const out = {}; const since = Date.now() - 30 * 86400000;
+  for (const l of db.allLeads()) {
+    const k = l.source || 'autre'; const o = out[k] = out[k] || { source: k, leads: 0, leads30: 0, devis: 0, acceptes: 0, gagnes: 0, ca_ttc: 0 };
+    o.leads++; if (Date.parse(l.created_at) > since) o.leads30++; if (l.status === 'gagne') o.gagnes++;
+    for (const q of quotes.filter(x => x.lead_id === l.id)) { if (q.status !== 'brouillon') o.devis++; if (q.status === 'accepte') { o.acceptes++; o.ca_ttc += q.totals.ttc; } }
+  }
+  const rows = Object.values(out).map(o => ({ ...o, conversion: o.leads ? Math.round(o.gagnes / o.leads * 100) : 0, ca_ttc: Math.round(o.ca_ttc) })).sort((a, b) => b.leads - a.leads);
+  res.json({ ok: true, data: rows });
+});
 
 // ── CRM : suivi des e-mails (lecture de la boîte Gmail) ──
 app.get('/api/crm/mail/status', (_req, res) => res.json({ ok: true, data: mailsync.status() }));
@@ -672,7 +797,7 @@ const slimLead = (l) => {
 const replyLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 60, standardHeaders: true, legacyHeaders: false, message: { ok: false, error: 'Trop d\'envois. Réessayez plus tard.' } });
 
 app.get('/api/crm/config', (_req, res) => {
-  res.json({ ok: true, data: { ai: triage.aiAvailable(), email: !!(GMAIL_USER && GMAIL_CLIENT_ID && GMAIL_CLIENT_SECRET && GMAIL_REFRESH_TOKEN) || process.env.CRM_TEST_MODE === '1', categories: triage.CATEGORIES, statuses: db.LEAD_STATUS } });
+  res.json({ ok: true, data: { user: _req.user, review_url: process.env.GOOGLE_REVIEW_URL || '', ai: triage.aiAvailable(), email: !!(GMAIL_USER && GMAIL_CLIENT_ID && GMAIL_CLIENT_SECRET && GMAIL_REFRESH_TOKEN) || process.env.CRM_TEST_MODE === '1', categories: triage.CATEGORIES, statuses: db.LEAD_STATUS } });
 });
 app.get('/api/crm/leads/stats', (_req, res) => res.json({ ok: true, data: db.leadStats() }));
 app.get('/api/crm/leads', (req, res) => {
@@ -710,6 +835,7 @@ app.patch('/api/crm/leads/:id', (req, res) => {
     patch.status = b.status;
   }
   if (b.reminder_at !== undefined) patch.reminder_at = b.reminder_at ? new Date(b.reminder_at).toISOString() : null;
+  if (b.assigned_to !== undefined) { patch.assigned_to = assignee(b.assigned_to); const who = patch.assigned_to ? (db.userById(patch.assigned_to) || {}).name : null; db.addLeadEvent(l.id, 'status', who ? 'Assigné à ' + who + (req.user.name ? ' (par ' + req.user.name + ')' : '') : 'Affectation retirée'); }
   if (Array.isArray(b.categories)) patch.categories = b.categories.filter(c => triage.CATEGORIES[c]).slice(0, 4);
   const out = db.updateLead(l.id, patch);
   if (patch.categories && out.triage) {
@@ -795,7 +921,13 @@ app.get('/api/crm/clients', (req, res) => {
 app.get('/api/crm/clients/:id', (req, res) => {
   const client = db.clientById(req.params.id);
   if (!client) return res.status(404).json({ ok: false, error: 'Client introuvable' });
-  res.json({ ok: true, data: client });
+  const admin = req.user.role === 'admin';
+  const leads = db.allLeads().filter(l => l.client_id === client.id).map(l => ({ id: l.id, created_at: l.created_at, status: l.status, source: l.source, summary: (l.triage && l.triage.summary) || '' })).sort((a, b) => b.created_at.localeCompare(a.created_at));
+  const quotes = admin ? db.quotesList().filter(q => q.client_id === client.id).map(q => ({ id: q.id, number: q.number, status: q.status, ttc: q.totals.ttc, created_at: q.created_at })) : [];
+  const leadIds = new Set(leads.map(l => l.id));
+  const events = db.allEvents().filter(e => e.lead_id && leadIds.has(e.lead_id)).map(e => ({ id: e.id, title: e.title, start: e.start, all_day: e.all_day })).sort((a, b) => b.start.localeCompare(a.start)).slice(0, 10);
+  const interventions = admin ? client.interventions : client.interventions.map(({ montant, ...i }) => i);
+  res.json({ ok: true, data: { ...client, interventions, leads, quotes, events } });
 });
 
 // POST /api/crm/clients
@@ -826,7 +958,8 @@ app.delete('/api/crm/clients/:id', (req, res) => {
 
 // GET /api/crm/interventions
 app.get('/api/crm/interventions', (req, res) => {
-  res.json({ ok: true, data: db.allInterventions() });
+  const admin = req.user.role === 'admin';
+  res.json({ ok: true, data: db.allInterventions().map(i => { if (admin) return i; const { montant, ...r } = i; return r; }) });
 });
 
 // POST /api/crm/interventions
@@ -838,18 +971,25 @@ app.post('/api/crm/interventions', (req, res) => {
     taille: b.taille || '', marque: b.marque || '', modele: b.modele || '',
     finition: b.finition || '', mode: b.mode || '',
     adresse_intervention: b.adresse_intervention || '',
-    statut: b.statut || 'nouveau', montant: b.montant || null, notes: b.notes || '',
+    statut: INTER_STATUS.includes(b.statut) ? b.statut : 'nouveau', montant: req.user.role === 'admin' ? (b.montant || null) : null, notes: b.notes || '',
+    assigned_to: assignee(b.assigned_to), date_prevue: /^\d{4}-\d{2}-\d{2}/.test(String(b.date_prevue || '')) ? String(b.date_prevue).slice(0, 10) : null,
   });
   res.json({ ok: true, id });
 });
 
 // PUT /api/crm/interventions/:id
+const INTER_STATUS = ['nouveau', 'devis_envoye', 'confirme', 'en_cours', 'termine', 'paye', 'annule'];
+const assignee = (v) => { if (v === '' || v == null) return null; const u = db.userById(v); return u ? u.id : null; };
 app.put('/api/crm/interventions/:id', (req, res) => {
-  const b = req.body;
-  db.updateIntervention(req.params.id, {
-    statut: b.statut, montant: b.montant || null, notes: b.notes || '',
-  });
-  res.json({ ok: true });
+  const cur = db.interventionById(req.params.id); if (!cur) return res.status(404).json({ ok: false, error: 'Introuvable' });
+  const b = req.body || {}; const d = {};
+  if (b.statut !== undefined && INTER_STATUS.includes(b.statut)) d.statut = b.statut;
+  if (b.notes !== undefined) d.notes = clean(b.notes, 2000);
+  if (b.montant !== undefined && req.user.role === 'admin') d.montant = b.montant === '' || b.montant == null ? null : (Number(b.montant) || null);
+  if (b.assigned_to !== undefined) d.assigned_to = assignee(b.assigned_to);
+  if (b.date_prevue !== undefined) d.date_prevue = /^\d{4}-\d{2}-\d{2}/.test(String(b.date_prevue || '')) ? String(b.date_prevue).slice(0, 10) : null;
+  db.updateIntervention(cur.id, d);
+  res.json({ ok: true, data: db.interventionById(cur.id) });
 });
 
 // DELETE /api/crm/interventions/:id
