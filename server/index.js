@@ -4,6 +4,7 @@ const helmet      = require('helmet');
 const rateLimit   = require('express-rate-limit');
 const multer      = require('multer');
 const path        = require('path');
+const mailtpl     = require('./mailtpl');
 const fs          = require('fs');
 const crypto      = require('crypto');
 const db          = require('./db');
@@ -296,38 +297,37 @@ function sanitize(str, { multiline = false } = {}) {
 
 // ── Email : owner ─────────────────────────────────────────────
 function ownerEmail(d) {
+  const F = mailtpl.FONT;
   const row = (label, val) => val
     ? `<tr>
-        <td style="padding:8px 0;color:#888;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;padding-right:24px;vertical-align:top">${label}</td>
-        <td style="padding:8px 0;color:#111;font-size:14px;">${val}</td>
+        <td style="padding:9px 0;color:#7b7b84;font-family:${F};font-size:11px;letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;padding-right:24px;vertical-align:top;border-top:1px solid #eeece7;">${label}</td>
+        <td style="padding:9px 0;color:#0b0b0c;font-family:${F};font-size:14px;font-weight:600;border-top:1px solid #eeece7;">${val}</td>
        </tr>`
     : '';
-
-  const date = new Date().toLocaleString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-
+  const date = new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris', day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   return `<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>Nouveau devis</title></head>
-<body style="margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;">
-<div style="max-width:620px;margin:32px auto;background:#fff;border-radius:4px;overflow:hidden;">
-
-  <div style="background:#060606;padding:28px 40px;">
-    <span style="color:#fff;font-size:20px;font-weight:700;letter-spacing:4px;">REYNOV</span>
-    <span style="color:rgba(255,255,255,0.4);font-size:13px;margin-left:12px;">Nouveau devis reçu</span>
+<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Nouveau devis</title></head>
+<body style="margin:0;padding:0;background:#ecebe7;font-family:${F};">
+<div style="max-width:640px;margin:28px auto;background:#fff;border-radius:20px;overflow:hidden;">
+  <div style="background:#0b0b0c;padding:26px 40px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td style="padding-right:16px;"><img src="${mailtpl.LOGO}" width="44" height="44" alt="REYNOV" style="display:block;border:0;"></td>
+      <td><div style="color:#fff;font-family:${F};font-size:15px;font-weight:700;letter-spacing:6px;">REYNOV</div><div style="color:#9a9aa2;font-family:${F};font-size:11px;letter-spacing:2.5px;text-transform:uppercase;margin-top:4px;">Nouveau devis reçu</div></td>
+    </tr></table>
   </div>
+  <div style="padding:34px 40px 30px;">
+    <h2 style="margin:0 0 4px;font-family:${F};font-size:22px;letter-spacing:-.3px;color:#0b0b0c;">Demande de ${d.prenom} ${d.nom}</h2>
+    <p style="margin:0 0 22px;color:#7b7b84;font-family:${F};font-size:12px;">${date}</p>
 
-  <div style="padding:36px 40px;">
-    <h2 style="margin:0 0 4px;font-size:20px;color:#111;">Demande de ${d.prenom} ${d.nom}</h2>
-    <p style="margin:0 0 24px;color:#888;font-size:12px;">${date}</p>
-
-    <div style="background:#f7f7f7;padding:20px 24px;margin-bottom:28px;">
-      <p style="margin:0 0 8px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#999;">Contact</p>
-      <p style="margin:0 0 4px;font-size:15px;font-weight:600;color:#111;">${d.prenom} ${d.nom}</p>
-      <p style="margin:0 0 2px;font-size:13px;color:#444;">${d.email}</p>
-      <p style="margin:0 0 2px;font-size:13px;color:#444;">${d.tel}</p>
-      ${d.adresse_client ? `<p style="margin:4px 0 0;font-size:13px;color:#444;">Adresse : ${d.adresse_client}</p>` : ''}
+    <div style="background:#f6f4ef;border-radius:16px;padding:20px 24px;margin-bottom:26px;">
+      <p style="margin:0 0 8px;font-family:${F};font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#7b7b84;">Contact</p>
+      <p style="margin:0 0 4px;font-family:${F};font-size:16px;font-weight:700;color:#0b0b0c;">${d.prenom} ${d.nom}</p>
+      <p style="margin:0 0 2px;font-family:${F};font-size:13.5px;color:#34343a;">${d.email}</p>
+      <p style="margin:0 0 2px;font-family:${F};font-size:13.5px;color:#34343a;">${d.tel}</p>
+      ${d.adresse_client ? `<p style="margin:4px 0 0;font-family:${F};font-size:13.5px;color:#34343a;">Adresse : ${d.adresse_client}</p>` : ''}
     </div>
 
-    <table style="width:100%;border-collapse:collapse;border-top:1px solid #eee;">
+    <table style="width:100%;border-collapse:collapse;">
       ${row('Prestation',       d.prestation)}
       ${row('Problème(s)',      d.problemes)}
       ${row('Nb jantes',        d.nb_jantes)}
@@ -340,13 +340,14 @@ function ownerEmail(d) {
     </table>
 
     ${d.description ? `
-    <div style="margin-top:24px;padding:16px 20px;background:#f7f7f7;border-left:3px solid #ccc;">
-      <p style="margin:0 0 6px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#999;">Message</p>
-      <p style="margin:0;font-size:13px;color:#333;line-height:1.6;">${d.description}</p>
+    <div style="margin-top:24px;padding:18px 22px;background:#f6f4ef;border-left:3px solid #0b0b0c;border-radius:0 12px 12px 0;">
+      <p style="margin:0 0 6px;font-family:${F};font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#7b7b84;">Message</p>
+      <p style="margin:0;font-family:${F};font-size:14px;color:#34343a;line-height:1.7;">${d.description}</p>
     </div>` : ''}
-  </div>
 
-  <div style="background:#f5f5f5;padding:16px 40px;font-size:11px;color:#aaa;">
+    <p style="margin:28px 0 0;"><a href="https://www.reynov-jantes.fr/admin/crm.html#/leads" style="display:inline-block;background:#0b0b0c;color:#fff;padding:13px 24px;border-radius:999px;font-family:${F};text-decoration:none;font-size:13.5px;font-weight:600;">Ouvrir dans le CRM</a></p>
+  </div>
+  <div style="background:#0b0b0c;padding:16px 40px;font-family:${F};font-size:11px;color:#9a9aa2;">
     REYNOV · reynov.lyon@gmail.com · 06 61 45 35 27
   </div>
 </div>
@@ -354,47 +355,7 @@ function ownerEmail(d) {
 }
 
 // ── Email : client ────────────────────────────────────────────
-function clientEmail(d) {
-  return `<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>Votre devis REYNOV</title></head>
-<body style="margin:0;padding:0;background:#f2f2f2;font-family:Arial,sans-serif;">
-<div style="max-width:620px;margin:32px auto;background:#fff;border-radius:4px;overflow:hidden;">
-
-  <div style="background:#060606;padding:28px 40px;">
-    <span style="color:#fff;font-size:20px;font-weight:700;letter-spacing:4px;">REYNOV</span>
-  </div>
-
-  <div style="padding:40px;">
-    <h2 style="margin:0 0 12px;font-size:22px;color:#111;">Bonjour ${d.prenom},</h2>
-    <p style="margin:0 0 24px;font-size:15px;color:#555;line-height:1.7;">
-      Votre demande de devis a bien été reçue. Nous vous recontactons sous <strong>24h</strong> avec une estimation personnalisée.
-    </p>
-
-    <div style="background:#f7f7f7;padding:24px;margin-bottom:28px;">
-      <p style="margin:0 0 14px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#999;">Votre demande</p>
-      ${d.prestation ? `<p style="margin:0 0 6px;font-size:13px;color:#444;"><b style="color:#111;">Prestation :</b> ${d.prestation}</p>` : ''}
-      ${d.problemes  ? `<p style="margin:0 0 6px;font-size:13px;color:#444;"><b style="color:#111;">Problème(s) :</b> ${d.problemes}</p>` : ''}
-      ${d.nb_jantes  ? `<p style="margin:0 0 6px;font-size:13px;color:#444;"><b style="color:#111;">Jantes :</b> ${d.nb_jantes} jante(s)${d.taille ? ` — ${d.taille}` : ''}</p>` : ''}
-      ${d.marque     ? `<p style="margin:0 0 6px;font-size:13px;color:#444;"><b style="color:#111;">Véhicule :</b> ${d.marque}${d.modele ? ` ${d.modele}` : ''}</p>` : ''}
-      ${d.mode       ? `<p style="margin:0 0 6px;font-size:13px;color:#444;"><b style="color:#111;">Mode :</b> ${d.mode}</p>` : ''}
-      ${d.delai      ? `<p style="margin:0;font-size:13px;color:#444;"><b style="color:#111;">Délai :</b> ${d.delai}</p>` : ''}
-    </div>
-
-    <p style="margin:0 0 28px;font-size:14px;color:#777;line-height:1.7;">
-      Une question ? Contactez-nous directement :
-    </p>
-    <p style="margin:0;">
-      <a href="tel:+33661453527" style="display:inline-block;padding:12px 24px;background:#060606;color:#fff;text-decoration:none;font-size:13px;font-weight:600;margin-right:12px;">06 61 45 35 27</a>
-      <a href="mailto:reynov.lyon@gmail.com" style="display:inline-block;padding:12px 24px;border:1px solid #ddd;color:#333;text-decoration:none;font-size:13px;">reynov.lyon@gmail.com</a>
-    </p>
-  </div>
-
-  <div style="background:#f5f5f5;padding:16px 40px;font-size:11px;color:#aaa;">
-    REYNOV · 47 chemin du Pras, 69350 Lyon · <a href="https://reynov-jantes.fr" style="color:#aaa;">reynov-jantes.fr</a>
-  </div>
-</div>
-</body></html>`;
-}
+function clientEmail(d) { return mailtpl.quoteAck(d); }
 
 // ── CRM — auth middleware ─────────────────────────────────────
 const CRM_PASSWORD = process.env.CRM_PASSWORD;
@@ -583,26 +544,27 @@ function cleanLines(raw) {
   return raw.slice(0, 30).map(x => ({ label: cleanLine(x && x.label, 200), qty: Math.min(100, Math.max(0, Number(x && x.qty) || 0)), unit_ht: Math.min(100000, Math.max(0, Math.round((Number(x && x.unit_ht) || 0) * 100) / 100)) })).filter(x => x.label);
 }
 function quoteHtml(q, l) {
+  const M = mailtpl, F = M.FONT;
   const t = db.quoteTotals(q);
   const name = l ? [l.prenom, l.nom].filter(Boolean).join(' ') : '';
-  const rows = (q.lines || []).map(x => `<tr><td style="padding:10px 8px;border-bottom:1px solid #eee;">${escHtml(x.label)}</td><td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:center;">${escHtml(x.qty)}</td><td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:right;">${x.unit_ht ? eur(x.unit_ht) : 'sur devis'}</td><td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:right;">${x.unit_ht ? eur(x.qty * x.unit_ht) : '—'}</td></tr>`).join('');
   const date = (iso) => new Date(iso).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris', day: '2-digit', month: 'long', year: 'numeric' });
-  return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Devis ${escHtml(q.number)} — REYNOV</title></head>
-<body style="margin:0;background:#f2f2f2;font-family:Arial,Helvetica,sans-serif;color:#222;">
-<div style="max-width:760px;margin:24px auto;background:#fff;border-radius:6px;overflow:hidden;">
-  <div style="background:#060606;padding:24px 32px;"><span style="color:#fff;font-size:20px;font-weight:700;letter-spacing:5px;">REYNOV</span><span style="color:#aaa;font-size:12px;margin-left:14px;">Rénovation de jantes · Lyon</span></div>
-  <div style="padding:30px 32px;font-size:14px;line-height:1.6;">
-    <table style="width:100%;border-collapse:collapse;"><tr>
-      <td style="vertical-align:top;"><p style="margin:0;font-size:22px;font-weight:700;">Devis ${escHtml(q.number)}</p><p style="margin:4px 0 0;color:#666;">Émis le ${date(q.created_at)} · valable jusqu'au ${date(q.valid_until + 'T12:00:00Z')}</p></td>
-      <td style="vertical-align:top;text-align:right;color:#444;font-size:13px;"><strong>${escHtml(name) || 'Client'}</strong><br>${l && l.adresse ? escHtml(l.adresse) + '<br>' : ''}${l && l.ville ? escHtml(l.ville) + '<br>' : ''}${l && l.email ? escHtml(l.email) + '<br>' : ''}${l && l.tel ? escHtml(l.tel) : ''}</td>
+  const th = (txt, al) => `<th align="${al}" style="white-space:nowrap;padding:10px 8px;font-family:${F};font-size:11px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:${M.MUTED};border-bottom:2px solid ${M.INK};">${txt}</th>`;
+  const rows = (q.lines || []).map(x => `<tr><td style="padding:14px 8px;border-bottom:1px solid ${M.LINE};font-family:${F};font-size:14px;color:${M.INK};font-weight:600;">${escHtml(x.label)}</td><td align="center" style="padding:14px 8px;border-bottom:1px solid ${M.LINE};font-family:${F};font-size:14px;color:#34343a;">${escHtml(x.qty)}</td><td align="right" style="padding:14px 8px;border-bottom:1px solid ${M.LINE};font-family:${F};font-size:14px;color:#34343a;white-space:nowrap;">${x.unit_ht ? eur(x.unit_ht) : 'sur devis'}</td><td align="right" style="padding:14px 8px;border-bottom:1px solid ${M.LINE};font-family:${F};font-size:14px;color:${M.INK};font-weight:600;white-space:nowrap;">${x.unit_ht ? eur(x.qty * x.unit_ht) : '—'}</td></tr>`).join('');
+  const sub = encodeURIComponent('Devis ' + q.number + ' accepté'), mailBody = encodeURIComponent('Bonjour, j\'accepte le devis ' + q.number + '. Merci de me proposer une date d\'intervention.');
+  const body = `${M.eyebrow('Votre devis')}${M.h1('Devis ' + escHtml(q.number))}
+    ${M.para('Émis le ' + date(q.created_at) + ' · valable jusqu\'au ' + date(q.valid_until + 'T12:00:00Z'), 'color:' + M.MUTED + ';margin-bottom:22px;')}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:26px;background:${M.SOFT};border-radius:16px;"><tr>
+      <td class="stack" valign="top" style="padding:18px 22px;font-family:${F};font-size:13.5px;line-height:1.7;color:#34343a;"><div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:${M.MUTED};margin-bottom:4px;">Destinataire</div><strong style="color:${M.INK};font-size:15px;">${escHtml(name) || 'Client'}</strong><br>${l && l.adresse ? escHtml(l.adresse) + '<br>' : ''}${l && l.ville ? escHtml(l.ville) + '<br>' : ''}${l && l.email ? escHtml(l.email) + '<br>' : ''}${l && l.tel ? escHtml(l.tel) : ''}</td>
+      <td class="stack" valign="top" style="padding:18px 22px;font-family:${F};font-size:13.5px;line-height:1.7;color:#34343a;"><div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:${M.MUTED};margin-bottom:4px;">Prestataire</div><strong style="color:${M.INK};font-size:15px;">REYNOV</strong><br>47 chemin du Pras<br>69350 La Mulatière<br>06 61 45 35 27</td>
     </tr></table>
-    <table style="width:100%;border-collapse:collapse;margin-top:26px;font-size:14px;"><thead><tr style="background:#f6f6f6;"><th style="padding:10px 8px;text-align:left;">Prestation</th><th style="padding:10px 8px;text-align:center;">Qté</th><th style="padding:10px 8px;text-align:right;">Prix HT</th><th style="padding:10px 8px;text-align:right;">Total HT</th></tr></thead><tbody>${rows || '<tr><td colspan="4" style="padding:14px;color:#888;">Aucune ligne</td></tr>'}</tbody></table>
-    <table style="margin:18px 0 0 auto;border-collapse:collapse;font-size:14px;"><tr><td style="padding:4px 18px;color:#666;">Total HT</td><td style="padding:4px 0;text-align:right;">${eur(t.ht)}</td></tr><tr><td style="padding:4px 18px;color:#666;">TVA ${t.rate} %</td><td style="padding:4px 0;text-align:right;">${eur(t.tva)}</td></tr><tr><td style="padding:8px 18px;font-weight:700;font-size:16px;">Total TTC</td><td style="padding:8px 0;text-align:right;font-weight:700;font-size:16px;">${eur(t.ttc)}</td></tr></table>
-    ${q.notes ? `<div style="margin-top:26px;padding:14px 18px;background:#f7f7f7;border-left:3px solid #111;white-space:pre-wrap;font-size:13px;color:#444;">${escHtml(q.notes)}</div>` : ''}
-    <p style="margin:26px 0 0;font-size:13px;color:#444;">Pour accepter ce devis, répondez simplement à cet e-mail ou écrivez-nous sur WhatsApp au 06 61 45 35 27.</p>
-  </div>
-  <div style="background:#fafafa;border-top:1px solid #eee;padding:16px 32px;font-size:11.5px;color:#777;line-height:1.6;">REYNOV SAS · SIRET 105 819 098 00016 · 47 chemin du Pras, 69350 La Mulatière · 06 61 45 35 27 · reynov.lyon@gmail.com · www.reynov-jantes.fr</div>
-</div></body></html>`;
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><thead><tr>${th('Prestation', 'left')}${th('Qté', 'center')}${th('Prix HT', 'right')}${th('Total HT', 'right')}</tr></thead><tbody>${rows || `<tr><td colspan="4" style="padding:16px;color:#888;font-family:${F};">Aucune ligne</td></tr>`}</tbody></table>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="right" style="margin:18px 0 0;"><tr><td style="padding:5px 22px 5px 0;font-family:${F};font-size:13.5px;color:${M.MUTED};">Total HT</td><td align="right" style="padding:5px 0;font-family:${F};font-size:14px;color:#34343a;">${eur(t.ht)}</td></tr><tr><td style="padding:5px 22px 5px 0;font-family:${F};font-size:13.5px;color:${M.MUTED};">TVA ${t.rate} %</td><td align="right" style="padding:5px 0;font-family:${F};font-size:14px;color:#34343a;">${eur(t.tva)}</td></tr><tr><td colspan="2" style="padding-top:10px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="${M.INK}" style="border-radius:12px;padding:12px 18px;font-family:${F};font-size:13px;color:#cfcfd6;">Total TTC</td><td bgcolor="${M.INK}" align="right" style="border-radius:12px;padding:12px 18px;font-family:${F};font-size:19px;font-weight:700;color:#ffffff;white-space:nowrap;">${eur(t.ttc)}</td></tr></table></td></tr></table>
+    <div style="clear:both;"></div>
+    ${q.notes ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:34px;background:${M.SOFT};border-radius:16px;"><tr><td style="padding:18px 22px;font-family:${F};font-size:13px;color:#34343a;line-height:1.8;white-space:pre-wrap;"><div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:${M.MUTED};margin-bottom:6px;">Conditions</div>${escHtml(q.notes)}</td></tr></table>` : '<div style="height:30px;"></div>'}
+    ${M.para('Pour accepter ce devis, répondez simplement à cet e-mail ou utilisez le bouton ci-dessous.', 'margin:26px 0 14px;')}
+    ${M.button('Accepter ce devis', 'mailto:reynov.lyon@gmail.com?subject=' + sub + '&body=' + mailBody)}${M.button('Une question ? WhatsApp', 'https://wa.me/33661453527', false)}
+    ${M.signature()}`;
+  return M.shell({ title: 'Devis ' + q.number + ' — REYNOV', preheader: 'Votre devis ' + q.number + ' : ' + eur(t.ttc) + ' TTC, valable 30 jours.', body, note: 'Vous recevez ce devis suite à votre demande auprès de REYNOV.' });
 }
 const fullQuote = (q) => ({ ...q, totals: db.quoteTotals(q) });
 app.get('/api/crm/quotes', (req, res) => res.json({ ok: true, data: db.quotesList({ lead_id: req.query.lead_id }) }));
@@ -1118,39 +1080,24 @@ function ingestLead(src) {
 }
 
 function contactOwnerEmail(l) {
-  const t = l.triage || {};
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;background:#f2f2f2;font-family:Arial,sans-serif;">
-<div style="max-width:620px;margin:24px auto;background:#fff;border-radius:6px;overflow:hidden;">
-  <div style="background:#060606;padding:22px 32px;"><span style="color:#fff;font-size:18px;font-weight:700;letter-spacing:4px;">REYNOV</span><span style="color:#999;font-size:12px;margin-left:12px;">Nouveau message de contact</span></div>
-  <div style="padding:28px 32px;font-size:14px;color:#333;line-height:1.7;">
-    <p style="margin:0 0 4px;font-size:18px;color:#111;"><strong>${escHtml(l.prenom)} ${escHtml(l.nom)}</strong></p>
-    <p style="margin:0 0 16px;color:#666;">${l.email ? `<a href="mailto:${escHtml(l.email)}">${escHtml(l.email)}</a>` : ''}${l.tel ? ' · ' + escHtml(l.tel) : ''}${l.sujet ? ' · ' + escHtml(l.sujet) : ''}</p>
-    <div style="background:#f7f7f7;border-left:3px solid #111;padding:14px 18px;white-space:pre-wrap;">${escHtml(l.message)}</div>
+  const t = l.triage || {}; const F = mailtpl.FONT;
+  return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#ecebe7;font-family:${F};">
+<div style="max-width:640px;margin:28px auto;background:#fff;border-radius:20px;overflow:hidden;">
+  <div style="background:#0b0b0c;padding:26px 40px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-right:16px;"><img src="${mailtpl.LOGO}" width="44" height="44" alt="REYNOV" style="display:block;border:0;"></td><td><div style="color:#fff;font-size:15px;font-weight:700;letter-spacing:6px;">REYNOV</div><div style="color:#9a9aa2;font-size:11px;letter-spacing:2.5px;text-transform:uppercase;margin-top:4px;">Nouveau message de contact</div></td></tr></table></div>
+  <div style="padding:30px 40px;font-size:14px;color:#34343a;line-height:1.7;">
+    <p style="margin:0 0 4px;font-size:20px;color:#0b0b0c;"><strong>${escHtml(l.prenom)} ${escHtml(l.nom)}</strong></p>
+    <p style="margin:0 0 16px;color:#7b7b84;">${l.email ? `<a href="mailto:${escHtml(l.email)}" style="color:#0b0b0c;">${escHtml(l.email)}</a>` : ''}${l.tel ? ' · ' + escHtml(l.tel) : ''}${l.sujet ? ' · ' + escHtml(l.sujet) : ''}</p>
+    <div style="background:#f6f4ef;border-left:3px solid #0b0b0c;border-radius:0 12px 12px 0;padding:16px 20px;white-space:pre-wrap;">${escHtml(l.message)}</div>
     <p style="margin:18px 0 4px;"><strong>Analyse :</strong> ${escHtml(t.summary || '')}${t.urgency === 'haute' ? ' <span style="color:#c00;">· urgent</span>' : ''}</p>
     <p style="margin:0 0 4px;color:#555;">${(t.price_hint || []).map(escHtml).join('<br>')}</p>
-    <p style="margin:18px 0 0;"><a href="https://www.reynov-jantes.fr/admin/crm.html#/leads" style="display:inline-block;background:#060606;color:#fff;padding:10px 18px;text-decoration:none;font-size:13px;">Ouvrir dans le CRM (réponse prête)</a></p>
+    <p style="margin:20px 0 0;"><a href="https://www.reynov-jantes.fr/admin/crm.html#/leads" style="display:inline-block;background:#0b0b0c;color:#fff;padding:13px 24px;border-radius:999px;text-decoration:none;font-size:13.5px;font-weight:600;">Ouvrir dans le CRM (réponse prête)</a></p>
   </div>
 </div></body></html>`;
 }
 
-function contactAckEmail(l) {
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;background:#f2f2f2;font-family:Arial,sans-serif;">
-<div style="max-width:620px;margin:32px auto;background:#fff;border-radius:4px;overflow:hidden;">
-  <div style="background:#060606;padding:26px 36px;"><span style="color:#fff;font-size:20px;font-weight:700;letter-spacing:4px;">REYNOV</span></div>
-  <div style="padding:34px 36px;font-size:15px;color:#444;line-height:1.7;">
-    <h2 style="margin:0 0 12px;font-size:21px;color:#111;">Bonjour ${escHtml(l.prenom)},</h2>
-    <p style="margin:0 0 16px;">Nous avons bien reçu votre message et vous répondons sous 24 h.</p>
-    <p style="margin:0 0 16px;">Pour un devis précis, vous pouvez aussi nous envoyer deux photos de vos jantes sur WhatsApp au <strong>06 61 45 35 27</strong>.</p>
-    <p style="margin:0;color:#888;font-size:13px;">REYNOV · 47 chemin du Pras, 69350 La Mulatière</p>
-  </div>
-</div></body></html>`;
-}
+function contactAckEmail(l) { return mailtpl.contactAck(l); }
 
-function replyEmail(body) {
-  const paras = String(body).split(/\n{2,}/).map(p => `<p style="margin:0 0 14px;">${escHtml(p).replace(/\n/g, '<br>')}</p>`).join('');
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;background:#ffffff;">
-<div style="max-width:620px;margin:0 auto;padding:24px;font-family:Arial,sans-serif;font-size:15px;line-height:1.7;color:#222;">${paras}</div></body></html>`;
-}
+function replyEmail(body) { return mailtpl.reply(body); }
 
 // ── POST /api/contact : formulaire de la page Contact ─────────
 const contactLimiter = rateLimit({
