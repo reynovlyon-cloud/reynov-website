@@ -50,7 +50,7 @@ function normalize(g) {
 const ROWS = { 'Prestation': 'prestation', 'Problème(s)': 'problemes', 'Nb jantes': 'nb_jantes', 'Taille': 'taille', 'Véhicule': 'vehicule', 'Finition': 'finition', 'Mode': 'mode', 'Délai': 'delai', 'Ville / CP': 'ville' };
 const TEL_RE = /(?:\+33|0033|0)\s?[1-9](?:[\s.\-]?\d{2}){4}/;
 function parseDevis(m, owner) {
-  const h = m.html || '';
+  const h = String(m.html || '').slice(0, 250000);   // jamais d'analyse sur un e-mail démesuré
   const plain = un(h.replace(/<\/(p|tr|div)>/gi, '\n')) || m.text;
   const lead = { source: 'devis', form: {}, created_at: m.ts };
   let name = '', email = '', tel = '';

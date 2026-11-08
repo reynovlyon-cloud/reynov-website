@@ -788,6 +788,10 @@
     }
     $('#set-sync').innerHTML = h + (ms && ms.enabled && ms.state !== 'scope_missing' ? `<button class="btn" data-action="sync-now">${ico('mail')}Synchroniser maintenant</button>` : '');
     loadTeam();
+    api('GET', '/diag').then((j) => {
+      const d = j.data, lab = { demarrage: 'Démarrage', arret: 'Arrêt', arret_anormal: 'Arrêt anormal', exception: 'Erreur', promesse_rejetee: 'Erreur', blocage: 'Blocage', memoire: 'Mémoire' };
+      $('#set-diag').innerHTML = `<p class="muted">Serveur actif depuis ${Math.round(d.uptime_s / 60)} min · mémoire ${d.rss_mb} Mo · ${esc(d.node)} · ${d.boots} démarrage(s) au total.</p>` + d.events.slice(0, 12).map((e) => `<div class="team-row" style="cursor:default"><span class="chip ${['arret_anormal', 'exception', 'promesse_rejetee', 'blocage', 'memoire'].includes(e.type) ? 'urgent' : ''}">${esc(lab[e.type] || e.type)}</span><div class="grow"><div class="s">${esc(dt(e.ts))} · ${e.rss} Mo</div><div class="t" style="font-weight:500;font-size:12.5px;word-break:break-word">${esc(e.text)}</div></div></div>`).join('');
+    }).catch(() => {});
     const cs = S.calStatus; let ch;
     if (!cs) ch = '<p class="muted">Chargement…</p>';
     else if (!cs.enabled) ch = '<p><span class="chip"><span class="dot" style="--c:var(--amber)"></span>Non connecté</span></p><p class="muted">Le planning du CRM n\'est pas encore relié à Google Agenda. Suivez le guide « Connecter le planning Google », puis ajoutez la variable <strong>GOOGLE_CALENDAR_REFRESH_TOKEN</strong> dans Railway.</p>';

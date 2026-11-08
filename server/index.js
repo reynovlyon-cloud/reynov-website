@@ -430,7 +430,7 @@ function crmAuth(req, res, next) {
 // Droits : un « employé » ne voit ni les chiffres d'affaires, ni les devis, ni les réglages, et ne supprime rien (sauf ses rendez-vous et photos).
 function roleGuard(req, res, next) {
   if (req.user && req.user.role === 'admin') return next();
-  const blocked = /^\/(stats|export|users(?!\/basic)|mail\/|calendar\/(list|select|sync)|quotes|leads\/import)/.test(req.path)
+  const blocked = /^\/(stats|export|diag|users(?!\/basic)|mail\/|calendar\/(list|select|sync)|quotes|leads\/import)/.test(req.path)
     || (req.method === 'DELETE' && !/^\/(events|photos)\//.test(req.path));
   if (blocked) return res.status(403).json({ ok: false, error: 'Réservé à l\'administrateur.' });
   next();
@@ -484,6 +484,7 @@ app.post('/api/crm/leads/import', crmLimiter, crmAuth, express.json({ limit: '8m
   res.json({ ok: true, added: c.added, duplicates: c.duplicate, skipped: c.skipped });
 });
 
+const diag = require('./diag').create({ dir: db.DATA_DIR });
 const mailsync = require('./mailsync').create({
   db, getAccessToken: () => getAccessToken(GMAIL_READ_TOKEN || GMAIL_REFRESH_TOKEN), owner: GMAIL_USER, importLeadItem, photoSaver: (leadId, buf, meta) => saveLeadPhoto(leadId, buf, meta),
   enabled: () => !!(GMAIL_USER && GMAIL_CLIENT_ID && GMAIL_CLIENT_SECRET && (GMAIL_READ_TOKEN || GMAIL_REFRESH_TOKEN)) && process.env.CRM_TEST_MODE !== '1' && process.env.MAIL_SYNC !== '0',
@@ -548,6 +549,7 @@ app.put('/api/crm/events/:id', (req, res) => {
   res.json({ ok: true, data: db.updateEvent(cur.id, r.f) });
 });
 app.delete('/api/crm/events/:id', (req, res) => res.json({ ok: db.deleteEvent(req.params.id) }));
+app.get('/api/crm/diag', (_req, res) => res.json({ ok: true, data: diag.snapshot() }));
 app.get('/api/crm/calendar/status', (_req, res) => res.json({ ok: true, data: calsync.status() }));
 app.post('/api/crm/calendar/sync', (_req, res) => { calsync.tick(true); res.json({ ok: true, data: calsync.status() }); });
 app.get('/api/crm/calendar/list', async (_req, res) => {
