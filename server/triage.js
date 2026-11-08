@@ -63,7 +63,7 @@ function analyzeRules(lead) {
   const epoxy = has(/epoxy/);
   const leasing = has(/leasing|\bloa\b|\blld\b|restitution|loueur|rendre (la|ma) (voiture|vehicule)/);
   const vente = has(/\bvend|vente|revente|annonce|marchand/);
-  const pro = has(/partenariat|concession|garage|flotte|marchand|societe|entreprise|b2b|professionnel/) && !has(/jante\s+de\s+ma\s+voiture/);
+  const pro = lead.source === 'pro' || has(/partenariat|concession|garage|flotte|marchand|societe|entreprise|b2b|professionnel/) && !has(/jante\s+de\s+ma\s+voiture/);
   const colour = has(/\b(noir|noire|gris|anthracite|blanc|bronze|or|champagne|rouge|bleu|vert|couleur|teinte|repeindre|peinture|ral|pantone)\b/);
   const perso = has(/personnalis|changer (la |de )?couleur|changement de couleur|custom|nouvelle couleur/);
   const monochrome = !biton && (has(/mono[\s-]?(couleur|chrome|couche)|une seule couleur|tout noir|full black|toute en|noir (mat|satin|brillant)|meme couleur/) || (perso && colour));

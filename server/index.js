@@ -83,31 +83,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// ── /index.html et /dossier/index.html -> adresse propre (/ et /dossier/) ──
-app.use((req, res, next) => {
-  if ((req.method === 'GET' || req.method === 'HEAD') && /\/index\.html$/.test(req.path)) {
-    return res.redirect(301, req.originalUrl.replace(/index\.html(?=\?|$)/, ''));
-  }
-  next();
-});
-
-// ── Redirection non-www -> www (évite le duplicate content) ──
-app.use((req, res, next) => {
-  const host = req.hostname;
-  if (host === CANONICAL_HOST || host === 'localhost' || host === '127.0.0.1' || req.path === '/api/health') return next();
-  return res.redirect(301, `https://${CANONICAL_HOST}${req.originalUrl}`);
-});
-
-// ── Anciennes URL -> nouvelles (301) ─────────────────────────
-const MOVED = {
-  '/blog/prix-reparation-jante-lyon-2025.html': '/blog/prix-reparation-jante-lyon.html',
-  '/blog/epoxy-ou-peinture-pistolet-jante-difference-lyon.html': '/blog/peinture-epoxy-jantes-haut-de-gamme-collection.html',
-};
-app.use((req, res, next) => {
-  const to = MOVED[req.path];
-  if (to) return res.redirect(301, to);
-  next();
-});
+// ── Redirections 301 en une seule étape : domaine canonique, /index.html, anciennes pages et ancien domaine (voir redirects.js) ──
+app.use(require('./redirects').middleware);
 
 // ── Rate limiting global de l'API (anti-scraping / abus) ─────
 app.use('/api', rateLimit({ windowMs: 60 * 1000, max: 120, standardHeaders: true, legacyHeaders: false,
@@ -1191,11 +1168,14 @@ function ensureClient(lead) {
 }
 
 // Enregistre une demande, la trie tout de suite (règles) puis l'enrichit par IA en arrière-plan si disponible.
+// Origine publicitaire envoyée par le navigateur (uniquement si le visiteur a accepté la mesure) : champs connus seulement
+function parseAttr(raw) { try { const o = JSON.parse(String(raw || '{}')); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } }
 function ingestLead(src) {
   const email = cleanLine(src.email, 200);
   const message = clean(src.message, 4000);
   const dup = db.findRecentDuplicate(email, message);
   if (dup) return { lead: dup, duplicate: true };
+  const attr = {}; ['gclid', 'gbraid', 'wbraid', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term'].forEach(k => { const v = src.attr && src.attr[k]; if (v) attr[k] = cleanLine(v, 120); });
   const f = src.form || {};
   const lead = db.createLead({
     source: cleanLine(src.source || 'devis', 40) || 'devis',
@@ -1207,6 +1187,7 @@ function ingestLead(src) {
       mode: cleanLine(f.mode, 60), delai: cleanLine(f.delai, 60), photos: Number(f.photos) || 0,
     },
     client_id: src.client_id || null, intervention_id: src.intervention_id || null,
+    ...(Object.keys(attr).length ? { attr } : {}),
   });
   const tri = triage.withDrafts(lead, triage.analyzeRules(lead));
   db.updateLead(lead.id, { triage: tri });
@@ -1239,6 +1220,58 @@ function contactOwnerEmail(l) {
 function contactAckEmail(l) { return mailtpl.contactAck(l); }
 
 function replyEmail(body) { return mailtpl.reply(body); }
+
+// ── POST /api/pro : demande d'un professionnel (carrosserie, garage, concession, marchand VO, loueur / flotte) ──
+const proLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 8, standardHeaders: true, legacyHeaders: false, message: { ok: false, error: 'Trop de demandes. Réessayez dans une heure ou appelez le 06 61 45 35 27.' } });
+const PRO_ACTIVITES = { carrosserie: 'Carrosserie', garage: 'Garage automobile', concession: 'Concession automobile', marchand: 'Marchand / vendeur de véhicules d\'occasion', loueur: 'Loueur / flotte', autre: 'Autre activité' };
+const PRO_VOLUMES = { ponctuel: 'Besoin ponctuel', quelques: 'Quelques jantes par mois', regulier: 'Plusieurs véhicules par semaine', lot: 'Lot / flotte à traiter' };
+app.post('/api/pro', proLimiter, (req, res, next) => {
+  upload.array('photos', 6)(req, res, (err) => {
+    if (err) return res.status(400).json({ ok: false, error: err.code === 'LIMIT_FILE_SIZE' ? 'Une photo dépasse 8 Mo. Réduisez-la ou envoyez-la ensuite sur WhatsApp.' : 'Fichier invalide (photos JPG, PNG, WebP ou HEIC, 6 maximum).' });
+    next();
+  });
+}, async (req, res) => {
+  try {
+    const b = req.body || {};
+    if (b.website) return res.status(400).json({ ok: false, error: 'Requête invalide.' });
+    const t0 = Number(b._t); if (t0 && Date.now() - t0 < 3000) return res.status(400).json({ ok: false, error: 'Requête invalide.' });
+    if (!devisBudgetOk()) return res.status(429).json({ ok: false, error: 'Service momentanément saturé. Appelez le 06 61 45 35 27.' });
+    const email = typeof b.email === 'string' ? b.email.trim() : '';
+    if (!email || email.length > 200 || !EMAIL_RE.test(email)) return res.status(400).json({ ok: false, error: 'Adresse e-mail invalide.' });
+    const entreprise = cleanLine(b.entreprise, 120), contact = cleanLine(b.contact, 120), tel = cleanLine(b.tel, 40), commune = cleanLine(b.commune, 80);
+    if (!entreprise) return res.status(400).json({ ok: false, error: 'Indiquez le nom de votre entreprise.' });
+    if (!contact) return res.status(400).json({ ok: false, error: 'Indiquez votre nom.' });
+    if (!PRO_ACTIVITES[b.activite]) return res.status(400).json({ ok: false, error: 'Choisissez votre type d\'activité.' });
+    if (tel.replace(/\D/g, '').length < 8) return res.status(400).json({ ok: false, error: 'Indiquez un numéro de téléphone valide.' });
+    if (!commune) return res.status(400).json({ ok: false, error: 'Indiquez votre commune ou code postal.' });
+    if (!emailBudgetOk(email)) return res.status(429).json({ ok: false, error: 'Une demande a déjà été reçue pour cette adresse. Appelez-nous au 06 61 45 35 27.' });
+    const files = (req.files || []).filter(f => sniffImage(f.buffer));
+    if (files.reduce((n, f) => n + f.size, 0) > MAX_TOTAL) return res.status(400).json({ ok: false, error: 'Photos trop lourdes au total (20 Mo max).' });
+    const volume = PRO_VOLUMES[b.volume] || '';
+    const message = clean(['Entreprise : ' + entreprise, 'Activité : ' + PRO_ACTIVITES[b.activite], 'Commune / CP : ' + commune, volume ? 'Volume : ' + volume : '', b.page ? 'Page : ' + cleanLine(b.page, 80) : '', '', clean(b.message, 3000)].filter((x, i, a) => x !== '' || a[i - 1] !== '').join('\n'), 4000);
+    const [prenom, ...rest] = contact.split(/\s+/);
+    let saved = false, lead = null;
+    try {
+      const r = ingestLead({ source: 'pro', attr: parseAttr(b.attr), prenom, nom: rest.join(' '), email, tel, ville: commune, sujet: 'Pro · ' + PRO_ACTIVITES[b.activite] + ' · ' + entreprise, message, form: { prestation: 'Partenariat professionnel', nb_jantes: '', mode: volume, photos: files.length } });
+      lead = r.lead; saved = !!lead;
+      if (r.duplicate) return res.json({ ok: true });
+      for (const f of files) { try { saveLeadPhoto(lead.id, f.buffer, { src: 'form', by: 'Client' }); } catch (e) { /* photo non conservée : elle reste dans l'e-mail */ } }
+    } catch (e) { console.error('⚠️ CRM (demande pro) :', e.message); }
+    let ownerSent = false;
+    try {
+      const attachments = files.map((f, i) => ({ filename: 'photo-' + (i + 1) + '.' + (sniffImage(f.buffer) === 'image/png' ? 'png' : sniffImage(f.buffer) === 'image/webp' ? 'webp' : sniffImage(f.buffer) === 'image/heic' ? 'heic' : 'jpg'), content: f.buffer, contentType: sniffImage(f.buffer) }));
+      const view = lead || { prenom, nom: rest.join(' '), email, tel, sujet: 'Pro · ' + entreprise, message, triage: {} };
+      await sendEmail({ from: `"REYNOV Site" <${GMAIL_USER}>`, to: GMAIL_USER, subject: 'Demande professionnelle - ' + entreprise, html: contactOwnerEmail(view), attachments, origin: 'owner' });
+      ownerSent = true;
+    } catch (e) { console.error('❌ Mail owner (demande pro) NON envoyé :', e.message); }
+    sendEmail({ from: `"REYNOV" <${GMAIL_USER}>`, to: email, subject: 'Votre demande professionnelle REYNOV a bien été reçue', html: mailtpl.proAck({ prenom: cleanLine(prenom, 80) }, entreprise), origin: 'ack' }).catch(e => console.error('⚠️ Accusé pro non envoyé :', e.message));
+    if (!saved && !ownerSent) throw new Error('Demande ni enregistrée ni envoyée');
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('❌ /api/pro :', e.message);
+    res.status(500).json({ ok: false, error: 'Une erreur est survenue. Appelez-nous au 06 61 45 35 27.' });
+  }
+});
 
 // ── POST /api/contact : formulaire de la page Contact ─────────
 const contactLimiter = rateLimit({
@@ -1377,7 +1410,7 @@ app.post('/api/devis', devisLimiter, (req, res, next) => {
         source: d.source || 'devis', prenom: un(d.prenom), nom: un(d.nom), email: d.email, tel: un(d.tel),
         ville: un(d.adresse), adresse: un(d.adresse_client), message: un(d.description),
         form: { prestation: un(d.prestation), problemes: un(d.problemes), nb_jantes: d.nb_jantes, taille: un(d.taille), marque: un(d.marque), modele: un(d.modele), finition: un(d.finition), mode: un(d.mode), delai: un(d.delai), photos: attachments.length },
-        client_id: clientId, intervention_id: interId,
+        client_id: clientId, intervention_id: interId, attr: parseAttr(b.attr),
       });
       if (r.lead) {
         db.updateLead(r.lead.id, { client_id: clientId, intervention_id: interId });

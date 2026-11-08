@@ -443,6 +443,7 @@ function submitForm() {
 
   const fd = new FormData();
   fd.append('_t', String(window.__devisT0 || ''));
+  try { const a = window.reynovAttr ? window.reynovAttr() : {}; if (a && Object.keys(a).length) fd.append('attr', JSON.stringify(a)); } catch (e) { /* facultatif */ }
   fd.append('prestation',    (groups.raison   || []).join(', '));
   fd.append('problemes',     (groups.probleme || []).join(', '));
   fd.append('nb_jantes',     (groups.nb       || []).join(''));

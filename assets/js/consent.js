@@ -36,7 +36,7 @@
     function close() { b.classList.remove('is-open'); }
     b.addEventListener('click', function (e) {
       var v = e.target && e.target.getAttribute && e.target.getAttribute('data-rc'); if (!v) return;
-      write(v); update(v); if (v === 'denied') purge(); close();
+      write(v); update(v); if (v === 'denied') purge(); else if (window.reynovCaptureAttr) window.reynovCaptureAttr(); close();
     });
     var fb = document.querySelector('.footer__bottom');
     if (fb) { var m = document.createElement('button'); m.type = 'button'; m.className = 'rc-manage'; m.textContent = 'Gérer les cookies'; m.addEventListener('click', open); fb.appendChild(m); }

@@ -58,7 +58,7 @@
   ];
   const ST_LABEL = { nouveau: 'Nouveau', a_rappeler: 'À rappeler', contacte: 'Contacté', rdv: 'Rendez-vous confirmé', gagne: 'Gagné', perdu: 'Perdu' };
   const MISSING = { photos: 'Photos des jantes (vue d\'ensemble + gros plan)', vehicule: 'Marque et modèle du véhicule', taille: 'Taille des jantes', ville: 'Ville / code postal', nombre: 'Nombre de jantes', telephone: 'Téléphone (réponse par e-mail uniquement)' };
-  const SRC = { devis: 'Formulaire devis', contact: 'Page contact', 'lp-renovation': 'Page pub rénovation', 'lp-reparation': 'Page pub réparation', manuel: 'Ajout manuel' };
+  const SRC = { devis: 'Formulaire devis', contact: 'Page contact', 'lp-renovation': 'Page pub rénovation', 'lp-reparation': 'Page pub réparation', pro: 'Formulaire professionnels', manuel: 'Ajout manuel' };
   const INTER_ST = { nouveau: 'Nouveau devis', devis_envoye: 'Devis envoyé', confirme: 'Confirmé', en_cours: 'En cours', termine: 'Terminé', paye: 'Payé', annule: 'Annulé' };
   const AV_COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#14b8a6', '#16a34a', '#ca8a04', '#6366f1', '#ef4444', '#0ea5e9'];
 
@@ -346,7 +346,7 @@
       <div class="card"><h4>Demande</h4>
         ${l.sujet ? `<div class="muted" style="margin-bottom:8px">${esc(l.sujet)}</div>` : ''}
         <div class="msg">${esc(l.message || '(aucun message — voir les informations ci-dessous)')}</div>
-        <dl class="kv">${kv('E-mail', l.email)}${kv('Téléphone', l.tel)}${kv('Ville / CP', l.ville)}${kv('Adresse', l.adresse)}${kv('Prestation', f.prestation)}${kv('Problèmes', f.problemes)}${kv('Nombre de jantes', f.nb_jantes)}${kv('Véhicule', [f.marque, f.modele].filter(Boolean).join(' '))}${kv('Taille', f.taille)}${kv('Finition', f.finition)}${kv('Intervention', f.mode)}${kv('Délai souhaité', f.delai)}${f.photos ? kv('Photos jointes', f.photos + ' (reçues par e-mail)') : ''}</dl>
+        <dl class="kv">${kv('E-mail', l.email)}${kv('Téléphone', l.tel)}${kv('Ville / CP', l.ville)}${kv('Adresse', l.adresse)}${kv('Prestation', f.prestation)}${kv('Problèmes', f.problemes)}${kv('Nombre de jantes', f.nb_jantes)}${kv('Véhicule', [f.marque, f.modele].filter(Boolean).join(' '))}${kv('Taille', f.taille)}${kv('Finition', f.finition)}${kv('Intervention', f.mode)}${kv('Délai souhaité', f.delai)}${l.attr && (l.attr.utm_campaign || l.attr.gclid || l.attr.utm_source) ? kv('Origine publicitaire', [l.attr.utm_source, l.attr.utm_medium, l.attr.utm_campaign].filter(Boolean).join(' / ') + (l.attr.gclid ? ' · clic Google Ads (gclid)' : '')) : ''}${f.photos ? kv('Photos jointes', f.photos + ' (galerie ci-dessous)') : ''}</dl>
       </div>
       <div class="card ai-card"><h4>${ico('sparkle')} Analyse <span class="eng ${esc(t.engine || 'regles')}">${t.engine === 'ia' ? 'IA' : 'Automatique'}</span></h4>
         <div style="font-weight:650;margin-bottom:10px">${esc(t.summary || '—')}${t.urgency === 'haute' ? ' <span class="chip urgent">Urgent</span>' : ''}</div>

@@ -1,6 +1,6 @@
 # REYNOV
 
-> REYNOV est un spécialiste de la rénovation, réparation et personnalisation de jantes aluminium premium, basé à La Mulatière (69350, périphérie sud de Lyon). Service mobile à domicile dans le Rhône, l'Ain, l'Isère, la Loire et la Haute-Savoie, ainsi qu'en atelier fixe. Intervention sur toutes marques, y compris véhicules électriques (Tesla, BYD, Xpeng).
+> REYNOV rénove, répare et personnalise les jantes aluminium des particuliers et des professionnels (carrosseries, garages, concessions, marchands de véhicules d'occasion, loueurs et flottes). Atelier fixe à La Mulatière (69350, sud de Lyon) et véhicule atelier mobile. Zone habituelle : Lyon et environ 30 km autour de l'atelier ; demandes plus éloignées étudiées au cas par cas. Toutes marques, y compris véhicules électriques.
 
 ## Informations essentielles
 
@@ -8,9 +8,11 @@
 - Adresse atelier : 47 chemin du Pras, 69350 La Mulatière (agglomération lyonnaise)
 - Téléphone : 06 61 45 35 27
 - Email : reynov.lyon@gmail.com
-- Zone d'intervention : Lyon et agglomération, Ouest lyonnais, Ain (01), Isère (38), Loire (42), Haute-Savoie (74), frontaliers genevois
+- Zone d'intervention habituelle : Lyon et environ 30 km autour de La Mulatière (Métropole de Lyon, Ouest lyonnais, Monts d'Or). Demandes plus éloignées (Ain, Isère, Loire, Haute-Savoie, Genevois) : étude au cas par cas, devis sur photos.
 - Horaires : lundi-vendredi 8h-18h, samedi 9h-17h
-- Tarifs : rénovation esthétique à partir de 130€/jante, réparation de rayure/frottement à partir de 100€/jante — devis gratuit sous 24h sur photos
+- Tarifs : rénovation et réparation de jante à partir de 130 € HT par jante ; dévoilage et soudure à partir de 140 € HT par jante ; personnalisation et peinture époxy sur devis. Devis gratuit sous 24 h sur photos. Le prix exact dépend de l'état et de la finition.
+- Délais indicatifs : rénovation 24 à 48 h par jante en atelier ; personnalisation 2 à 4 jours (jusqu'à 5 pour une finition poli diamant ou bi-ton) ; peinture époxy 3 jours.
+- Intervention à domicile : sur terrain privé, sol plat, prise électrique à proximité ; pas d'intervention en appartement ni en parking souterrain (dépôt à l'atelier possible)
 - Garantie : 30 jours sur toutes les prestations
 
 ## Prestations
@@ -22,7 +24,12 @@
 - [Personnalisation](https://www.reynov-jantes.fr/prestations/personnalisation.html) : changement de couleur, finitions bi-ton, diamantées, mates
 - [Préparation avant vente](https://www.reynov-jantes.fr/prestations/preparation-vente.html) : remise à neuf des jantes avant revente du véhicule
 - [Retour de leasing](https://www.reynov-jantes.fr/prestations/retour-leasing.html) : remise en état avant restitution LOA/LLD pour éviter les pénalités
-- [Professionnels](https://www.reynov-jantes.fr/professionnels.html) : concessions, garages, loueurs, flottes d'entreprise
+- [Professionnels](https://www.reynov-jantes.fr/professionnels.html) : sous-traitance de rénovation de jantes pour carrosseries, garages, concessions, marchands de véhicules d'occasion, loueurs et flottes (photos, diagnostic, devis écrit avant accord, intervention sur site ou à l'atelier, contrôle et restitution)
+  - [Carrosseries](https://www.reynov-jantes.fr/professionnels/carrosseries.html)
+  - [Garages](https://www.reynov-jantes.fr/professionnels/garages.html)
+  - [Concessions automobiles](https://www.reynov-jantes.fr/professionnels/concessions-automobiles.html)
+  - [Marchands VO](https://www.reynov-jantes.fr/professionnels/marchands-vo.html)
+  - [Loueurs et flottes](https://www.reynov-jantes.fr/professionnels/loueurs-flottes.html)
 
 ## Marques traitées
 
@@ -30,6 +37,7 @@ Toutes marques et tous types de jantes aluminium. Pages dédiées : [Audi](https
 
 ## Pages de référence
 
+- [Rénovation de jantes à Lyon](https://www.reynov-jantes.fr/zones/lyon.html) — atelier à La Mulatière, service mobile, arrondissements et communes proches
 - [Accueil](https://www.reynov-jantes.fr/) — présentation générale et zones d'intervention
 - [FAQ](https://www.reynov-jantes.fr/faq.html) — questions fréquentes sur prix, délais, garantie
 - [Réalisations](https://www.reynov-jantes.fr/realisations.html) — galerie avant/après

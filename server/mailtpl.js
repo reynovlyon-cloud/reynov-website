@@ -82,6 +82,16 @@ function contactAck(l) {
   return shell({ title: 'Votre message à REYNOV', preheader: 'Nous avons bien reçu votre message : réponse sous 24 h.', hero: true, body, note: 'Vous recevez cet e-mail car vous avez écrit à REYNOV depuis reynov-jantes.fr.' });
 }
 
+// ── Accusé de réception d'une demande professionnelle ──
+function proAck(l, company) {
+  const body = `${eyebrow('Demande professionnelle reçue')}${h1(`Bonjour ${esc(l.prenom)},`)}
+    ${para('Merci pour votre message' + (company ? ' au nom de <strong style="color:' + INK + ';">' + esc(company) + '</strong>' : '') + '. Nous l\'étudions et revenons vers vous en général <strong style="color:' + INK + ';">sous 24 h ouvrées</strong>.')}
+    ${para('Pour avancer plus vite, envoyez-nous quelques photos des jantes concernées (et le nombre de véhicules ou de jantes). Nous vous répondrons avec un diagnostic et un devis précisant les modalités avant tout accord : lieu d\'intervention, délais, conditions.', 'margin-bottom:14px;')}
+    ${button('Envoyer des photos sur WhatsApp', WA)}${button('Appeler ' + PHONE, 'tel:' + TEL, false)}
+    ${signature()}`;
+  return shell({ title: 'Votre demande professionnelle — REYNOV', preheader: 'Demande bien reçue : diagnostic et devis avant tout accord.', hero: true, body, note: 'Vous recevez cet e-mail car vous avez écrit à REYNOV depuis la page professionnels de reynov-jantes.fr.' });
+}
+
 // ── Réponse rédigée depuis le CRM (texte libre de l'équipe) ──
 function reply(text) {
   const paras = String(text).split(/\n{2,}/).map((p) => para(esc(p).replace(/\n/g, '<br>'))).join('');
@@ -91,4 +101,4 @@ function reply(text) {
   return shell({ title: 'REYNOV', preheader: String(text).replace(/\s+/g, ' ').slice(0, 110), body, note: 'Vous recevez cet e-mail en réponse à votre demande auprès de REYNOV.' });
 }
 
-module.exports = { shell, button, eyebrow, h1, para, signature, quoteAck, contactAck, reply, esc, BASE, LOGO, FONT, INK, MUTED, LINE, SOFT };
+module.exports = { shell, button, eyebrow, h1, para, signature, quoteAck, contactAck, proAck, reply, esc, BASE, LOGO, FONT, INK, MUTED, LINE, SOFT };

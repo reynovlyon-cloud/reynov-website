@@ -1,12 +1,29 @@
+# REYNOV — https://www.reynov-jantes.fr
+# Robots de recherche et d'assistants IA : autorisés (affichage de REYNOV dans les résultats et les réponses).
+User-agent: Googlebot
+User-agent: Googlebot-Image
+User-agent: Bingbot
+User-agent: OAI-SearchBot
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: ChatGPT-User
+User-agent: PerplexityBot
+User-agent: DuckDuckBot
 User-agent: *
 Allow: /
-Disallow: /node_modules/
-Disallow: /email-prospection-pro.html
 Disallow: /admin/
+Disallow: /api/
 Disallow: /ads/
 Disallow: /lp/
+Disallow: /node_modules/
+Disallow: /email-prospection-pro.html
+
+# Robots d'entraînement de modèles : actuellement autorisés (statut conservé).
+# Pour les refuser SANS affecter le référencement ni les réponses de recherche IA, décommenter :
+#   User-agent: GPTBot            (OpenAI : entraînement)
+#   User-agent: ClaudeBot         (Anthropic : entraînement)
+#   User-agent: Google-Extended   (Google : entraînement et ancrage de Gemini ; sans effet sur la recherche Google)
+#   User-agent: CCBot
+#   Disallow: /
 
 Sitemap: https://www.reynov-jantes.fr/sitemap.xml
-
-# https://llmstxt.org/
-# llms.txt: https://www.reynov-jantes.fr/llms.txt
