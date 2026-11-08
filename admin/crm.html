@@ -34,6 +34,7 @@
     <button class="nav-item" data-nav="clients"><span data-ico="users"></span>Clients</button>
     <button class="nav-item" data-nav="planning"><span data-ico="calendar"></span>Planning</button>
     <button class="nav-item" data-nav="chantiers"><span data-ico="wrench"></span>Chantiers</button>
+    <button class="nav-item" data-nav="publications"><span data-ico="share"></span>Publications</button>
     <button class="nav-item admin-only" data-nav="devis"><span data-ico="doc"></span>Devis</button>
     <button class="nav-item admin-only" data-nav="interventions"><span data-ico="bag"></span>Interventions</button>
     <div class="side-label">Business</div>
@@ -120,6 +121,17 @@
         <div class="board" id="chantier-board" style="grid-template-columns:repeat(4,minmax(260px,1fr))"></div>
       </section>
 
+      <!-- Publications -->
+      <section class="view" id="view-publications" hidden>
+        <div class="toolbar">
+          <button class="btn primary" data-action="new-post"><span data-ico="plus"></span>Nouvelle publication</button>
+          <button class="btn" data-action="plan-week"><span data-ico="calendar"></span>Planifier la semaine</button>
+          <select class="mini" id="post-from-ch"><option value="">Créer depuis un chantier…</option></select>
+          <span class="hint" id="posts-hint"></span>
+        </div>
+        <div class="board" id="post-board" style="grid-template-columns:repeat(4,minmax(260px,1fr))"></div>
+      </section>
+
       <!-- Devis -->
       <section class="view" id="view-devis" hidden>
         <div class="toolbar"><button class="btn primary" data-action="new-quote"><span data-ico="plus"></span>Nouveau devis</button><select class="mini" id="quote-filter"><option value="">Tous les statuts</option></select><span class="hint" id="quotes-hint"></span></div>
@@ -155,6 +167,7 @@
             <button class="btn" data-action="import"><span data-ico="download"></span>Choisir le fichier…</button><div id="import-result" class="muted" style="margin-top:12px"></div></div>
           <div class="card"><h3>Planning Google Agenda</h3><div id="set-cal"></div></div>
           <div class="card"><h3>Équipe</h3><p class="muted">Chaque personne a son identifiant. Un « employé » voit les demandes, le planning et les chantiers, mais ni les chiffres, ni les devis, ni les réglages.</p><div id="set-team"></div><button class="btn" data-action="new-user"><span data-ico="plus"></span>Ajouter une personne</button></div>
+          <div class="card"><h3>Instagram (publication automatique)</h3><div id="set-ig"></div></div>
           <div class="card"><h3>Journal technique</h3><p class="muted">Démarrages, arrêts, plantages et mémoire du serveur : utile si Railway signale un « Deploy Crashed ».</p><div id="set-diag"></div></div>
           <div class="card"><h3>Session</h3><p class="muted">Connecté à l'administration REYNOV.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="/" target="_blank" rel="noopener"><span data-ico="external"></span>Voir le site</a><button class="btn danger" data-action="logout"><span data-ico="logout"></span>Déconnexion</button></div></div>
           <div class="card"><h3>Notifications</h3><p class="muted">Un son discret et une notification du navigateur à chaque nouveau lead (onglet ouvert).</p><button class="btn" data-action="notif" id="notif-btn"><span data-ico="bell"></span>Activer les notifications</button></div>
@@ -202,6 +215,25 @@
 
 <dialog id="dlg-photo" style="width:min(920px,96vw)"><div style="padding:14px"><img id="photo-big" alt="" style="width:100%;max-height:78vh;object-fit:contain;border-radius:20px;background:var(--glass-2)" /><div class="foot" style="padding:10px 4px 0"><a class="btn" id="photo-dl" download="photo">Télécharger</a><button class="btn primary" type="button" data-action="close-dlg">Fermer</button></div></div></dialog>
 <input type="file" id="lead-file" accept="image/*" multiple hidden />
+
+<dialog id="dlg-post"><form method="dialog" class="dlg" id="form-post">
+  <h3 id="post-h">Publication</h3><input type="hidden" name="id" />
+  <div class="field"><label>Titre (interne)</label><input class="input" name="title" required placeholder="Ex. : Avant / Après — Audi RS3" /></div>
+  <div class="two">
+    <div class="field"><label>Où publier</label><div class="seg" id="post-platforms"><label class="chip"><input type="checkbox" name="pf_instagram" checked style="margin-right:6px"> Instagram</label><label class="chip"><input type="checkbox" name="pf_tiktok" style="margin-right:6px"> TikTok</label></div></div>
+    <div class="field"><label>Format</label><select class="input" name="type"><option value="reel">Reel / vidéo</option><option value="photo">Photo</option><option value="carousel">Carrousel</option><option value="story">Story</option></select></div>
+  </div>
+  <div class="two"><div class="field"><label>Date et heure de publication</label><input class="input" type="datetime-local" name="scheduled_at" /></div><div class="field"><label>Responsable</label><select class="input" name="assigned_to" id="post-assign"></select></div></div>
+  <div class="field"><label>Légende</label><textarea class="input" name="caption" id="post-caption" rows="5" maxlength="2200" placeholder="Écrivez, dictez, ou choisissez un modèle ci-dessous"></textarea>
+    <div class="dr-actions" style="margin-top:6px"><button class="btn sm mic" type="button" data-action="mic" data-target="post-caption">Dicter la légende</button><select class="mini" id="post-tpl"><option value="">Modèle de légende…</option><option value="avant_apres">Avant / Après</option><option value="conseil">Conseil</option><option value="avis">Avis clients</option><option value="coulisses">Coulisses</option></select></div></div>
+  <div class="field"><label>Hashtags</label><input class="input" name="hashtags" maxlength="500" /></div>
+  <div class="field"><label>Médias (photos JPEG, vidéos MP4 / MOV)</label><div class="ch-photos" id="post-media"></div>
+    <div class="dr-actions" style="margin-top:8px"><button class="btn sm" type="button" data-action="post-media-add">Ajouter photos / vidéos</button></div>
+    <p class="faint" style="font-size:12px;margin:6px 0 0">Reels : vidéo verticale 9:16, 3 à 90 secondes, réglage « le plus compatible » sur iPhone.</p><input type="file" id="post-file" accept="image/*,video/mp4,video/quicktime" multiple hidden /></div>
+  <p class="faint" id="post-state" style="font-size:12.5px;margin:0 0 10px"></p>
+  <div class="dr-actions" id="post-done" style="margin-bottom:12px"></div>
+  <div class="foot"><button class="btn danger admin-only" type="button" data-action="post-delete" id="post-del">Supprimer</button><button class="btn" type="button" data-action="post-share" id="post-share">Partager depuis ce téléphone</button><button class="btn" type="button" data-action="post-validate" id="post-validate">Envoyer à valider</button><button class="btn primary admin-only" type="button" data-action="post-approve" id="post-approve">Approuver et programmer</button><button class="btn" type="submit">Enregistrer</button></div>
+</form></dialog>
 
 <dialog id="dlg-quote"><form method="dialog" class="dlg" id="form-quote">
   <h3 id="quote-title-h">Devis</h3><input type="hidden" name="id" />

@@ -6,7 +6,7 @@ if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 const DB_FILE = path.join(DATA_DIR, 'crm.json');
 
-let _db = { clients: [], interventions: [], visits: {}, leads: [], events: [], event_tombs: [], quotes: [], users: [], _uid: 1, _qid: 1, _cid: 1, _iid: 1, _lid: 1, _eid: 1 };
+let _db = { clients: [], interventions: [], visits: {}, leads: [], events: [], event_tombs: [], quotes: [], users: [], posts: [], _pid: 1, _uid: 1, _qid: 1, _cid: 1, _iid: 1, _lid: 1, _eid: 1 };
 
 if (fs.existsSync(DB_FILE)) {
   try {
@@ -18,6 +18,8 @@ if (fs.existsSync(DB_FILE)) {
     if (!Array.isArray(_db.event_tombs)) _db.event_tombs = [];
     if (!Array.isArray(_db.quotes)) _db.quotes = [];
     if (!Array.isArray(_db.users)) _db.users = [];
+    if (!Array.isArray(_db.posts)) _db.posts = [];
+    if (!_db._pid) _db._pid = 1 + _db.posts.reduce((m, x) => Math.max(m, x.id || 0), 0);
     if (!_db._uid) _db._uid = 1 + _db.users.reduce((m, u) => Math.max(m, u.id || 0), 0);
     if (!_db._qid) _db._qid = 1 + _db.quotes.reduce((m, q) => Math.max(m, q.id || 0), 0);
     if (!_db._eid) _db._eid = 1 + _db.events.reduce((m, e) => Math.max(m, e.id || 0), 0);
@@ -373,6 +375,23 @@ function findLeadNear(email, iso, minutes = 30) {
 }
 function interventionById(id) { return _db.interventions.find(x => x.id === Number(id)) || null; }
 
+// ── Publications (Instagram / TikTok) ──
+const POST_STATUS = ['idee', 'a_valider', 'approuve', 'publie', 'refuse'];
+function postsList() { return [..._db.posts].sort((a, b) => String(a.scheduled_at || '9').localeCompare(String(b.scheduled_at || '9'))); }
+function postById(id) { return _db.posts.find(x => x.id === Number(id)) || null; }
+function createPost(data) {
+  const p = { id: _db._pid++, created_at: now(), updated_at: now(), title: '', platforms: ['instagram'], type: 'reel', caption: '', hashtags: '', media: [], scheduled_at: null, status: 'idee', assigned_to: null, created_by: '', approved_by: '', approved_at: null, done: {}, error: '', tries: 0, intervention_id: null, ...data };
+  _db.posts.push(p); save(); return p;
+}
+function updatePost(id, patch) {
+  const p = postById(id); if (!p) return null;
+  ['title', 'platforms', 'type', 'caption', 'hashtags', 'scheduled_at', 'status', 'assigned_to', 'approved_by', 'approved_at', 'done', 'error', 'tries', 'ig'].forEach(k => { if (patch[k] !== undefined) p[k] = patch[k]; });
+  p.updated_at = now(); save(); return p;
+}
+function deletePost(id) { const n = _db.posts.length; _db.posts = _db.posts.filter(x => x.id !== Number(id)); if (_db.posts.length !== n) save(); return _db.posts.length !== n; }
+function addPostMedia(id, m) { const p = postById(id); if (!p) return null; p.media = p.media || []; p.media.push(m); p.updated_at = now(); save(); return p; }
+function removePostMedia(id, file) { const p = postById(id); if (!p) return false; const n = (p.media || []).length; p.media = (p.media || []).filter(m => m.file !== file); if (p.media.length !== n) { save(); return true; } return false; }
+
 // ── Devis ──
 const QUOTE_STATUS = ['brouillon', 'envoye', 'accepte', 'refuse'];
 function quoteTotals(q) {
@@ -476,11 +495,11 @@ function stats() {
 }
 
 function exportAll() {
-  return { clients: _db.clients, interventions: _db.interventions, leads: _db.leads, events: _db.events, quotes: _db.quotes, users: _db.users.map(({ pass, ...u }) => u) };
+  return { clients: _db.clients, interventions: _db.interventions, leads: _db.leads, events: _db.events, quotes: _db.quotes, posts: _db.posts, users: _db.users.map(({ pass, ...u }) => u) };
 }
 
 module.exports = {
-  exportAll, LEAD_STATUS, DATA_DIR, usersList, userById, userByUsername, createUser, updateUser, deleteUser, addInterventionPhoto, removeInterventionPhoto, interventionById, addLeadPhoto, removeLeadPhoto, findLeadNear, QUOTE_STATUS, quoteTotals, quotesList, quoteById, createQuote, updateQuote, deleteQuote, onEventChange, eventsList, eventById, eventByGid, allEvents, createEvent, updateEvent, setEventLink, deleteEvent, eventTombs, clearTomb, replyState, leadsByEmail, addMailEvent, allLeads: () => _db.leads,
+  exportAll, LEAD_STATUS, DATA_DIR, POST_STATUS, postsList, postById, createPost, updatePost, deletePost, addPostMedia, removePostMedia, usersList, userById, userByUsername, createUser, updateUser, deleteUser, addInterventionPhoto, removeInterventionPhoto, interventionById, addLeadPhoto, removeLeadPhoto, findLeadNear, QUOTE_STATUS, quoteTotals, quotesList, quoteById, createQuote, updateQuote, deleteQuote, onEventChange, eventsList, eventById, eventByGid, allEvents, createEvent, updateEvent, setEventLink, deleteEvent, eventTombs, clearTomb, replyState, leadsByEmail, addMailEvent, allLeads: () => _db.leads,
   createLead, leadById, updateLead, logContact, addLeadEvent, deleteLead, leadsList, findRecentDuplicate, leadExists, leadStats,
   stats, visitsByDay, logVisit,
   clientsList, clientById, findByEmail,

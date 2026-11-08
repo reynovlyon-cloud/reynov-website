@@ -31,6 +31,7 @@
     check: P('<path d="m5 12 5 5 9-10"/>'),
     sparkle: P('<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/>'),
     trend: P('<path d="m3 17 6-6 4 4 8-8M15 7h6v6"/>'),
+    share: P('<path d="M12 3v12M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/>'),
     image: P('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-5-5-8 8"/>'),
     doc: P('<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/>'),
     speaker: P('<path d="M4 10v4h4l5 4V6L8 10zM16.5 9a4 4 0 0 1 0 6M19 6.5a8 8 0 0 1 0 11"/>'),
@@ -61,7 +62,7 @@
   const INTER_ST = { nouveau: 'Nouveau devis', devis_envoye: 'Devis envoyé', confirme: 'Confirmé', en_cours: 'En cours', termine: 'Terminé', paye: 'Payé', annule: 'Annulé' };
   const AV_COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#14b8a6', '#16a34a', '#ca8a04', '#6366f1', '#ef4444', '#0ea5e9'];
 
-  const S = { token: '', cfg: { ai: false, email: false, categories: {}, statuses: [] }, leads: [], stats: null, biz: null, clients: [], inters: [], view: 'dashboard', cats: new Set(), q: '', openId: null, seen: new Set(), polled: false, visitDays: 30, lastNew: 0, wait: false, mail: null, events: [], cal: null, calStatus: null, calList: null, today: null, quotes: [], leadQuotes: [], qSel: null, user: null, users: [], mine: false, chMine: false, chantiers: [], chSel: null, photoCache: {}, team: [] };
+  const S = { token: '', cfg: { ai: false, email: false, categories: {}, statuses: [] }, leads: [], stats: null, biz: null, clients: [], inters: [], view: 'dashboard', cats: new Set(), q: '', openId: null, seen: new Set(), polled: false, visitDays: 30, lastNew: 0, wait: false, mail: null, events: [], cal: null, calStatus: null, calList: null, today: null, quotes: [], leadQuotes: [], qSel: null, user: null, users: [], mine: false, chMine: false, chantiers: [], chSel: null, posts: [], postSel: null, igStatus: null, photoCache: {}, team: [] };
 
   // ── Utilitaires ───────────────────────────────────────────
   const fullName = (l) => ((l.prenom || '') + ' ' + (l.nom || '')).trim() || l.email || 'Sans nom';
@@ -184,7 +185,7 @@
   // ── Navigation ────────────────────────────────────────────
   const ADMIN_VIEWS = ['devis', 'interventions', 'stats', 'settings'];
   const isAdmin = () => !S.user || S.user.role === 'admin';
-  const TITLES = { dashboard: 'Tableau de bord', leads: 'Leads', clients: 'Clients', interventions: 'Interventions', stats: 'Statistiques', planning: 'Planning', chantiers: 'Chantiers', devis: 'Devis', settings: 'Paramètres' };
+  const TITLES = { dashboard: 'Tableau de bord', leads: 'Leads', clients: 'Clients', interventions: 'Interventions', stats: 'Statistiques', planning: 'Planning', chantiers: 'Chantiers', publications: 'Publications', devis: 'Devis', settings: 'Paramètres' };
   function go(view) {
     if (!TITLES[view] || (ADMIN_VIEWS.includes(view) && !isAdmin())) view = 'dashboard';
     S.view = view;
@@ -197,7 +198,7 @@
     render();
   }
   function render() {
-    ({ dashboard: renderDashboard, leads: renderLeads, clients: renderClients, interventions: renderInters, stats: renderStats, planning: renderPlanning, chantiers: renderChantiers, devis: renderDevis, settings: renderSettings }[S.view] || renderDashboard)();
+    ({ dashboard: renderDashboard, leads: renderLeads, clients: renderClients, interventions: renderInters, stats: renderStats, planning: renderPlanning, chantiers: renderChantiers, publications: renderPublications, devis: renderDevis, settings: renderSettings }[S.view] || renderDashboard)();
   }
 
   // ── Tableau de bord ───────────────────────────────────────
@@ -568,6 +569,7 @@
         <div class="prog-col"><h4>${ico('calendar')} Rendez-vous<span class="n">${t.events.length}</span></h4>${ev}${t.tomorrow ? `<div class="prog-empty">Demain : ${t.tomorrow} rendez-vous</div>` : ''}</div>
         <div class="prog-col"><h4>${ico('phone')} À traiter<span class="n">${t.to_call.length}</span></h4>${call}</div>
         <div class="prog-col"><h4>${ico('mail')} Relances<span class="n">${t.waiting_total + t.quotes_follow.length}</span></h4>${wait}</div>
+        <div class="prog-col"><h4>${ico('share')} Publications<span class="n">${(t.posts_today || []).length}</span></h4>${(t.posts_today || []).map((p) => `<div class="prog-item" data-action="open-post-id" data-id="${p.id}"><span class="time-pill">${esc(p.time)}</span><div class="grow"><div class="t">${esc(p.title)}</div><div class="s">${esc(p.platforms.map((x) => PF[x]).join(' + '))} · ${p.media} média(s)</div></div></div>`).join('') || '<div class="prog-empty">Rien à publier aujourd\'hui.</div>'}${t.posts_to_validate ? `<div class="prog-empty" style="cursor:pointer" data-nav="publications">${t.posts_to_validate} à valider</div>` : ''}</div>
       </div>`;
   }
   function speakBrief(btn) {
@@ -767,6 +769,97 @@
     $('#q-photos-f').hidden = !has; if (!has) return; box.innerHTML = leadPhotoTiles(l, false); loadThumbs(box);
   }
 
+
+  // ── Publications Instagram / TikTok ───────────────────────
+  const PCOLS = [
+    { id: 'idee', label: 'Idées', color: 'var(--slate)' },
+    { id: 'a_valider', label: 'À valider', color: 'var(--amber)' },
+    { id: 'approuve', label: 'Programmé', color: 'var(--blue)' },
+    { id: 'publie', label: 'Publié', color: 'var(--emerald)' },
+  ];
+  const PF = { instagram: 'Instagram', tiktok: 'TikTok' };
+  const ptime = (iso) => (iso ? new Date(iso).toLocaleString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Sans date');
+  async function loadPosts() { try { S.posts = (await api('GET', '/posts')).data; } catch (e) { S.posts = []; } }
+  async function renderPublications() {
+    await loadPosts();
+    api('GET', '/interventions').then((j) => {
+      const sel = $('#post-from-ch'); if (!sel) return;
+      const ok = j.data.filter((i) => ['termine', 'paye'].includes(i.statut) && !i.post_id && (i.photos || []).some((p) => p.kind === 'avant' && /\.jpg$/.test(p.file)) && (i.photos || []).some((p) => p.kind === 'apres' && /\.jpg$/.test(p.file)));
+      sel.innerHTML = '<option value="">Créer depuis un chantier' + (ok.length ? ' (' + ok.length + ' avec photos avant/après)' : '') + '…</option>' + ok.map((i) => `<option value="${i.id}">${esc(fullName(i))} — ${esc(dec([i.marque, i.modele].filter(Boolean).join(' ')) || dec(i.prestation) || 'chantier')}</option>`).join('');
+    }).catch(() => {});
+    if (isAdmin() && !S.igStatus) api('GET', '/social/status').then((j) => { S.igStatus = j.data; renderPublications(); }).catch(() => {});
+    const ig = S.igStatus; $('#posts-hint').textContent = !isAdmin() ? 'Publiez en un geste avec « Partager depuis ce téléphone ».' : (ig && ig.configured ? (ig.ok ? 'Instagram connecté (@' + ig.username + ') : les publications approuvées partent toutes seules à l\'heure prévue.' : 'Instagram : connexion à vérifier (' + (ig.error || '') + ').') : 'Instagram non connecté : publication par partage depuis le téléphone (voir Paramètres pour la connexion automatique).');
+    $('#post-board').innerHTML = PCOLS.map((c) => {
+      const items = S.posts.filter((p) => p.status === c.id || (c.id === 'idee' && p.status === 'refuse'));
+      return `<div class="ccol" style="--c:${c.color}"><div class="col-h"><span class="dot" style="--c:${c.color}"></span>${esc(c.label)}<span class="count">${items.length}</span></div>${items.map(postCard).join('') || '<div class="empty">Aucune</div>'}</div>`;
+    }).join('');
+    $('#post-board').querySelectorAll('img[data-rel]').forEach(async (im) => { const u = await blobAt(im.dataset.rel); if (u) im.src = u; });
+  }
+  function postCard(p) {
+    const m = (p.media || [])[0]; const rel = m && m.kind === 'image' ? 'media/post/' + p.id + '/' + m.file : '';
+    const chips = (p.platforms || []).map((x) => `<span class="chip ${(p.done || {})[x] ? 'st-gagne' : ''}">${(p.done || {})[x] ? ico('check') : ''}${esc(PF[x])}</span>`).join('');
+    const late = p.status === 'approuve' && p.scheduled_at && Date.parse(p.scheduled_at) < Date.now() && !(p.platforms || []).every((x) => (p.done || {})[x]);
+    return `<article class="chantier-card" style="cursor:pointer" data-action="open-post" data-id="${p.id}">
+      ${rel ? `<div class="ch-photo" style="margin-bottom:10px;aspect-ratio:16/9"><img data-rel="${esc(rel)}" alt="" /></div>` : (m ? `<div class="ch-photo" style="margin-bottom:10px;aspect-ratio:16/9;display:grid;place-items:center;font-size:26px">▶</div>` : '')}
+      <div class="nm">${esc(p.title)}</div><div class="meta">${esc({ reel: 'Reel', photo: 'Photo', carousel: 'Carrousel', story: 'Story' }[p.type] || p.type)} · ${esc(ptime(p.scheduled_at))}${p.status === 'refuse' ? ' · refusé' : ''}</div>
+      <div class="line">${chips}${p.assigned_to ? whoChip(p.assigned_to) : ''}${late ? '<span class="chip urgent">À publier</span>' : ''}${p.error ? '<span class="chip urgent" title="' + esc(p.error) + '">Erreur</span>' : ''}</div></article>`;
+  }
+  async function toJpeg(file, max) {      // Instagram n'accepte que le JPEG : on convertit toute photo avant l'envoi
+    if (!/^image\//.test(file.type)) return file;
+    try {
+      const bmp = await createImageBitmap(file); const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
+      const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k); c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+      const b = await new Promise((r) => c.toBlob(r, 'image/jpeg', 0.9)); return b ? new File([b], 'photo.jpg', { type: 'image/jpeg' }) : file;
+    } catch (e) { return file; }
+  }
+  function drawPostMedia(p) {
+    const box = $('#post-media'); const md = p.media || [];
+    box.innerHTML = md.length ? md.map((m) => `<div class="ch-photo">${m.kind === 'image' ? `<img data-rel="media/post/${p.id}/${esc(m.file)}" alt="" data-action="view-photo" />` : '<div style="display:grid;place-items:center;height:100%;font-size:26px">▶</div><span class="tag">Vidéo</span>'}<button type="button" class="del" data-action="post-media-del" data-file="${esc(m.file)}" aria-label="Retirer">×</button></div>`).join('') : '<div class="ch-empty">Aucun média : ajoutez des photos ou une vidéo.</div>';
+    box.querySelectorAll('img[data-rel]').forEach(async (im) => { const u = await blobAt(im.dataset.rel); if (u) im.src = u; });
+  }
+  function drawPostState(p) {
+    const st = { idee: 'Idée (brouillon)', a_valider: 'En attente de validation', approuve: 'Approuvée et programmée', publie: 'Publiée', refuse: 'Refusée' }[p.status] || p.status;
+    $('#post-state').textContent = st + (p.approved_by ? ' · approuvée par ' + p.approved_by : '') + (p.error ? ' · ' + p.error : '') + (p.ig && p.ig.permalink ? ' · ' + p.ig.permalink : '');
+    $('#post-done').innerHTML = (p.platforms || []).map((x) => `<button type="button" class="btn sm ${(p.done || {})[x] ? 'st-gagne' : ''}" data-action="post-done" data-pf="${x}">${(p.done || {})[x] ? ico('check') + ' Publié sur ' + esc(PF[x]) + ' (annuler)' : 'Marquer publié sur ' + esc(PF[x])}</button>`).join('');
+    $('#post-approve').hidden = p.status === 'approuve' || p.status === 'publie'; $('#post-validate').hidden = p.status !== 'idee' && p.status !== 'refuse';
+    $('#post-del').hidden = !p.id;
+  }
+  function openPostDialog(p) {
+    const f = $('#form-post'); f.reset(); S.postSel = p || null; const e = p || { platforms: ['instagram'], type: 'reel', status: 'idee' };
+    $('#post-h').textContent = p ? p.title || 'Publication' : 'Nouvelle publication';
+    f.elements.id.value = p ? p.id : ''; f.elements.title.value = e.title || ''; f.elements.type.value = e.type; f.elements.caption.value = e.caption || ''; f.elements.hashtags.value = e.hashtags || '';
+    f.elements.pf_instagram.checked = (e.platforms || []).includes('instagram'); f.elements.pf_tiktok.checked = (e.platforms || []).includes('tiktok');
+    f.elements.scheduled_at.value = e.scheduled_at ? toLocalInput(e.scheduled_at) : '';
+    $('#post-assign').innerHTML = userOptions(e.assigned_to);
+    drawPostMedia(p || { id: '', media: [] }); drawPostState(p || { status: 'idee', platforms: e.platforms, done: {} });
+    $('#post-share').hidden = !p || !(p.media || []).length; $('#dlg-post').showModal();
+  }
+  function postBody() {
+    const f = $('#form-post').elements; const pl = []; if (f.pf_instagram.checked) pl.push('instagram'); if (f.pf_tiktok.checked) pl.push('tiktok');
+    return { title: f.title.value.trim(), type: f.type.value, platforms: pl, caption: f.caption.value, hashtags: f.hashtags.value.trim(), scheduled_at: f.scheduled_at.value ? new Date(f.scheduled_at.value).toISOString() : null, assigned_to: f.assigned_to.value || null };
+  }
+  async function savePost(status) {
+    const id = $('#form-post').elements.id.value; const body = postBody(); if (status) body.status = status;
+    const j = id ? await api('PUT', '/posts/' + id, body) : await api('POST', '/posts', body);
+    S.postSel = j.data; $('#form-post').elements.id.value = j.data.id; drawPostState(j.data); $('#post-share').hidden = !(j.data.media || []).length; return j.data;
+  }
+  async function uploadPostMedia(files) {
+    let p = S.postSel; if (!p) p = await savePost(); toast('Envoi en cours…');
+    const fd = new FormData(); for (const f of files) fd.append('media', await toJpeg(f, 1440));
+    const r = await fetch('/api/crm/posts/' + p.id + '/media', { method: 'POST', headers: { Authorization: 'Bearer ' + S.token }, body: fd });
+    const j = await r.json().catch(() => ({ ok: false, error: 'Envoi impossible' })); if (!j.ok) return toast(j.error || 'Envoi impossible', true);
+    S.postSel = j.data; drawPostMedia(j.data); $('#post-share').hidden = false; toast(j.added + ' média(s) ajouté(s)');
+  }
+  async function sharePost(p) {
+    const files = [];
+    for (const m of p.media || []) { const r = await fetch('/api/crm/media/post/' + p.id + '/' + m.file, { headers: { Authorization: 'Bearer ' + S.token } }); if (r.ok) files.push(new File([await r.blob()], m.file, { type: m.kind === 'video' ? (/\.mov$/.test(m.file) ? 'video/quicktime' : 'video/mp4') : 'image/jpeg' })); }
+    const text = [p.caption, p.hashtags].filter(Boolean).join('\n\n');
+    if (navigator.canShare && navigator.canShare({ files }) && navigator.share) { try { await navigator.share({ files, text }); return toast('Choisissez Instagram ou TikTok, puis revenez ici cocher « publié ».'); } catch (e) { if (e && e.name === 'AbortError') return; } }
+    try { await navigator.clipboard.writeText(text); } catch (e) { /* copie manuelle */ }
+    files.forEach((f) => { const a = document.createElement('a'); a.href = URL.createObjectURL(f); a.download = f.name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); });
+    toast('Médias téléchargés et légende copiée : collez-la dans Instagram / TikTok.');
+  }
+
   // ── Paramètres ────────────────────────────────────────────
   function renderSettings() {
     $('#set-ai').innerHTML = S.cfg.ai
@@ -788,6 +881,11 @@
     }
     $('#set-sync').innerHTML = h + (ms && ms.enabled && ms.state !== 'scope_missing' ? `<button class="btn" data-action="sync-now">${ico('mail')}Synchroniser maintenant</button>` : '');
     loadTeam();
+    api('GET', '/social/status').then((j) => {
+      const g = j.data; S.igStatus = g;
+      $('#set-ig').innerHTML = !g.configured ? '<p><span class="chip"><span class="dot" style="--c:var(--amber)"></span>Non connecté</span></p><p class="muted">Sans connexion, vos équipes publient en un geste depuis le téléphone (bouton « Partager »). Pour la publication automatique à l\'heure programmée, suivez le guide « Connecter Instagram » puis ajoutez les variables <strong>IG_ACCESS_TOKEN</strong> et <strong>IG_USER_ID</strong> dans Railway.</p>'
+        : (g.ok ? `<p><span class="chip st-rdv"><span class="dot"></span>Connecté</span></p><p class="muted">Compte @${esc(g.username)} : les publications approuvées partent automatiquement à l'heure prévue (Reels, photos, carrousels, stories). TikTok : partage depuis le téléphone.</p>` : `<p><span class="chip"><span class="dot" style="--c:var(--rose)"></span>Connexion à vérifier</span></p><p class="muted">${esc(g.error || '')}</p>`);
+    }).catch(() => {});
     api('GET', '/diag').then((j) => {
       const d = j.data, lab = { demarrage: 'Démarrage', arret: 'Arrêt', arret_anormal: 'Arrêt anormal', exception: 'Erreur', promesse_rejetee: 'Erreur', blocage: 'Blocage', memoire: 'Mémoire' };
       $('#set-diag').innerHTML = `<p class="muted">Serveur actif depuis ${Math.round(d.uptime_s / 60)} min · mémoire ${d.rss_mb} Mo · ${esc(d.node)} · ${d.boots} démarrage(s) au total.</p>` + d.events.slice(0, 12).map((e) => `<div class="team-row" style="cursor:default"><span class="chip ${['arret_anormal', 'exception', 'promesse_rejetee', 'blocage', 'memoire'].includes(e.type) ? 'urgent' : ''}">${esc(lab[e.type] || e.type)}</span><div class="grow"><div class="s">${esc(dt(e.ts))} · ${e.rss} Mo</div><div class="t" style="font-weight:500;font-size:12.5px;word-break:break-word">${esc(e.text)}</div></div></div>`).join('');
@@ -823,7 +921,7 @@
     if (rec && recBtn === btn) { stopMic(); return; }
     stopMic();
     const target = $('#' + btn.dataset.target); if (!target) return;
-    const forMessage = btn.dataset.target === 'reply-body';
+    const forMessage = btn.dataset.target === 'reply-body' || btn.dataset.target === 'post-caption';
     const startVal = target.value;
     const base = target.value + (target.value && !/\s$/.test(target.value) ? ' ' : '');
     const r = new SR(); r.lang = 'fr-FR'; r.continuous = true; r.interimResults = true;
@@ -871,6 +969,17 @@
     'close-dlg': (el) => el.closest('dialog').close(),
     'show-wait': () => { S.wait = true; go('leads'); },
     noop: () => {},
+    'new-post': () => openPostDialog(null),
+    'open-post-id': async (el) => { await loadPosts(); const p = S.posts.find((x) => x.id === Number(el.dataset.id)); if (p) openPostDialog(p); },
+    'open-post': (el) => { const p = S.posts.find((x) => x.id === Number(el.dataset.id)); if (p) openPostDialog(p); },
+    'plan-week': async () => { try { const j = await api('POST', '/posts/plan-week', {}); toast(j.data.length ? j.data.length + ' publication(s) proposée(s) pour la semaine' : 'La semaine est déjà planifiée'); renderPublications(); } catch (e) { toast(e.message, true); } },
+    'post-media-add': () => { const f = $('#post-file'); f.value = ''; f.click(); },
+    'post-media-del': async (el) => { const p = S.postSel; if (!p) return; try { await api('DELETE', '/posts/' + p.id + '/media/' + el.dataset.file); p.media = (p.media || []).filter((m) => m.file !== el.dataset.file); drawPostMedia(p); $('#post-share').hidden = !(p.media || []).length; } catch (e) { toast(e.message, true); } },
+    'post-validate': async () => { try { const p = await savePost('a_valider'); toast('Envoyée à valider'); if (S.view === 'publications') renderPublications(); drawPostState(p); } catch (e) { toast(e.message, true); } },
+    'post-approve': async () => { try { const p = await savePost('approuve'); toast(S.igStatus && S.igStatus.ok ? 'Approuvée : elle partira sur Instagram à l\'heure prévue' : 'Approuvée et programmée'); if (S.view === 'publications') renderPublications(); drawPostState(p); } catch (e) { toast(e.message, true); } },
+    'post-share': async () => { try { const p = await savePost(); await sharePost(p); } catch (e) { toast(e.message, true); } },
+    'post-done': async (el) => { const p = S.postSel; if (!p) return; try { const j = await api('POST', '/posts/' + p.id + '/done', { platform: el.dataset.pf, done: !(p.done || {})[el.dataset.pf] }); S.postSel = j.data; drawPostState(j.data); if (S.view === 'publications') renderPublications(); } catch (e) { toast(e.message, true); } },
+    'post-delete': async () => { const p = S.postSel; if (!p || !confirm('Supprimer cette publication et ses médias ?')) return; try { await api('DELETE', '/posts/' + p.id); $('#dlg-post').close(); renderPublications(); toast('Publication supprimée'); } catch (e) { toast(e.message, true); } },
     'view-photo': (el) => viewPhoto(el.dataset.rel),
     'lead-photo-add': (el) => { const f = $('#lead-file'); f.dataset.id = el.dataset.id; f.value = ''; f.click(); },
     'lead-photo-del': async (el) => { if (!confirm('Supprimer cette photo ?')) return; try { await api('DELETE', '/photos/lead/' + el.dataset.id + '/' + el.dataset.file); const l = S.leads.find((x) => x.id === Number(el.dataset.id)); if (l) l.photos = (l.photos || []).filter((p) => p.file !== el.dataset.file); drawLeadPhotos(l || { id: Number(el.dataset.id), photos: [], form: {} }); render(); } catch (e) { toast(e.message, true); } },
@@ -1026,6 +1135,12 @@
     }
     else if (t.id === 'lead-assign') { try { const j = await api('PATCH', '/leads/' + t.dataset.id, { assigned_to: t.value || null }); replaceLead(j.data); toast(t.value ? 'Assigné à ' + userName(t.value) : 'Affectation retirée'); render(); } catch (er) { toast(er.message, true); } }
     else if (t.id === 'ch-file') { try { await uploadPhotos([...t.files], t.dataset.kind || 'autre'); } catch (er) { toast(er.message, true); } t.value = ''; }
+    else if (t.id === 'post-file') { try { await uploadPostMedia([...t.files]); } catch (er) { toast(er.message, true); } t.value = ''; }
+    else if (t.id === 'post-tpl' && t.value) {
+      const T = { avant_apres: ['Avant / Après.\nRénovation de jantes à l\'atelier REYNOV, à Lyon : qualité d\'origine, garantie 30 jours.\nDevis gratuit sous 24 h : 06 61 45 35 27 (lien en bio).', '#reynov #lyon #renovationjantes #jantes #detailing #avantapres #wheelrestoration'], conseil: ['Une jante rayée par un trottoir ?\nInutile de la remplacer : la rénovation démarre à 130 € HT par jante, avec un résultat qui retrouve la qualité d\'origine. Comptez 24 à 48 h par jante.\nDevis gratuit sous 24 h : 06 61 45 35 27 (lien en bio).', '#reynov #lyon #renovationjantes #jantes #detailing #conseilauto #entretienauto'], avis: ['5/5 sur 56 avis Google. Merci à vous tous pour votre confiance.\nDevis gratuit sous 24 h : 06 61 45 35 27 (lien en bio).', '#reynov #lyon #renovationjantes #avisclients #artisan'], coulisses: ['Dans l\'atelier REYNOV : décapage, préparation, peinture, vernis. Chaque jante est traitée avec le même soin.\nDevis gratuit sous 24 h : 06 61 45 35 27 (lien en bio).', '#reynov #lyon #renovationjantes #atelier #behindthescenes #detailing'] }[t.value];
+      const f = $('#form-post').elements; if (!f.caption.value || confirm('Remplacer la légende actuelle par ce modèle ?')) { f.caption.value = T[0]; f.hashtags.value = T[1]; } t.value = '';
+    }
+    else if (t.id === 'post-from-ch' && t.value) { try { const j = await api('POST', '/posts/from-chantier/' + t.value, {}); t.value = ''; await renderPublications(); openPostDialog(j.data); toast('Brouillon créé avec les photos avant/après'); } catch (er) { toast(er.message, true); t.value = ''; } }
     else if (t.id === 'ev-allday') setAllDay(t.checked);
     else if (t.id === 'cal-select') { try { await api('POST', '/calendar/select', { id: t.value }); toast('Agenda sélectionné : synchronisation en cours'); S.calList = null; setTimeout(async () => { await loadCal(); if (S.view === 'settings') renderSettings(); }, 4000); } catch (er) { toast(er.message, true); } }
     else if (t.id === 'reply-tpl') {
@@ -1099,6 +1214,10 @@
   $('#form-quote').addEventListener('submit', async (e) => {
     e.preventDefault();
     try { const q = await qSave(false); if (q) { $('#dlg-quote').close(); await refreshAll(); if (S.view === 'devis') renderDevis(); if (S.view === 'dashboard') renderDashboard(); } } catch (er) { toast(er.message, true); }
+  });
+  $('#form-post').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try { await savePost(); $('#dlg-post').close(); toast('Publication enregistrée'); if (S.view === 'publications') renderPublications(); } catch (er) { toast(er.message, true); }
   });
   $('#form-chantier').addEventListener('submit', async (e) => {
     e.preventDefault(); const f = $('#form-chantier').elements;

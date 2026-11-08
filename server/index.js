@@ -392,7 +392,7 @@ function crmAuth(req, res, next) {
 function roleGuard(req, res, next) {
   if (req.user && req.user.role === 'admin') return next();
   const blocked = /^\/(stats|export|diag|users(?!\/basic)|mail\/|calendar\/(list|select|sync)|quotes|leads\/import)/.test(req.path)
-    || (req.method === 'DELETE' && !/^\/(events|photos)\//.test(req.path));
+    || (req.method === 'DELETE' && !/^\/(events|photos|posts\/\d+\/media)\//.test(req.path));
   if (blocked) return res.status(403).json({ ok: false, error: 'Réservé à l\'administrateur.' });
   next();
 }
@@ -469,6 +469,17 @@ app.post('/api/crm/login', crmLimiter, express.json({ limit: '10kb' }), (req, re
   if (!u || u.active === false || !checkPass(pw, u.pass)) return fail();
   res.json({ ok: true, token: signSession(u.id), user: { id: u.id, name: u.name, role: u.role === 'admin' ? 'admin' : 'employe' } });
 });
+
+// Médias des publications : adresse publique signée, uniquement pour qu'Instagram puisse les télécharger au moment de publier
+const mediaSig = (id, file) => crypto.createHmac('sha256', SESSION_KEY).update('pm|' + id + '|' + file).digest('hex').slice(0, 24);
+const MEDIA_DIR = path.join(db.DATA_DIR, 'media');
+const mediaPath = (id, file) => (/^\d+$/.test(String(id)) && /^[0-9]+-[0-9a-f]{8}\.(jpg|png|webp|mp4|mov|m4v)$/.test(file)) ? path.join(MEDIA_DIR, String(id), file) : null;
+app.get('/api/pub/media/:id/:file', (req, res) => {
+  const p = mediaPath(req.params.id, req.params.file);
+  if (!p || !safeEqual(String(req.query.s || ''), mediaSig(req.params.id, req.params.file)) || !fs.existsSync(p)) return res.status(404).end();
+  res.setHeader('Cache-Control', 'public, max-age=3600'); res.sendFile(p);
+});
+const social = require('./social').create({ db, publicUrl: (id, file) => 'https://' + CANONICAL_HOST + '/api/pub/media/' + id + '/' + file + '?s=' + mediaSig(id, file) });
 
 app.use('/api/crm', crmLimiter, express.json({ limit: '100kb' }), crmAuth, roleGuard);
 
@@ -644,6 +655,8 @@ function dailyProgram(user) {
   const quotes = mine ? [] : db.quotesList();
   const qFollow = quotes.filter(q => q.status === 'envoye' && Date.now() - Date.parse(q.sent_at) > 3 * 86400000).map(q => ({ id: q.id, number: q.number, client: nameOf(q.lead_id ? db.leadById(q.lead_id) : null), ttc: q.totals.ttc, days: Math.floor((Date.now() - Date.parse(q.sent_at)) / 86400000) }));
   const qDraft = quotes.filter(q => q.status === 'brouillon').length;
+  const postsToday = db.postsList().filter(p => p.status === 'approuve' && p.scheduled_at && parisDay(p.scheduled_at) === today && !(p.platforms || []).every(x => (p.done || {})[x])).map(p => ({ id: p.id, title: p.title, time: parisTime(p.scheduled_at), platforms: p.platforms, media: (p.media || []).length }));
+  const postsToValidate = mine ? 0 : db.postsList().filter(p => p.status === 'a_valider').length;
   // Texte du programme (règles locales : aucune donnée client n'est envoyée à un service externe)
   const jour = new Date().toLocaleDateString('fr-FR', { timeZone: TZ_PARIS, weekday: 'long', day: 'numeric', month: 'long' });
   const parts = ['Bonjour ! Nous sommes ' + jour + '.'];
@@ -655,8 +668,10 @@ function dailyProgram(user) {
   if (waiting.length) parts.push(waiting.length + ' client' + (waiting.length > 1 ? 's attendent' : ' attend') + ' une réponse, le plus ancien depuis ' + waitingList[0].days + ' jour' + (waitingList[0].days > 1 ? 's' : '') + '.');
   if (qFollow.length) parts.push(qFollow.length + ' devis envoyé' + (qFollow.length > 1 ? 's' : '') + ' sans réponse depuis plus de 3 jours : ' + qFollow.slice(0, 3).map(q => q.client).join(', ') + '. Pensez à les relancer.');
   if (qDraft) parts.push(qDraft + ' devis en brouillon à terminer.');
+  if (postsToday.length) parts.push(postsToday.length + ' publication' + (postsToday.length > 1 ? 's' : '') + ' à mettre en ligne aujourd\'hui : ' + postsToday.map(p => p.title + ' à ' + p.time).join(' ; ') + '.');
+  if (postsToValidate) parts.push(postsToValidate + ' publication' + (postsToValidate > 1 ? 's' : '') + ' à valider.');
   parts.push('Bonne journée !');
-  return { date: today, events, tomorrow: tomorrowN, to_call: toCall, waiting: waitingList, waiting_total: waiting.length, quotes_follow: qFollow, quotes_draft: qDraft, brief: parts.join(' ') };
+  return { date: today, events, tomorrow: tomorrowN, to_call: toCall, waiting: waitingList, waiting_total: waiting.length, quotes_follow: qFollow, quotes_draft: qDraft, posts_today: postsToday, posts_to_validate: postsToValidate, brief: parts.join(' ') };
 }
 app.get('/api/crm/today', (req, res) => res.json({ ok: true, data: dailyProgram(req.user) }));
 
@@ -774,6 +789,132 @@ app.delete('/api/crm/photos/lead/:id/:file', (req, res) => {
   const ok = db.removeLeadPhoto(req.params.id, req.params.file);
   if (ok) { try { fs.unlinkSync(p); } catch (e) { /* déjà supprimée */ } }
   res.json({ ok });
+});
+
+// ── CRM : publications Instagram / TikTok ──
+const POST_PLATFORMS = ['instagram', 'tiktok'], POST_TYPES = ['reel', 'photo', 'carousel', 'story'];
+const MEDIA_EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'video/mp4': 'mp4', 'video/quicktime': 'mov', 'video/x-m4v': 'm4v' };
+const guessMime = (f) => { if (MEDIA_EXT[f.mimetype]) return f.mimetype; const e = path.extname(String(f.originalname || '')).toLowerCase(); return { '.mp4': 'video/mp4', '.mov': 'video/quicktime', '.m4v': 'video/x-m4v', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp' }[e] || f.mimetype; };
+const mediaUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, _f, cb) => { const d = path.join(MEDIA_DIR, String(req.params.id)); fs.mkdirSync(d, { recursive: true }); cb(null, d); },
+    filename: (_r, f, cb) => { f.mimetype = guessMime(f); cb(null, Date.now() + '-' + crypto.randomBytes(4).toString('hex') + '.' + MEDIA_EXT[f.mimetype]); },
+  }),
+  limits: { fileSize: 200 * 1024 * 1024, files: 10 },
+  fileFilter: (_r, f, cb) => cb(null, !!MEDIA_EXT[guessMime(f)]),
+});
+function postFields(b, cur) {
+  const f = {};
+  if (b.title !== undefined) f.title = cleanLine(b.title, 120);
+  if (b.caption !== undefined) f.caption = clean(b.caption, 2200);
+  if (b.hashtags !== undefined) f.hashtags = cleanLine(b.hashtags, 500);
+  if (b.type !== undefined && POST_TYPES.includes(b.type)) f.type = b.type;
+  if (Array.isArray(b.platforms)) { f.platforms = b.platforms.filter(x => POST_PLATFORMS.includes(x)); if (!f.platforms.length) return { error: 'Choisissez Instagram, TikTok, ou les deux.' }; }
+  if (b.scheduled_at !== undefined) { if (b.scheduled_at && isNaN(Date.parse(b.scheduled_at))) return { error: 'Date invalide.' }; f.scheduled_at = b.scheduled_at ? new Date(b.scheduled_at).toISOString() : null; }
+  if (b.assigned_to !== undefined) f.assigned_to = assignee(b.assigned_to);
+  return { f };
+}
+const postView = (p) => p;
+app.get('/api/crm/posts', (_req, res) => res.json({ ok: true, data: db.postsList().map(postView) }));
+app.get('/api/crm/social/status', async (_req, res) => res.json({ ok: true, data: await social.status() }));
+app.post('/api/crm/posts', (req, res) => {
+  const r = postFields({ platforms: ['instagram'], ...(req.body || {}) }); if (r.error) return res.status(400).json({ ok: false, error: r.error });
+  const b = req.body || {}; const kind = ['avant_apres', 'conseil', 'avis', 'coulisses'].includes(b.template) ? b.template : null;
+  if (kind && !r.f.caption) { const c = social_captionFor(kind, { n: db.postsList().length }); r.f.caption = c.caption; r.f.hashtags = c.tags; }
+  const p = db.createPost({ ...r.f, title: r.f.title || 'Nouvelle publication', created_by: req.user.name });
+  res.json({ ok: true, data: p });
+});
+const social_captionFor = (...a) => require('./social').captionFor(...a);
+app.put('/api/crm/posts/:id', (req, res) => {
+  const cur = db.postById(req.params.id); if (!cur) return res.status(404).json({ ok: false, error: 'Introuvable' });
+  const b = req.body || {}; const r = postFields(b, cur); if (r.error) return res.status(400).json({ ok: false, error: r.error });
+  if (b.status !== undefined) {
+    if (!db.POST_STATUS.includes(b.status)) return res.status(400).json({ ok: false, error: 'Statut inconnu.' });
+    if (['approuve', 'refuse'].includes(b.status) && req.user.role !== 'admin') return res.status(403).json({ ok: false, error: 'Seul l\'administrateur approuve les publications.' });
+    if (b.status === 'approuve') {
+      const sched = r.f.scheduled_at !== undefined ? r.f.scheduled_at : cur.scheduled_at;
+      if (!(cur.media || []).length) return res.status(400).json({ ok: false, error: 'Ajoutez au moins un média avant d\'approuver.' });
+      if (!sched) return res.status(400).json({ ok: false, error: 'Choisissez la date et l\'heure de publication.' });
+      r.f.approved_by = req.user.name; r.f.approved_at = new Date().toISOString(); r.f.tries = 0; r.f.error = '';
+    }
+    r.f.status = b.status;
+  }
+  res.json({ ok: true, data: db.updatePost(cur.id, r.f) });
+});
+app.delete('/api/crm/posts/:id', (req, res) => { const ok = db.deletePost(req.params.id); if (ok) { try { fs.rmSync(path.join(MEDIA_DIR, String(Number(req.params.id))), { recursive: true, force: true }); } catch (e) { /* ignoré */ } } res.json({ ok }); });
+app.post('/api/crm/posts/:id/media', (req, res) => {
+  const p = db.postById(req.params.id); if (!p) return res.status(404).json({ ok: false, error: 'Introuvable' });
+  mediaUpload.array('media', 10)(req, res, (err) => {
+    if (err) return res.status(400).json({ ok: false, error: err.code === 'LIMIT_FILE_SIZE' ? 'Fichier trop lourd (200 Mo maximum).' : 'Envoi impossible.' });
+    let added = 0;
+    for (const f of req.files || []) {
+      let ok = false;
+      try {
+        const fd = fs.openSync(f.path, 'r'); const buf = Buffer.alloc(16); fs.readSync(fd, buf, 0, 16, 0); fs.closeSync(fd);
+        ok = /^video\//.test(f.mimetype) ? buf.slice(4, 8).toString('latin1') === 'ftyp' : !!sniffImage(buf) && sniffImage(buf) !== 'image/heic';
+      } catch (e) { ok = false; }
+      if (!ok) { try { fs.unlinkSync(f.path); } catch (e) { /* ignoré */ } continue; }
+      db.addPostMedia(p.id, { file: path.basename(f.path), kind: /^video\//.test(f.mimetype) ? 'video' : 'image', size: f.size, at: new Date().toISOString() }); added++;
+    }
+    if (!added) return res.status(400).json({ ok: false, error: 'Fichier non reconnu : photos JPEG ou vidéos MP4/MOV uniquement.' });
+    res.json({ ok: true, added, data: db.postById(p.id) });
+  });
+});
+app.delete('/api/crm/posts/:id/media/:file', (req, res) => {
+  const f = mediaPath(req.params.id, req.params.file); if (!f) return res.status(400).json({ ok: false, error: 'Fichier invalide' });
+  const ok = db.removePostMedia(req.params.id, req.params.file); if (ok) { try { fs.unlinkSync(f); } catch (e) { /* ignoré */ } }
+  res.json({ ok });
+});
+app.get('/api/crm/media/post/:id/:file', (req, res) => {
+  const p = db.postById(req.params.id); const f = mediaPath(req.params.id, req.params.file);
+  if (!p || !f || !(p.media || []).some(m => m.file === req.params.file) || !fs.existsSync(f)) return res.status(404).end();
+  res.setHeader('Cache-Control', 'private, max-age=3600'); res.sendFile(f);
+});
+// Publié à la main (partage depuis le téléphone) : coche la plateforme ; tout est publié quand toutes les plateformes le sont
+app.post('/api/crm/posts/:id/done', (req, res) => {
+  const p = db.postById(req.params.id); if (!p) return res.status(404).json({ ok: false, error: 'Introuvable' });
+  const pl = String((req.body || {}).platform || ''); if (!POST_PLATFORMS.includes(pl)) return res.status(400).json({ ok: false, error: 'Plateforme inconnue.' });
+  const done = { ...(p.done || {}) }; if ((req.body || {}).done === false) delete done[pl]; else done[pl] = new Date().toISOString();
+  const all = (p.platforms || []).every(x => done[x]);
+  res.json({ ok: true, data: db.updatePost(p.id, { done, status: all ? 'publie' : (p.status === 'publie' ? 'approuve' : p.status) }) });
+});
+// Brouillon prêt à publier à partir d'un chantier terminé : photos avant / après + légende
+function chantierPhotos(it) { return (it.photos || []).filter(x => ['avant', 'apres'].includes(x.kind) && /\.jpg$/.test(x.file)); }
+function postFromChantier(it, when) {
+  const ph = chantierPhotos(it); const avant = ph.filter(x => x.kind === 'avant'), apres = ph.filter(x => x.kind === 'apres');
+  const media = [...avant.slice(0, 1), ...apres.slice(0, 1)]; if (!media.length) return null;
+  const cap = social_captionFor('avant_apres', { marque: triage.entitiesToText(it.marque || ''), modele: triage.entitiesToText(it.modele || '') });
+  const p = db.createPost({ title: 'Avant / Après — ' + (triage.entitiesToText([it.marque, it.modele].filter(Boolean).join(' ')) || 'chantier'), type: media.length > 1 ? 'carousel' : 'photo', platforms: ['instagram', 'tiktok'], caption: cap.caption, hashtags: cap.tags, scheduled_at: when || null, status: 'idee', intervention_id: it.id, created_by: 'Assistant' });
+  const dir = path.join(MEDIA_DIR, String(p.id)); fs.mkdirSync(dir, { recursive: true });
+  for (const m of media) {
+    const src = path.join(PHOTO_DIR, String(it.id), m.file); if (!fs.existsSync(src)) continue;
+    const name = Date.now() + '-' + crypto.randomBytes(4).toString('hex') + '.jpg'; fs.copyFileSync(src, path.join(dir, name));
+    db.addPostMedia(p.id, { file: name, kind: 'image', size: fs.statSync(path.join(dir, name)).size, at: new Date().toISOString() });
+  }
+  db.updateIntervention(it.id, { post_id: p.id });
+  return db.postById(p.id);
+}
+app.post('/api/crm/posts/from-chantier/:iid', (req, res) => {
+  const it = db.interventionById(req.params.iid); if (!it) return res.status(404).json({ ok: false, error: 'Chantier introuvable' });
+  const p = postFromChantier(it, null); if (!p) return res.status(400).json({ ok: false, error: 'Ce chantier n\'a pas de photo avant/après au format JPEG.' });
+  res.json({ ok: true, data: p });
+});
+// Planifier la semaine : lundi, mercredi et vendredi à 18 h 30 (heure de Paris), brouillons à valider
+app.post('/api/crm/posts/plan-week', (req, res) => {
+  const SP = require('./social'); const created = [];
+  const posts = db.postsList(); const taken = new Set(posts.filter(p => p.scheduled_at && p.status !== 'refuse').map(p => parisDay(p.scheduled_at)));
+  const pool = db.allInterventions().filter(i => ['termine', 'paye'].includes(i.statut) && !i.post_id && chantierPhotos(i).some(x => x.kind === 'avant') && chantierPhotos(i).some(x => x.kind === 'apres'));
+  const fallback = ['conseil', 'avis', 'conseil', 'coulisses']; let n = posts.length, f = 0;
+  for (let k = 1; k <= 7; k++) {
+    const day = parisDay(Date.now() + k * 86400000); const dow = new Date(day + 'T12:00:00Z').getUTCDay();
+    if (![1, 3, 5].includes(dow) || taken.has(day)) continue;
+    const when = SP.parisToUtc(day, '18:30');
+    const it = dow === 1 ? pool.shift() : null; let p = it ? postFromChantier(db.interventionById(it.id), when) : null;
+    if (p) { created.push(p); continue; }
+    const kind = fallback[f++ % fallback.length]; const c = SP.captionFor(kind, { n: n++ });
+    created.push(db.createPost({ title: { conseil: 'Conseil', avis: 'Avis clients', coulisses: 'Coulisses de l\'atelier' }[kind], type: 'reel', platforms: ['instagram', 'tiktok'], caption: c.caption, hashtags: c.tags, scheduled_at: when, status: 'idee', created_by: 'Assistant' }));
+  }
+  res.json({ ok: true, data: created });
 });
 
 // ── CRM : suivi des e-mails (lecture de la boîte Gmail) ──
@@ -1308,6 +1449,7 @@ process.on('unhandledRejection', err => console.error('💥 unhandledRejection:'
 
 app.listen(PORT, '0.0.0.0', () => {
   mailsync.start();
+  social.start();
   calsync.start();
   console.log(`🚀 REYNOV server démarré sur le port ${PORT}`);
 });
