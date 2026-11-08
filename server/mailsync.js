@@ -29,7 +29,7 @@ function b64(d) { return Buffer.from(String(d || ''), 'base64url').toString('utf
 // Message Gmail → objet simple { id, ts, from, to, subject, snippet, html, text, photos, origin }
 function normalize(g) {
   const p = g.payload || {};
-  const o = { id: g.id, threadId: g.threadId, snippet: decodeEntities(g.snippet || ''), html: '', text: '', photos: 0 };
+  const o = { id: g.id, threadId: g.threadId, snippet: decodeEntities(g.snippet || ''), html: '', text: '', photos: 0, atts: [] };
   o.subject = decodeEntities(header(p, 'Subject'));
   o.from = addrs(header(p, 'From'))[0] || '';
   o.to = [...addrs(header(p, 'To')), ...addrs(header(p, 'Cc')), ...addrs(header(p, 'Delivered-To'))].filter((e, i, a) => a.indexOf(e) === i);
@@ -41,7 +41,7 @@ function normalize(g) {
       if (x.mimeType === 'text/html' && !o.html) o.html = b64(x.body.data);
       else if (x.mimeType === 'text/plain' && !o.text) o.text = b64(x.body.data);
     }
-    if (x.filename && /^image\//.test(x.mimeType || '')) o.photos++;
+    if (x.filename && /^image\//.test(x.mimeType || '')) { o.photos++; if (x.body && x.body.attachmentId) o.atts.push({ id: x.body.attachmentId, mime: x.mimeType, size: Number(x.body.size) || 0 }); }
   });
   return o;
 }
@@ -77,17 +77,18 @@ function parseDevis(m, owner) {
 }
 
 // ── Module ──────────────────────────────────────────────────
-function create({ db, getAccessToken, owner, importLeadItem, enabled, apiBase }) {
+function create({ db, getAccessToken, owner, importLeadItem, enabled, apiBase, photoSaver }) {
   const BASE = apiBase || GMAIL;
   owner = String(owner || '').toLowerCase();
   const FILE = path.join(db.DATA_DIR, 'mailsync.json');
-  let st = { since: null, devis_page: null, devis_done: false, seen: [], synced: {}, last_run: null, last_ok: null, state: 'idle', error: '', counts: { devis: 0, in: 0, out: 0 } };
+  let st = { since: null, devis_page: null, devis_done: false, photo_scan: false, photo_page: null, pdone: [], seen: [], synced: {}, last_run: null, last_ok: null, state: 'idle', error: '', counts: { devis: 0, in: 0, out: 0 } };
   try { st = { ...st, ...JSON.parse(fs.readFileSync(FILE, 'utf8')) }; } catch (e) { /* premier démarrage */ }
   const seen = new Set(st.seen);
+  const pdone = new Set(st.pdone || []);
   let running = false, timer = null, token = null, tokenAt = 0;
 
   function persist() {
-    st.seen = [...seen].slice(-30000);
+    st.seen = [...seen].slice(-30000); st.pdone = [...pdone].slice(-5000);
     try { fs.writeFileSync(FILE + '.tmp', JSON.stringify(st)); fs.renameSync(FILE + '.tmp', FILE); } catch (e) { console.error('⚠️ mailsync save:', e.message); }
   }
 
@@ -135,12 +136,27 @@ function create({ db, getAccessToken, owner, importLeadItem, enabled, apiBase })
     return null;
   }
 
+  // Photos jointes à une notification « Nouveau devis » : rangées sur la fiche du lead (sans doublon)
+  async function attachPhotos(m) {
+    if (!photoSaver || !m.atts || !m.atts.length || m.from !== owner || !/^\s*Nouveau devis\b/i.test(m.subject)) return 0;
+    const email = parseDevis(m, owner).email; const lead = email ? db.findLeadNear(email, m.ts) : null; if (!lead) return 0;
+    let n = 0;
+    for (const a of m.atts.slice(0, 8)) {
+      if (a.size > 12 * 1024 * 1024) continue;
+      try {
+        const r = await api('/messages/' + m.id + '/attachments/' + a.id);
+        if (r.data && photoSaver(lead.id, Buffer.from(r.data, 'base64url'), { src: 'gmail:' + m.id, by: 'Client' })) n++;
+      } catch (e) { if (e.status === 401 || e.status === 403) throw e; }
+    }
+    return n;
+  }
   async function fetchAndProcess(id, full) {
     if (seen.has(id)) return;
     const g = await api('/messages/' + id + '?format=' + (full ? 'full' : 'metadata') + (full ? '' : '&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Cc&metadataHeaders=Subject&metadataHeaders=Date&metadataHeaders=X-Reynov-Origin'));
     let m = normalize(g);
     if (!full && m.from === owner && /^\s*Nouveau devis\b/i.test(m.subject)) m = normalize(await api('/messages/' + id + '?format=full'));
     process(m);
+    if (full || m.atts.length) { try { await attachPhotos(m); pdone.add(id); } catch (e) { if (e.status === 403 || e.status === 401) throw e; } }
     seen.add(id);
   }
   async function batch(ids, full, deadline) {
@@ -163,6 +179,19 @@ function create({ db, getAccessToken, owner, importLeadItem, enabled, apiBase })
           if (Date.now() >= deadline && (r.messages || []).some((x) => !seen.has(x.id))) break;
           st.devis_page = r.nextPageToken || null;
           if (!st.devis_page) { st.devis_done = true; break; }
+        }
+      }
+      // 1b) photos jointes aux anciens devis (une seule fois)
+      if (st.devis_done && !st.photo_scan) {
+        while (Date.now() < deadline) {
+          const r = await listAll('from:me subject:"Nouveau devis" has:attachment', st.photo_page, 50);
+          const ids = (r.messages || []).map((x) => x.id).filter((i) => !pdone.has(i));
+          for (let i = 0; i < ids.length && Date.now() < deadline; i += 3) {
+            await Promise.all(ids.slice(i, i + 3).map(async (mid) => { const m = normalize(await api('/messages/' + mid + '?format=full')); await attachPhotos(m); pdone.add(mid); }));
+          }
+          if (ids.some((i) => !pdone.has(i))) break;
+          st.photo_page = r.nextPageToken || null;
+          if (!st.photo_page) { st.photo_scan = true; break; }
         }
       }
       // 2) historique d'échanges de chaque lead (une recherche par adresse e-mail)

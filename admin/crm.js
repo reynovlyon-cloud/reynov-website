@@ -31,6 +31,7 @@
     check: P('<path d="m5 12 5 5 9-10"/>'),
     sparkle: P('<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/>'),
     trend: P('<path d="m3 17 6-6 4 4 8-8M15 7h6v6"/>'),
+    image: P('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-5-5-8 8"/>'),
     doc: P('<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/>'),
     speaker: P('<path d="M4 10v4h4l5 4V6L8 10zM16.5 9a4 4 0 0 1 0 6M19 6.5a8 8 0 0 1 0 11"/>'),
     route: P('<circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="6" r="2.2"/><path d="M8.2 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.8"/>'),
@@ -283,7 +284,7 @@
     return `<article class="lead-card" draggable="true" data-id="${l.id}" style="--c:${stColor(l.status)}">
       <div class="lead-top"><span class="avatar" style="--c:${avColor(l)};width:32px;height:32px">${esc(initials(l))}</span><span class="nm">${esc(fullName(l))}</span><span class="when">${esc(ago(l.created_at))}</span></div>
       <div class="lead-sum">${esc(t.summary || (l.message || '').slice(0, 120) || 'Sans détail')}</div>
-      <div class="chips">${cats}${urgent}<span class="chip src">${esc(SRC[l.source] || l.source)}</span></div>
+      <div class="chips">${cats}${urgent}<span class="chip src">${esc(SRC[l.source] || l.source)}</span>${(l.photos || []).length ? `<span class="chip">${ico('image')}${(l.photos || []).length}</span>` : ''}</div>
       ${state}${replyBadge(l)}${rem}${l.assigned_to ? `<div style="margin-bottom:8px">${whoChip(l.assigned_to)}</div>` : ''}<div class="card-actions">${actions}</div></article>`;
   }
   function colHtml(c, list) {
@@ -357,6 +358,7 @@
         </div>
         ${t.ai_error ? `<p class="faint" style="font-size:12px;margin:8px 0 0">L'IA n'a pas répondu (${esc(t.ai_error)}) : analyse automatique utilisée.</p>` : ''}
       </div>
+      <div class="card"><h4>${ico('image')} Photos du client (${(l.photos || []).length})</h4><div class="ch-photos" id="lead-photos"></div><p class="faint" id="lead-photos-hint" style="font-size:12px;margin:8px 0 0"></p><div class="dr-actions" style="margin-top:8px"><button class="btn sm" data-action="lead-photo-add" data-id="${l.id}">${ico('image')}Ajouter des photos</button></div></div>
       <div class="card"><h4>${ico('mail')} Réponse proposée</h4>
         <div class="field"><label>Modèle</label><select class="input" id="reply-tpl" data-id="${l.id}">${options}</select></div>
         <div class="field"><label>Objet</label><input class="input" id="reply-subject" value="${esc(fill(cur.subject, l))}" /></div>
@@ -390,8 +392,9 @@
         <div class="dr-actions"><button class="btn sm" data-action="set-status" data-status="rdv" data-id="${l.id}">Rendez-vous confirmé</button><button class="btn sm" data-action="set-status" data-status="gagne" data-id="${l.id}">Marquer gagné</button><button class="btn sm" data-action="set-status" data-status="perdu" data-id="${l.id}">Marquer perdu</button></div>
       </div>
       <div class="card"><h4>Historique</h4><div class="timeline">${events || '<div class="muted">Aucun événement</div>'}</div></div>
-      <div><button class="btn sm danger" data-action="delete-lead" data-id="${l.id}">${ico('trash')}Supprimer ce lead</button></div>
+      <div><button class="btn sm danger admin-only" data-action="delete-lead" data-id="${l.id}">${ico('trash')}Supprimer ce lead</button></div>
     </div>`;
+    drawLeadPhotos(l);
   }
   function db_status_options(cur) {
     return ['nouveau', 'a_rappeler', 'contacte', 'rdv', 'gagne', 'perdu'].map((s) => `<option value="${s}"${s === cur ? ' selected' : ''}>${esc(ST_LABEL[s])}</option>`).join('');
@@ -615,7 +618,7 @@
     $('#q-lines').innerHTML = q ? q.lines.map(qLineRow).join('') : '';
     ['q-del', 'q-print', 'q-send'].forEach((i) => { $('#' + i).hidden = !q; });
     $('#q-lead').disabled = !!q;
-    qTotals(); $('#dlg-quote').showModal();
+    drawQuotePhotos(q ? q.lead_id : (preset && preset.lead_id)); qTotals(); $('#dlg-quote').showModal();
   }
   async function qSave(silent) {
     const f = $('#form-quote').elements; const id = f.id.value; if (!id) { toast('Choisissez d\'abord un client.', true); return null; }
@@ -725,6 +728,45 @@
     } catch (e) { /* facultatif */ }
   }
 
+
+  // ── Photos des demandes (clients) ─────────────────────────
+  async function blobAt(rel) {            // rel = « photos/lead/12/xxx.jpg » : image protégée, récupérée avec la session puis affichée localement
+    if (S.photoCache[rel]) return S.photoCache[rel];
+    const r = await fetch('/api/crm/' + rel, { headers: { Authorization: 'Bearer ' + S.token } }); if (!r.ok) return '';
+    return (S.photoCache[rel] = URL.createObjectURL(await r.blob()));
+  }
+  function leadPhotoTiles(l, del) {
+    return (l.photos || []).map((p) => {
+      const rel = 'photos/lead/' + l.id + '/' + p.file;
+      return `<div class="ch-photo"><img alt="Photo du client" data-rel="${esc(rel)}" data-action="view-photo" />${del ? `<button type="button" class="del" data-action="lead-photo-del" data-id="${l.id}" data-file="${esc(p.file)}" aria-label="Supprimer">×</button>` : ''}${p.src === 'form' || (p.src || '').startsWith('gmail') ? '<span class="tag">Client</span>' : ''}</div>`;
+    }).join('');
+  }
+  function loadThumbs(root) {
+    root.querySelectorAll('img[data-rel]').forEach(async (im) => { const u = await blobAt(im.dataset.rel); if (u) im.src = u; else { im.alt = 'Format non affichable (HEIC) : cliquez pour télécharger'; im.removeAttribute('src'); } });
+  }
+  async function viewPhoto(rel) {
+    const u = await blobAt(rel); if (!u) return toast('Impossible d\'afficher cette photo.', true);
+    $('#photo-big').src = u; const a = $('#photo-dl'); a.href = u; a.download = rel.split('/').pop(); $('#dlg-photo').showModal();
+  }
+  function drawLeadPhotos(l) {
+    const box = $('#lead-photos'); if (!box) return;
+    box.innerHTML = (l.photos || []).length ? leadPhotoTiles(l, true) : '<div class="ch-empty">Aucune photo conservée pour cette demande.</div>';
+    loadThumbs(box);
+    const f = (l.form || {}).photos, n = (l.photos || []).length; const hint = $('#lead-photos-hint');
+    if (hint) hint.textContent = f && f > n ? 'Le client a joint ' + f + ' photo(s) à sa demande, ' + n + ' conservée(s) ici.' : '';
+  }
+  async function uploadLeadPhotos(id, files) {
+    const fd = new FormData(); for (const f of files) fd.append('photos', await shrink(f));
+    toast('Envoi des photos…');
+    const r = await fetch('/api/crm/leads/' + id + '/photos', { method: 'POST', headers: { Authorization: 'Bearer ' + S.token }, body: fd });
+    const j = await r.json().catch(() => ({ ok: false, error: 'Envoi impossible' })); if (!j.ok) return toast(j.error || 'Envoi impossible', true);
+    const l = S.leads.find((x) => x.id === id); if (l) l.photos = j.data; drawLeadPhotos({ id, photos: j.data, form: (l && l.form) || {} }); toast(j.added + ' photo(s) ajoutée(s)'); render();
+  }
+  function drawQuotePhotos(leadId) {
+    const l = S.leads.find((x) => x.id === Number(leadId)); const box = $('#q-photos'); const has = l && (l.photos || []).length;
+    $('#q-photos-f').hidden = !has; if (!has) return; box.innerHTML = leadPhotoTiles(l, false); loadThumbs(box);
+  }
+
   // ── Paramètres ────────────────────────────────────────────
   function renderSettings() {
     $('#set-ai').innerHTML = S.cfg.ai
@@ -825,6 +867,9 @@
     'close-dlg': (el) => el.closest('dialog').close(),
     'show-wait': () => { S.wait = true; go('leads'); },
     noop: () => {},
+    'view-photo': (el) => viewPhoto(el.dataset.rel),
+    'lead-photo-add': (el) => { const f = $('#lead-file'); f.dataset.id = el.dataset.id; f.value = ''; f.click(); },
+    'lead-photo-del': async (el) => { if (!confirm('Supprimer cette photo ?')) return; try { await api('DELETE', '/photos/lead/' + el.dataset.id + '/' + el.dataset.file); const l = S.leads.find((x) => x.id === Number(el.dataset.id)); if (l) l.photos = (l.photos || []).filter((p) => p.file !== el.dataset.file); drawLeadPhotos(l || { id: Number(el.dataset.id), photos: [], form: {} }); render(); } catch (e) { toast(e.message, true); } },
     'filter-mine': () => { S.mine = !S.mine; renderLeads(); },
     'ch-mine': () => { S.chMine = !S.chMine; renderChantiers(); },
     'ch-open': (el) => { const i = S.chantiers.find((x) => x.id === Number(el.dataset.id)); if (i) openChantier(i); },
@@ -971,6 +1016,7 @@
   document.addEventListener('change', async (e) => {
     const t = e.target;
     if (t.id === 'dr-status') { try { await setStatus(Number(t.dataset.id), t.value); } catch (er) { toast(er.message, true); } }
+    else if (t.id === 'lead-file') { try { await uploadLeadPhotos(Number(t.dataset.id), [...t.files]); } catch (er) { toast(er.message, true); } t.value = ''; }
     else if (t.id === 'q-lead' && t.value && !$('#form-quote').elements.id.value) {
       try { const j = await api('POST', '/quotes', { lead_id: Number(t.value) }); openQuoteDialog(j.data); toast('Devis préparé d\'après la demande : vérifiez les lignes'); if (S.view === 'devis') renderDevis(); } catch (er) { toast(er.message, true); }
     }

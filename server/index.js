@@ -485,7 +485,7 @@ app.post('/api/crm/leads/import', crmLimiter, crmAuth, express.json({ limit: '8m
 });
 
 const mailsync = require('./mailsync').create({
-  db, getAccessToken: () => getAccessToken(GMAIL_READ_TOKEN || GMAIL_REFRESH_TOKEN), owner: GMAIL_USER, importLeadItem,
+  db, getAccessToken: () => getAccessToken(GMAIL_READ_TOKEN || GMAIL_REFRESH_TOKEN), owner: GMAIL_USER, importLeadItem, photoSaver: (leadId, buf, meta) => saveLeadPhoto(leadId, buf, meta),
   enabled: () => !!(GMAIL_USER && GMAIL_CLIENT_ID && GMAIL_CLIENT_SECRET && (GMAIL_READ_TOKEN || GMAIL_REFRESH_TOKEN)) && process.env.CRM_TEST_MODE !== '1' && process.env.MAIL_SYNC !== '0',
 });
 
@@ -774,6 +774,42 @@ app.get('/api/crm/stats/sources', (_req, res) => {
   }
   const rows = Object.values(out).map(o => ({ ...o, conversion: o.leads ? Math.round(o.gagnes / o.leads * 100) : 0, ca_ttc: Math.round(o.ca_ttc) })).sort((a, b) => b.leads - a.leads);
   res.json({ ok: true, data: rows });
+});
+
+// ── Photos des demandes (envoyées par le client ou ajoutées à la main) ──
+const LEAD_EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/heic': 'heic' };
+function saveLeadPhoto(leadId, buf, meta = {}) {
+  const type = sniffImage(buf); if (!type || buf.length > 12 * 1024 * 1024) return false;
+  const l = db.leadById(leadId); if (!l || (l.photos || []).length >= 40) return false;
+  const sha = crypto.createHash('sha1').update(buf).digest('hex');
+  if ((l.photos || []).some(p => p.sha === sha)) return false;
+  const dir = path.join(PHOTO_DIR, 'l' + l.id); fs.mkdirSync(dir, { recursive: true });
+  const name = Date.now() + '-' + crypto.randomBytes(4).toString('hex') + '.' + LEAD_EXT[type];
+  fs.writeFileSync(path.join(dir, name), buf);
+  return db.addLeadPhoto(l.id, { file: name, kind: meta.kind || 'client', at: new Date().toISOString(), by: meta.by || '', src: meta.src || '', sha });
+}
+const leadPhotoPath = (id, file) => (/^[0-9]+-[0-9a-f]{8}\.(jpg|png|webp|heic)$/.test(file) && /^\d+$/.test(String(id))) ? path.join(PHOTO_DIR, 'l' + id, file) : null;
+app.post('/api/crm/leads/:id/photos', (req, res) => {
+  const l = db.leadById(req.params.id); if (!l) return res.status(404).json({ ok: false, error: 'Lead introuvable' });
+  photoUpload.array('photos', 6)(req, res, (err) => {
+    if (err) return res.status(400).json({ ok: false, error: err.code === 'LIMIT_FILE_SIZE' ? 'Photo trop lourde (10 Mo maximum).' : 'Envoi impossible.' });
+    const files = req.files || []; if (!files.length) return res.status(400).json({ ok: false, error: 'Aucune photo reçue.' });
+    let added = 0; for (const f of files) { if (saveLeadPhoto(l.id, f.buffer, { src: 'crm', by: req.user.name })) added++; }
+    if (!added) return res.status(400).json({ ok: false, error: 'Aucune photo ajoutée (format JPEG, PNG, WebP ou HEIC, ou déjà présente).' });
+    res.json({ ok: true, added, data: db.leadById(l.id).photos });
+  });
+});
+app.get('/api/crm/photos/lead/:id/:file', (req, res) => {
+  const l = db.leadById(req.params.id); const p = leadPhotoPath(req.params.id, req.params.file);
+  if (!l || !p || !(l.photos || []).some(x => x.file === req.params.file) || !fs.existsSync(p)) return res.status(404).end();
+  res.setHeader('Cache-Control', 'private, max-age=86400');
+  res.sendFile(p);
+});
+app.delete('/api/crm/photos/lead/:id/:file', (req, res) => {
+  const p = leadPhotoPath(req.params.id, req.params.file); if (!p) return res.status(400).json({ ok: false, error: 'Photo invalide' });
+  const ok = db.removeLeadPhoto(req.params.id, req.params.file);
+  if (ok) { try { fs.unlinkSync(p); } catch (e) { /* déjà supprimée */ } }
+  res.json({ ok });
 });
 
 // ── CRM : suivi des e-mails (lecture de la boîte Gmail) ──
@@ -1253,7 +1289,10 @@ app.post('/api/devis', devisLimiter, (req, res, next) => {
         form: { prestation: un(d.prestation), problemes: un(d.problemes), nb_jantes: d.nb_jantes, taille: un(d.taille), marque: un(d.marque), modele: un(d.modele), finition: un(d.finition), mode: un(d.mode), delai: un(d.delai), photos: attachments.length },
         client_id: clientId, intervention_id: interId,
       });
-      if (r.lead) db.updateLead(r.lead.id, { client_id: clientId, intervention_id: interId });
+      if (r.lead) {
+        db.updateLead(r.lead.id, { client_id: clientId, intervention_id: interId });
+        for (const a of attachments) { try { saveLeadPhoto(r.lead.id, a.content, { src: 'form', by: 'Client' }); } catch (e) { console.error('⚠️ Photo non conservée :', e.message); } }   // les photos restent consultables dans le CRM
+      }
       saved = true;
       console.log('✅ CRM mis à jour');
     } catch (e) {

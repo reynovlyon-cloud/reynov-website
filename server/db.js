@@ -363,6 +363,14 @@ function deleteUser(id) {
 // ── Photos de chantier ──
 function addInterventionPhoto(id, photo) { const i = _db.interventions.find(x => x.id === Number(id)); if (!i) return null; i.photos = i.photos || []; i.photos.push(photo); i.updated_at = now(); save(); return i; }
 function removeInterventionPhoto(id, file) { const i = _db.interventions.find(x => x.id === Number(id)); if (!i) return false; const n = (i.photos || []).length; i.photos = (i.photos || []).filter(p => p.file !== file); if (i.photos.length !== n) { save(); return true; } return false; }
+// Photos envoyées par le client avec sa demande (ou ajoutées à la main) : stockées sur le volume, listées sur le lead
+function addLeadPhoto(id, photo) { const l = leadById(id); if (!l) return false; l.photos = l.photos || []; if (photo.sha && l.photos.some(p => p.sha === photo.sha)) return false; l.photos.push(photo); l.updated_at = now(); saveSoon(); return true; }
+function removeLeadPhoto(id, file) { const l = leadById(id); if (!l) return false; const n = (l.photos || []).length; l.photos = (l.photos || []).filter(p => p.file !== file); if (l.photos.length !== n) { saveSoon(); return true; } return false; }
+function findLeadNear(email, iso, minutes = 30) {
+  const e = (email || '').toLowerCase(), t = Date.parse(iso);
+  return _db.leads.filter(l => (l.email || '').toLowerCase() === e && Math.abs(Date.parse(l.created_at) - t) < minutes * 60000)
+    .sort((a, b) => Math.abs(Date.parse(a.created_at) - t) - Math.abs(Date.parse(b.created_at) - t))[0] || null;
+}
 function interventionById(id) { return _db.interventions.find(x => x.id === Number(id)) || null; }
 
 // ── Devis ──
@@ -472,7 +480,7 @@ function exportAll() {
 }
 
 module.exports = {
-  exportAll, LEAD_STATUS, DATA_DIR, usersList, userById, userByUsername, createUser, updateUser, deleteUser, addInterventionPhoto, removeInterventionPhoto, interventionById, QUOTE_STATUS, quoteTotals, quotesList, quoteById, createQuote, updateQuote, deleteQuote, onEventChange, eventsList, eventById, eventByGid, allEvents, createEvent, updateEvent, setEventLink, deleteEvent, eventTombs, clearTomb, replyState, leadsByEmail, addMailEvent, allLeads: () => _db.leads,
+  exportAll, LEAD_STATUS, DATA_DIR, usersList, userById, userByUsername, createUser, updateUser, deleteUser, addInterventionPhoto, removeInterventionPhoto, interventionById, addLeadPhoto, removeLeadPhoto, findLeadNear, QUOTE_STATUS, quoteTotals, quotesList, quoteById, createQuote, updateQuote, deleteQuote, onEventChange, eventsList, eventById, eventByGid, allEvents, createEvent, updateEvent, setEventLink, deleteEvent, eventTombs, clearTomb, replyState, leadsByEmail, addMailEvent, allLeads: () => _db.leads,
   createLead, leadById, updateLead, logContact, addLeadEvent, deleteLead, leadsList, findRecentDuplicate, leadExists, leadStats,
   stats, visitsByDay, logVisit,
   clientsList, clientById, findByEmail,

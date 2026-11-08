@@ -199,9 +199,13 @@
   <div class="foot"><button class="btn danger" type="button" data-action="delete-event" id="btn-del-event">Supprimer</button><button class="btn" type="button" data-action="close-dlg">Annuler</button><button class="btn primary" type="submit">Enregistrer</button></div>
 </form></dialog>
 
+<dialog id="dlg-photo" style="width:min(920px,96vw)"><div style="padding:14px"><img id="photo-big" alt="" style="width:100%;max-height:78vh;object-fit:contain;border-radius:20px;background:var(--glass-2)" /><div class="foot" style="padding:10px 4px 0"><a class="btn" id="photo-dl" download="photo">Télécharger</a><button class="btn primary" type="button" data-action="close-dlg">Fermer</button></div></div></dialog>
+<input type="file" id="lead-file" accept="image/*" multiple hidden />
+
 <dialog id="dlg-quote"><form method="dialog" class="dlg" id="form-quote">
   <h3 id="quote-title-h">Devis</h3><input type="hidden" name="id" />
   <div class="two"><div class="field"><label>Client / lead *</label><select class="input" name="lead_id" id="q-lead"></select></div><div class="field"><label>Valable jusqu'au</label><input class="input" type="date" name="valid_until" /></div></div>
+  <div class="field" id="q-photos-f" hidden><label>Photos envoyées par le client</label><div class="ch-photos" id="q-photos"></div></div>
   <div class="field"><label>Lignes du devis (prix HT)</label><div id="q-lines"></div><button class="btn sm" type="button" data-action="q-add-line">+ Ajouter une ligne</button></div>
   <div class="two"><div class="field"><label>TVA</label><select class="input" name="tva_rate"><option value="20">20 %</option><option value="10">10 %</option><option value="0">0 % (non applicable)</option></select></div><div class="field"><label>Statut</label><select class="input" name="status" id="q-status"></select></div></div>
   <div class="field"><label>Conditions et notes (visibles par le client)</label><textarea class="input" name="notes" rows="4"></textarea></div>
