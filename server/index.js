@@ -27,9 +27,9 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc:  ["'self'"],
-      scriptSrc:   ["'self'", "'unsafe-inline'", 'https://www.google-analytics.com', 'https://www.googletagmanager.com', 'https://googleads.g.doubleclick.net', 'https://www.googleadservices.com'],       // inline scripts dans les HTML
+      scriptSrc:   ["'self'", "'unsafe-inline'", 'https://www.google-analytics.com', 'https://www.googletagmanager.com', 'https://googleads.g.doubleclick.net', 'https://www.googleadservices.com', 'https://connect.facebook.net'],       // inline scripts dans les HTML
       // Directive distincte requise par le diagnostic Google Ads (script-src-elem prime sur script-src pour les balises <script>)
-      scriptSrcElem: ["'self'", "'unsafe-inline'", 'https://www.google-analytics.com', 'https://www.googletagmanager.com', 'https://googleads.g.doubleclick.net', 'https://www.googleadservices.com'],
+      scriptSrcElem: ["'self'", "'unsafe-inline'", 'https://www.google-analytics.com', 'https://www.googletagmanager.com', 'https://googleads.g.doubleclick.net', 'https://www.googleadservices.com', 'https://connect.facebook.net'],
       styleSrc:    ["'self'", "'unsafe-inline'"],
       fontSrc:     ["'self'"],
       imgSrc:      ["'self'", 'data:', 'blob:', 'https:'],
@@ -40,7 +40,9 @@ app.use(helmet({
         // le mode consentement de Google Ads vers pagead2.googlesyndication.com : sans ces domaines, ces mesures étaient bloquées.
         'https://*.google-analytics.com', 'https://*.analytics.google.com', 'https://*.googletagmanager.com',
         'https://pagead2.googlesyndication.com', 'https://*.g.doubleclick.net', 'https://ad.doubleclick.net', 'https://td.doubleclick.net',
-        'https://www.googleadservices.com', 'https://google.com', 'https://www.google.com', 'https://www.google.fr'],
+        'https://www.googleadservices.com', 'https://google.com', 'https://www.google.com', 'https://www.google.fr',
+        // Pixel Meta (chargé seulement après consentement)
+        'https://connect.facebook.net', 'https://www.facebook.com'],
       frameSrc:    ['https://googleads.g.doubleclick.net', 'https://td.doubleclick.net'],
       objectSrc:   ["'none'"],
       upgradeInsecureRequests: [],
@@ -1175,7 +1177,7 @@ function ingestLead(src) {
   const message = clean(src.message, 4000);
   const dup = db.findRecentDuplicate(email, message);
   if (dup) return { lead: dup, duplicate: true };
-  const attr = {}; ['gclid', 'gbraid', 'wbraid', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term'].forEach(k => { const v = src.attr && src.attr[k]; if (v) attr[k] = cleanLine(v, 120); });
+  const attr = {}; ['gclid', 'gbraid', 'wbraid', 'fbclid', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'].forEach(k => { const v = src.attr && src.attr[k]; if (v) attr[k] = cleanLine(v, 120); });
   const f = src.form || {};
   const lead = db.createLead({
     source: cleanLine(src.source || 'devis', 40) || 'devis',

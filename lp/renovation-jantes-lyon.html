@@ -641,8 +641,8 @@
       .cta-section__btns { flex-direction: column; align-items: center; }
     }
   </style>
-  <script src="/assets/js/consent.js?v=1" defer></script>
-  <script src="/assets/js/track.js?v=1" defer></script>
+  <script src="/assets/js/consent.js?v=2" defer></script>
+  <script src="/assets/js/track.js?v=2" defer></script>
 </head>
 <body>
 
@@ -922,11 +922,13 @@ document.getElementById('lp-form').addEventListener('submit', function(e) {
   fd.append('prestation', prestation);
   fd.append('nb_jantes',  nb);
   fd.append('source',     'lp-renovation');
+  try { var __a = window.reynovAttr ? window.reynovAttr() : {}; if (__a && Object.keys(__a).length) fd.append('attr', JSON.stringify(__a)); } catch (e) { /* facultatif */ }
 
   fetch('/api/devis', { method: 'POST', body: fd })
     .then(r => r.json())
     .then(data => {
       if (data.ok) {
+        if (window.reynovFbq) window.reynovFbq('Lead', { content_name: 'page-pub' });
         if (typeof gtag === 'function') {
           gtag('event', 'conversion', { send_to: 'AW-18189889040/7zKmCNbLnMwcEJDczuFD', value: 150, currency: 'EUR' });
         }

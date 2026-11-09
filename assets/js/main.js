@@ -489,6 +489,7 @@ function submitForm() {
         // Filet de sécurité : si Google ne répond pas (bloqueur de publicités, navigateur en protection
         // renforcée, réseau lent), le callback n'arrive jamais et la personne resterait bloquée sur le
         // formulaire alors que sa demande est bien partie. On la redirige donc au plus tard après 3 s.
+        if (window.reynovFbq) window.reynovFbq('Lead', { content_name: 'devis' });
         let redirected = false;
         const goConfirmation = () => { if (redirected) return; redirected = true; window.location.href = '/devis-confirmation.html'; };
         if (typeof gtag === 'function') {

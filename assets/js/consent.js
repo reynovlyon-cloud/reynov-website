@@ -29,14 +29,14 @@
     var b = document.createElement('div');
     b.className = 'rc-banner'; b.setAttribute('role', 'dialog'); b.setAttribute('aria-label', 'Gestion des cookies');
     b.innerHTML = '<p class="rc-title">Votre vie privée</p>' +
-      '<p class="rc-text">Nous utilisons des cookies de mesure d’audience et de publicité (Google) pour améliorer le site et mesurer nos annonces. Vous choisissez, et pouvez changer d’avis à tout moment. <a href="/politique-de-confidentialite.html">En savoir plus</a></p>' +
+      '<p class="rc-text">Nous utilisons des cookies de mesure d’audience et de publicité (Google et Meta) pour améliorer le site et mesurer nos annonces. Vous choisissez, et pouvez changer d’avis à tout moment. <a href="/politique-de-confidentialite.html">En savoir plus</a></p>' +
       '<div class="rc-actions"><button type="button" class="rc-btn" data-rc="denied">Refuser</button><button type="button" class="rc-btn" data-rc="granted">Accepter</button></div>';
     document.body.appendChild(b);
     function open() { requestAnimationFrame(function () { b.classList.add('is-open'); }); }
     function close() { b.classList.remove('is-open'); }
     b.addEventListener('click', function (e) {
       var v = e.target && e.target.getAttribute && e.target.getAttribute('data-rc'); if (!v) return;
-      write(v); update(v); if (v === 'denied') purge(); else if (window.reynovCaptureAttr) window.reynovCaptureAttr(); close();
+      write(v); update(v); if (v === 'denied') { purge(); if (window.reynovRevokePixel) window.reynovRevokePixel(); } else { if (window.reynovCaptureAttr) window.reynovCaptureAttr(); if (window.reynovPixel) window.reynovPixel(); } close();
     });
     var fb = document.querySelector('.footer__bottom');
     if (fb) { var m = document.createElement('button'); m.type = 'button'; m.className = 'rc-manage'; m.textContent = 'Gérer les cookies'; m.addEventListener('click', open); fb.appendChild(m); }

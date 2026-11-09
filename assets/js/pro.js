@@ -72,6 +72,7 @@
         if (res.j && res.j.ok) {
           // la réussite n'est affichée (et mesurée) qu'après confirmation du serveur
           f.hidden = true; var done = document.getElementById('pro-done'); done.hidden = false;
+          if (window.reynovFbq) window.reynovFbq('Lead', { content_name: 'professionnel', content_category: el('activite').value });
           if (typeof window.gtag === 'function') window.gtag('event', 'pro_contact_submit', { activity: el('activite').value, page_path: location.pathname, transport_type: 'beacon' });
           window.scrollTo({ top: Math.max(0, done.getBoundingClientRect().top + window.scrollY - 140), behavior: 'smooth' });
         } else {
