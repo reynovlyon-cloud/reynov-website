@@ -20,7 +20,7 @@ const para = (t, extra = '') => `<p style="margin:0 0 16px;font-family:${FONT};f
 function signature() {
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:30px;"><tr><td style="border-top:1px solid ${LINE};padding-top:22px;font-family:${FONT};">
     <p style="margin:0;font-size:15px;font-weight:700;color:${INK};">L'équipe REYNOV</p>
-    <p style="margin:3px 0 12px;font-size:13px;color:${MUTED};">Rénovation de jantes · Lyon et Rhône-Alpes</p>
+    <p style="margin:3px 0 12px;font-size:13px;color:${MUTED};">Rénovation de jantes · Lyon et alentours · 7j/7</p>
     <p style="margin:0;font-size:13.5px;color:${TEXT};line-height:1.9;">Téléphone / WhatsApp : <a href="${WA}" style="color:${INK};font-weight:600;text-decoration:none;">${PHONE}</a><br>Atelier : 47 chemin du Pras, 69350 La Mulatière</p>
   </td></tr></table>`;
 }
@@ -61,10 +61,10 @@ function quoteAck(d) {
     ${para('Merci de votre confiance. Votre demande est bien arrivée : nous l\'étudions et revenons vers vous <strong style="color:' + INK + ';">sous 24 h</strong> avec une estimation personnalisée.')}
     ${recap ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:22px 0 8px;background:${SOFT};border-radius:16px;"><tr><td style="padding:22px 24px 14px;"><p style="margin:0 0 6px;font-family:${FONT};font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:${MUTED};">Récapitulatif de votre demande</p><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${recap}</table></td></tr></table>` : ''}
     <p style="margin:30px 0 16px;font-family:${FONT};font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:${MUTED};">Et maintenant ?</p>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${step(1, 'Étude de votre demande', 'Nous analysons vos informations et vos photos.')}${step(2, 'Votre devis personnalisé', 'Envoyé sous 24 h, gratuit et sans engagement.')}${step(3, 'Intervention', 'À domicile ou à l\'atelier de La Mulatière, avec garantie de 30 jours.')}</table>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${step(1, 'Étude de votre demande', 'Nous analysons vos informations et vos photos.')}${step(2, 'Votre devis personnalisé', 'Envoyé sous 24 h, gratuit et sans engagement.')}${step(3, 'Intervention', 'À domicile ou à l\'atelier de La Mulatière, avec garantie satisfaction de 30 jours.')}</table>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 26px;background:${SOFT};border-radius:16px;"><tr>
       <td class="stack" align="center" style="padding:16px 8px;font-family:${FONT};font-size:12.5px;font-weight:600;color:${INK};">Devis gratuit</td>
-      <td class="stack" align="center" style="padding:16px 8px;font-family:${FONT};font-size:12.5px;font-weight:600;color:${INK};border-left:1px solid ${LINE};">Garantie 30 jours</td>
+      <td class="stack" align="center" style="padding:16px 8px;font-family:${FONT};font-size:12.5px;font-weight:600;color:${INK};border-left:1px solid ${LINE};">Garantie satisfaction 30 jours</td>
       <td class="stack" align="center" style="padding:16px 8px;font-family:${FONT};font-size:12.5px;font-weight:600;color:${INK};border-left:1px solid ${LINE};">Qualité d'origine</td></tr></table>
     ${para('Pour accélérer votre devis, envoyez-nous deux ou trois photos de vos jantes :', 'margin-bottom:14px;')}
     ${button('Envoyer des photos sur WhatsApp', WA)}${button('Appeler ' + PHONE, 'tel:' + TEL, false)}

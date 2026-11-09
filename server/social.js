@@ -22,14 +22,14 @@ const TIPS = [
   ['Une fissure sur une jante ?', 'On la répare par soudure TIG à partir de 140 € HT, et si elle n\'est pas réparable en sécurité, on vous le dit avant de commencer.', 'conseil'],
   ['Retour de leasing dans quelques semaines ?', 'Remettez vos jantes en état avant la restitution : vous évitez des pénalités souvent bien plus élevées que le coût de la rénovation.', 'leasing'],
   ['Envie d\'un autre style ?', 'Noir satiné, bi-ton, brossé, diamanté : la personnalisation de vos jantes se fait en 2 à 4 jours selon la finition.', 'conseil'],
-  ['On vient chez vous.', 'Notre service mobile intervient sur terrain privé, sol plat, avec une prise électrique à proximité. Devis gratuit sous 24 h sur photos.', 'conseil'],
+  ['On vient chez vous.', 'Notre véhicule atelier se déplace 7j/7, de 9h à 19h, à Lyon et 10 à 15 km autour (dès 3 jantes). Terrain privé, sol plat, prise électrique à proximité. Devis gratuit sous 24 h sur photos.', 'conseil'],
   ['Peinture époxy.', 'Une finition d\'exception, qualité d\'origine comme sortie d\'usine, en 3 jours. La teinte se définit avec vous.', 'conseil'],
 ];
 function captionFor(kind, ctx = {}) {
   const veh = [ctx.marque, ctx.modele].filter(Boolean).join(' ');
   const cta = 'Devis gratuit sous 24 h : 06 61 45 35 27 (lien en bio).';
   if (kind === 'avant_apres') {
-    return { caption: `Avant / Après${veh ? ' — ' + veh : ''}.\nRénovation de jantes à l'atelier REYNOV, à Lyon : qualité d'origine, garantie 30 jours.\n${cta}`, tags: TAGS.base + ' ' + TAGS.avant_apres };
+    return { caption: `Avant / Après${veh ? ' — ' + veh : ''}.\nRénovation de jantes à l'atelier REYNOV, à Lyon : qualité d'origine, garantie satisfaction 30 jours.\n${cta}`, tags: TAGS.base + ' ' + TAGS.avant_apres };
   }
   if (kind === 'avis') {
     return { caption: `5/5 sur 56 avis Google. Merci à vous tous pour votre confiance.\nVotre avis nous aide à faire connaître notre travail.\n${cta}`, tags: TAGS.base + ' ' + TAGS.avis };

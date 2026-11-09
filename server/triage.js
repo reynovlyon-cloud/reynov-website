@@ -150,11 +150,11 @@ const BLOCKS = {
   fissure: () => 'Une fissure se répare par soudure TIG après diagnostic, uniquement en atelier à La Mulatière, à partir de 140 € HT par jante. Si une jante n\'est pas réparable en toute sécurité, nous vous le disons avant de commencer.',
   diamantee: () => 'Pour une jante diamantée qui blanchit ou pèle, nous procédons au ré-usinage ou à une reprise en peinture effet diamant, selon l\'état : devis précis sur photos.',
   epoxy: () => 'La peinture époxy est notre finition la plus aboutie : qualité d\'origine, comme sortie d\'usine, en 3 jours. La teinte se définit avec vous.',
-  renovation: () => 'La rénovation de jantes commence à 130 € HT par jante (décapage, primaire anticorrosion, peinture, vernis), avec 24 à 48 h par jante en atelier. Elle peut aussi se faire à votre domicile.',
+  renovation: () => 'La rénovation de jantes commence à 130 € HT par jante (décapage, primaire anticorrosion, peinture, vernis), avec 24 à 48 h par jante en atelier. Elle se fait à l\'atelier ou, sous conditions, à votre domicile.',
   perso: () => 'Pour changer la couleur ou la finition (RAL, Pantone, teinte carrosserie), le tarif dépend de la finition et du nombre de jantes : je vous le confirme après vos photos. Comptez 2 à 4 jours.',
   leasing: () => 'Pour un retour de leasing, plus on anticipe, mieux c\'est : indiquez-moi la date de restitution et j\'organise le planning en conséquence.',
   vente: () => 'Avant une vente, nous traitons uniquement ce qui se voit sur l\'annonce, avec une rénovation ciblée à partir de 130 € HT par jante.',
-  pro: () => 'Pour les professionnels, nous intervenons sur site, sans volume minimum, avec devis sous 24 h.',
+  pro: () => 'Pour les professionnels (carrosseries, garages, concessions, centres de reconditionnement), nous travaillons à l\'atelier de La Mulatière ou sur site, avec un devis sous 24 h et un compte rendu photo par véhicule.',
   autre: () => 'Pour vous orienter précisément, j\'ai besoin de quelques informations sur vos jantes.',
 };
 
@@ -181,8 +181,9 @@ function buildReply(lead, tri, catOverride) {
     lines.push('');
   }
   if (atelierOnly) lines.push('Dépôt à l\'atelier : 47 chemin du Pras, 69350 La Mulatière, 15 minutes avant l\'heure du rendez-vous.');
-  else if (domicile) lines.push('Intervention à domicile possible (terrain privé, sol plat, prise électrique à proximité).');
-  lines.push('Toutes nos prestations sont garanties 30 jours, et le devis est gratuit et sans engagement.');
+  else if (domicile && tri.wheels && tri.wheels < 3) lines.push('Le déplacement à domicile est inclus à partir de 3 jantes (Lyon et 10 à 15 km autour) : pour ' + (tri.wheels === 1 ? 'une jante' : tri.wheels + ' jantes') + ', nous vous accueillons à l\'atelier, 47 chemin du Pras, 69350 La Mulatière.');
+  else if (domicile) lines.push('Intervention à domicile possible à partir de 3 jantes, déplacement inclus à Lyon (1er au 9e) et 10 à 15 km autour (terrain privé, sol plat, prise électrique à proximité). Au-delà, un forfait kilométrique est indiqué dans le devis.');
+  lines.push('Le devis est gratuit et sans engagement. Garantie satisfaction de 30 jours : si quelque chose ne vous convient pas, nous reprenons la jante intégralement.');
   lines.push('');
   lines.push(tri.urgency === 'haute' ? 'Vous avez une échéance : dites-moi la date et je regarde le premier créneau possible.' : 'Je peux vous proposer un créneau dès cette semaine : quelle est votre disponibilité ?');
   lines.push('Vous pouvez aussi m\'appeler ou m\'écrire sur WhatsApp au 06 61 45 35 27.');
@@ -203,7 +204,7 @@ function buildWhatsapp(lead, tri) {
   let t = `Bonjour {{prenom}}, c'est REYNOV. Merci pour votre demande (${cats || 'jantes'}).`;
   if (tri.price_hint && tri.price_hint[0]) t += ` ${tri.price_hint[0]}.`;
   if (needs.length) t += ` Pour un tarif précis, pouvez-vous m'envoyer ${needs.join(', ')} ?`;
-  t += ' Devis gratuit, garantie 30 jours. À très vite !';
+  t += ' Devis gratuit, garantie satisfaction 30 jours. À très vite !';
   return t;
 }
 
@@ -220,12 +221,15 @@ function withDrafts(lead, tri) {
 const ANTHROPIC_URL = process.env.ANTHROPIC_API_URL || 'https://api.anthropic.com/v1/messages';
 const AI_SYSTEM = `Tu es l'assistant commercial de REYNOV, atelier de rénovation de jantes à Lyon (La Mulatière). Tu analyses une demande client et proposes une réponse courte, chaleureuse et professionnelle, en français, sans emoji.
 FAITS AUTORISÉS (n'en invente aucun autre) :
-- Rénovation de jantes : à partir de 130 € HT par jante ; 24 à 48 h par jante en atelier ; possible à domicile (terrain privé, sol plat, prise électrique) ou en atelier.
+- Rénovation de jantes : à partir de 130 € HT par jante ; 24 à 48 h par jante en atelier ; possible à domicile à partir de 3 jantes (terrain privé, sol plat, prise électrique) ou en atelier quel que soit le nombre de jantes.
 - Dévoilage : à partir de 140 € HT par jante ; uniquement en atelier.
 - Soudure de jante fissurée (TIG) : à partir de 140 € HT par jante ; uniquement en atelier ; si la jante n'est pas réparable en sécurité, on le dit avant de commencer.
 - Personnalisation (couleur, bi-ton, brossé, poli diamant) : sur devis, 2 à 4 jours (jusqu'à 5 pour poli diamant et bi-ton).
 - Peinture époxy : finition d'exception, qualité d'origine comme sortie d'usine, 3 jours, teinte définie avec le client.
-- Devis gratuit et sans engagement sous 24 h à partir de photos ; garantie 30 jours.
+- Devis gratuit et sans engagement sous 24 h à partir de photos.
+- Garantie satisfaction de 30 jours : si quelque chose ne plaît pas au client, REYNOV reprend la jante intégralement pendant 30 jours (ce n'est pas une limite de durabilité du produit).
+- Horaires : 7 jours sur 7, de 9h à 19h.
+- Déplacement inclus à Lyon (1er au 9e) et dans un rayon de 10 à 15 km autour de Lyon, à partir de 3 jantes. En dessous de 3 jantes : accueil à l'atelier. Au-delà de la zone : forfait kilométrique indiqué dans le devis.
 - Atelier : 47 chemin du Pras, 69350 La Mulatière (déposer le véhicule 15 minutes avant l'heure du rendez-vous). Téléphone / WhatsApp : 06 61 45 35 27.
 RÈGLES : ne jamais annoncer d'autre prix que ceux ci-dessus ; pour tout le reste, dire « sur devis après photos ». Si des informations manquent, les demander (photos, marque/modèle, taille des jantes, ville, nombre de jantes). Écrire « {{prenom}} » à la place du prénom. Réponse de 90 à 170 mots, signée « L'équipe REYNOV ».
 Réponds UNIQUEMENT par un objet JSON : {"summary": string (max 110 caractères), "categories": array parmi ["monochrome","biton","devoilage","fissure","diamantee","epoxy","renovation","perso","leasing","vente","pro","autre"], "urgency": "haute"|"normale", "wheels": number|null, "missing": array parmi ["photos","vehicule","taille","ville","nombre"], "reply_subject": string, "reply_body": string}`;
@@ -315,7 +319,7 @@ function checkDraft(lead, subject, body, instruction) {
     if (!known.has(v)) out.push({ level: 'warn', text: 'Montant « ' + m[0].trim() + ' » : ce n\'est pas un tarif publié (130 € HT rénovation, 140 € HT dévoilage/soudure). Est-ce voulu ?' });
   }
   const g = all.match(/garantie[^.\n]{0,60}?(\d+)\s*(jours?|mois|ans?)/i);
-  if (g && !(Number(g[1]) === 30 && /jour/i.test(g[2]))) out.push({ level: 'warn', text: 'Garantie annoncée : « ' + g[0].trim() + ' ». La garantie REYNOV est de 30 jours.' });
+  if (g && !(Number(g[1]) === 30 && /jour/i.test(g[2]))) out.push({ level: 'warn', text: 'Garantie annoncée : « ' + g[0].trim() + ' ». La garantie satisfaction REYNOV est de 30 jours (reprise intégrale de la jante).' });
   if (/\{\{|\[\s*(?:à compléter|xx|\.\.\.)\s*\]|\bXX+\b|\.\.\.\.|\?\?/i.test(all)) out.push({ level: 'warn', text: 'Le message contient un passage à compléter (« {{ }} », « XX » ou « [...] »).' });
   if (/\b(gratuit(?:e|es)?|offert(?:e|es)?|remise|promo(?:tion)?|-\s?\d+\s?%|\d+\s?%\s?de\s?réduction)\b/i.test(all) && !/devis gratuit|devis est gratuit/i.test(all)) out.push({ level: 'warn', text: 'Le message parle de gratuité ou de remise : vérifiez que c\'est bien un engagement que vous prenez.' });
   const pr = String(lead.prenom || '').trim();

@@ -525,7 +525,7 @@ function quoteLinesFromLead(l) {
 function quoteNotesFor(l) {
   const cats = ((l.triage || {}).categories) || [];
   const delai = cats.includes('epoxy') ? '3 jours' : (cats.some(c => ['biton', 'diamantee', 'perso'].includes(c)) ? '2 à 4 jours (jusqu\'à 5 pour une finition poli diamant ou bi-ton)' : '24 à 48 h par jante');
-  return 'Délai indicatif : ' + delai + ' en atelier à La Mulatière.\nGarantie 30 jours sur la prestation.\nDevis valable 30 jours. Règlement à la livraison.';
+  return 'Délai indicatif : ' + delai + ' en atelier à La Mulatière.\nGarantie satisfaction 30 jours : reprise intégrale de la jante si le résultat ne vous convient pas.\nDevis valable 30 jours. Règlement à la livraison.';
 }
 function cleanLines(raw) {
   if (!Array.isArray(raw)) return null;
@@ -561,7 +561,7 @@ app.post('/api/crm/quotes', (req, res) => {
   const b = req.body || {}; const l = b.lead_id ? db.leadById(b.lead_id) : null;
   if (b.lead_id && !l) return res.status(404).json({ ok: false, error: 'Lead introuvable' });
   const lines = cleanLines(b.lines) || (l ? quoteLinesFromLead(l) : []);
-  const q = db.createQuote({ lead_id: l ? l.id : null, client_id: l ? ensureClient(l) : null, lines, notes: l ? quoteNotesFor(l) : 'Devis valable 30 jours. Garantie 30 jours sur la prestation.' });
+  const q = db.createQuote({ lead_id: l ? l.id : null, client_id: l ? ensureClient(l) : null, lines, notes: l ? quoteNotesFor(l) : 'Devis valable 30 jours. Garantie satisfaction 30 jours (reprise intégrale de la jante).' });
   if (l) db.addLeadEvent(l.id, 'status', 'Devis ' + q.number + ' créé');
   res.json({ ok: true, data: fullQuote(q) });
 });
@@ -1223,7 +1223,7 @@ function replyEmail(body) { return mailtpl.reply(body); }
 
 // ── POST /api/pro : demande d'un professionnel (carrosserie, garage, concession, marchand VO, loueur / flotte) ──
 const proLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 8, standardHeaders: true, legacyHeaders: false, message: { ok: false, error: 'Trop de demandes. Réessayez dans une heure ou appelez le 06 61 45 35 27.' } });
-const PRO_ACTIVITES = { carrosserie: 'Carrosserie', garage: 'Garage automobile', concession: 'Concession automobile', marchand: 'Marchand / vendeur de véhicules d\'occasion', loueur: 'Loueur / flotte', autre: 'Autre activité' };
+const PRO_ACTIVITES = { carrosserie: 'Carrosserie', garage: 'Garage automobile', concession: 'Concession automobile', reconditionnement: 'Centre de reconditionnement', marchand: 'Marchand / vendeur de véhicules d\'occasion', loueur: 'Loueur / flotte', autre: 'Autre activité' };
 const PRO_VOLUMES = { ponctuel: 'Besoin ponctuel', quelques: 'Quelques jantes par mois', regulier: 'Plusieurs véhicules par semaine', lot: 'Lot / flotte à traiter' };
 app.post('/api/pro', proLimiter, (req, res, next) => {
   upload.array('photos', 6)(req, res, (err) => {
