@@ -61,3 +61,19 @@ Fourchettes de prix relevées sur le web (sources secondaires, non vérifiées, 
 6. **Offre professionnelle** : proposer à 5 à 10 carrosseries et garages de proximité un premier lot test ; recueillir un témoignage écrit avec accord avant publication.
 
 *Limites de cette analyse : pas de données Google (positions, impressions, backlinks) ; pas de requêtes réelles vers des assistants IA ; les recherches ont été faites via un moteur américain, qui ne reflète pas exactement les résultats français de Google.*
+
+## 6. Comparaison des pages locales concurrentes (10 novembre 2026)
+
+Pages publiques consultées le 10/11/2026 ; seul ce qui est lisible est rapporté (« affiché » = déclaré par le concurrent, non vérifié).
+
+| Critère | Jantes Alu Services (Vénissieux) | Rénovation Jantes Lyon (Saint-Fons) | AWRS (Lyon-Vénissieux) | REYNOV (après corrections) |
+|---|---|---|---|---|
+| Prix affichés | aucun | aucun | aucun (« jusqu'à 75 % d'économie » affiché) | **à partir de 130 € HT / 156 € TTC** par jante |
+| Délais | 48 h affiché (rénovation, dévoilage) | non indiqués | non indiqués | **24 à 48 h par jante, indicatif**, confirmé au devis |
+| Garantie | 12 mois affichés (rénovation et personnalisation ; dévoilage et soudure exclus) | non mentionnée | page « Garanties » (contenu non lu) | **satisfaction 30 jours : reprise intégrale** (promesse différente d'une garantie de durabilité) |
+| Preuves | note 4,8 sans nombre d'avis ; « plus de 15 ans » affiché ; pas d'avant/après lisible | note 4,9 sans nombre d'avis ; avant/après non vérifiables ; matériel numérique annoncé | « n°1 français », « 1 500 roues par mois », « 90 % de professionnels » affichés | **5/5 sur 56 avis Google** ; avant/après réels (Kia, Macan, Audi A3) ; aucun chiffre de volume non confirmé |
+| Offre professionnelle | aucune page dédiée | aucune | oui, par métier cité, mais **process de premier lot non décrit**, logistique non mentionnée | **7 pages** (carrosseries, garages, concessions, centres de reconditionnement, marchands VO, loueurs/flottes) avec « Chiffrer un premier lot », étapes du premier lot et conditions de récurrence |
+| Contenu local | 11 communes citées, FAQ de 8 questions | adresse et accès uniquement, pas de FAQ | deux centres, pas de contenu local | pages Lyon 1er–9e et communes proches avec distance, accès, conditions sur place/atelier, FAQ cohérente avec le balisage |
+| Parcours de devis | « devis gratuit » (formulaire sur sous-domaine) | « recevoir un devis » | page devis dédiée | devis par photos, WhatsApp, formulaire en 6 étapes, formulaire pro court |
+
+**Écarts à combler côté REYNOV** (à décider) : aucune garantie de durabilité affichée alors que deux concurrents annoncent 12 mois ; pas de vidéo ni de matériel distinctif (usinage numérique chez Rénovation Jantes Lyon) ; pas de chiffre de volume ou d'ancienneté confirmé ; volume d'avis Google à faire croître.
