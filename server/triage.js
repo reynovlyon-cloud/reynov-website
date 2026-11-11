@@ -182,7 +182,7 @@ function buildReply(lead, tri, catOverride) {
   }
   if (atelierOnly) lines.push('Dépôt à l\'atelier : 47 chemin du Pras, 69350 La Mulatière, 15 minutes avant l\'heure du rendez-vous.');
   else if (domicile && tri.wheels && tri.wheels < 3) lines.push('Le déplacement à domicile est inclus à partir de 3 jantes (Lyon et 10 à 15 km autour) : pour ' + (tri.wheels === 1 ? 'une jante' : tri.wheels + ' jantes') + ', nous vous accueillons à l\'atelier, 47 chemin du Pras, 69350 La Mulatière.');
-  else if (domicile) lines.push('Intervention à domicile possible à partir de 3 jantes, déplacement inclus à Lyon (1er au 9e) et 10 à 15 km autour (terrain privé, sol plat, prise électrique à proximité). Au-delà, un forfait kilométrique est indiqué dans le devis.');
+  else if (domicile) lines.push('Intervention à domicile possible à partir de 3 jantes, déplacement inclus à Lyon (1er au 9e) et 10 à 15 km autour (terrain privé, sol plat, prise électrique à proximité). Au-delà, et jusqu\'à 20 à 30 km autour de Lyon, un forfait kilométrique est indiqué dans le devis.');
   lines.push('Le devis est gratuit et sans engagement. Garantie satisfaction de 30 jours : si quelque chose ne vous convient pas, nous reprenons la jante intégralement.');
   lines.push('');
   lines.push(tri.urgency === 'haute' ? 'Vous avez une échéance : dites-moi la date et je regarde le premier créneau possible.' : 'Je peux vous proposer un créneau dès cette semaine : quelle est votre disponibilité ?');
