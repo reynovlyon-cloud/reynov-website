@@ -734,6 +734,36 @@ app.get('/api/crm/stats/sources', (_req, res) => {
   res.json({ ok: true, data: rows });
 });
 
+// ── CRM : suivi des objectifs (30 / 60 / 90 jours) : demandes par intention, devis, partenaires professionnels (administrateur) ──
+app.get('/api/crm/stats/objectifs', (_req, res) => {
+  const leads = db.allLeads(), quotes = db.quotesList();
+  const leadOf = new Map(leads.map(l => [l.id, l]));
+  const cats = (l) => (l && l.triage && l.triage.categories) || [];
+  const isPro = (l) => !!l && (l.source === 'pro' || cats(l).includes('pro'));
+  const intent = (l) => isPro(l) ? 'pro' : cats(l).includes('leasing') ? 'leasing' : cats(l).includes('vente') ? 'revente' : 'autre';
+  const jantes = (q) => (q.lines || []).filter(x => /jante/i.test(x.label) && !/option/i.test(x.label)).reduce((n, x) => n + (Number(x.qty) || 0), 0);
+  const out = { periodes: {}, partenaires: [] };
+  for (const days of [30, 60, 90]) {
+    const since = Date.now() - days * 86400000;
+    const o = { demandes: 0, leasing: 0, revente: 0, pro: 0, autre: 0, devis_envoyes: 0, devis_acceptes: 0, devis_pro_acceptes: 0, jantes_pros: 0 };
+    leads.filter(l => Date.parse(l.created_at) > since).forEach(l => { o.demandes++; o[intent(l)]++; });
+    for (const q of quotes) {
+      if (q.status !== 'brouillon' && Date.parse(q.sent_at || q.created_at) > since) o.devis_envoyes++;
+      if (q.status === 'accepte' && Date.parse(q.accepted_at || q.updated_at) > since) { o.devis_acceptes++; if (isPro(leadOf.get(q.lead_id))) { o.devis_pro_acceptes++; o.jantes_pros += jantes(q); } }
+    }
+    out.periodes[days] = o;
+  }
+  const byPartner = new Map();
+  for (const q of quotes) {
+    const l = leadOf.get(q.lead_id); if (!isPro(l) || q.status !== 'accepte') continue;
+    const key = q.client_id || l.client_id || ('l' + l.id), when = q.accepted_at || q.updated_at || '';
+    const c = byPartner.get(key) || { entreprise: String(l.sujet || '').split('·').pop().trim() || [l.prenom, l.nom].filter(Boolean).join(' '), contact: [l.prenom, l.nom].filter(Boolean).join(' '), devis: 0, jantes: 0, ca_ttc: 0, dernier: '' };
+    c.devis++; c.jantes += jantes(q); c.ca_ttc += q.totals.ttc; if (when > c.dernier) c.dernier = when; byPartner.set(key, c);
+  }
+  out.partenaires = [...byPartner.values()].map(c => ({ ...c, ca_ttc: Math.round(c.ca_ttc), actif: c.devis >= 2 })).sort((a, b) => b.devis - a.devis || b.jantes - a.jantes);
+  res.json({ ok: true, data: out });
+});
+
 // ── Photos des demandes (envoyées par le client ou ajoutées à la main) ──
 const LEAD_EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/heic': 'heic' };
 function saveLeadPhoto(leadId, buf, meta = {}) {

@@ -472,7 +472,7 @@
       statCard('var(--blue)', 'chart', 'Visites (total)', (b.visites_total || 0).toLocaleString('fr-FR'), (b.visites_aujourd_hui || 0) + ' aujourd\'hui');
     const src = Object.entries(st.sources || {}).sort((a, b2) => b2[1] - a[1]); const smax = Math.max(1, ...src.map((s) => s[1]));
     $('#stats-sources').innerHTML = src.length ? src.map(([k, n]) => `<div class="hbar" style="--c:var(--violet)"><span>${esc(SRC[k] || k)}</span><div class="track"><div class="fill" style="width:${Math.round(n / smax * 100)}%"></div></div><span class="n">${n}</span></div>`).join('') : '<div class="empty">Pas encore de données</div>';
-    renderRoi();
+    renderRoi(); renderGoals();
     $('#visit-range').innerHTML = [7, 30, 90].map((d) => `<span class="chip${S.visitDays === d ? ' on' : ''}" data-action="visit-range" data-days="${d}">${d} j</span>`).join('');
     try {
       const v = (await api('GET', '/visits?days=' + S.visitDays)).data;
@@ -721,6 +721,15 @@
     f.elements.name.value = u ? u.name : ''; f.elements.username.value = u ? u.username : ''; f.elements.username.disabled = !!u; f.elements.role.value = u ? u.role : 'employe';
     $('#user-pw-l').textContent = u ? 'Nouveau mot de passe (laisser vide pour ne pas changer)' : 'Mot de passe * (8 caractères minimum)'; f.elements.password.required = !u;
     $('#user-del').hidden = !u; $('#dlg-user').showModal();
+  }
+  async function renderGoals() {
+    const body = $('#stats-goals'), pb = $('#stats-partners'); if (!body) return;
+    try {
+      const d = (await api('GET', '/stats/objectifs')).data, P = d.periodes;
+      const rows = [['Demandes reçues', 'demandes'], ['dont retour de leasing', 'leasing'], ['dont revente', 'revente'], ['dont professionnels', 'pro'], ['Devis envoyés', 'devis_envoyes'], ['Devis acceptés', 'devis_acceptes'], ['Devis professionnels acceptés', 'devis_pro_acceptes'], ['Jantes confiées par les professionnels', 'jantes_pros']];
+      body.innerHTML = rows.map(([lbl, k]) => `<tr><td>${esc(lbl)}</td><td><strong>${P[30][k]}</strong></td><td>${P[60][k]}</td><td>${P[90][k]}</td></tr>`).join('');
+      pb.innerHTML = d.partenaires.length ? d.partenaires.map((p) => `<tr><td><strong>${esc(p.entreprise)}</strong></td><td>${esc(p.contact)}</td><td>${p.devis}</td><td>${p.jantes}</td><td>${esc(p.ca_ttc.toLocaleString('fr-FR'))} €</td><td>${p.actif ? 'Partenaire actif' : 'Premier devis'}</td></tr>`).join('') : '<tr><td colspan="6" class="faint">Aucun partenaire pour l\'instant : un devis professionnel accepté apparaîtra ici.</td></tr>';
+    } catch (e) { /* facultatif */ }
   }
   async function renderRoi() {
     const body = $('#stats-roi'); if (!body) return;
