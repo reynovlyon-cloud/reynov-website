@@ -9,6 +9,7 @@ const fs          = require('fs');
 const crypto      = require('crypto');
 const db          = require('./db');
 const triage      = require('./triage');
+const relance     = require('./relance');
 
 const app    = express();
 app.disable('x-powered-by');
@@ -628,6 +629,8 @@ function dailyProgram(user) {
   const brief = (l) => { const t = l.triage || {}; return { id: l.id, name: nameOf(l), tel: l.tel, summary: t.summary || '', urgent: t.urgency === 'haute', since_h: Math.round((Date.now() - Date.parse(l.created_at)) / 3600000) }; };
   const toCall = L.filter(l => (l.status === 'nouveau' && !l.contacted) || (l.status === 'a_rappeler' && l.reminder_at && Date.parse(l.reminder_at) <= Date.now()))
     .sort((a, b) => ((b.triage && b.triage.urgency === 'haute') - (a.triage && a.triage.urgency === 'haute')) || a.created_at.localeCompare(b.created_at)).slice(0, 8).map(brief);
+  const relDue = L.map(l => ({ l, r: db.relanceFor(l) })).filter(x => x.r.due).sort((a, b) => Date.parse(a.r.due_at) - Date.parse(b.r.due_at));
+  const relList = relDue.slice(0, 8).map(x => ({ ...brief(x.l), level: x.r.level, days: x.r.wait_days, quote: mine || !x.r.quote ? null : x.r.quote.number }));
   const waiting = L.map(l => ({ l, r: db.replyState(l) })).filter(x => x.r.waiting && !toCall.some(c => c.id === x.l.id) && x.l.status !== 'nouveau')
     .sort((a, b) => Date.parse(a.r.since) - Date.parse(b.r.since));
   const waitingList = waiting.slice(0, 6).map(x => ({ ...brief(x.l), days: Math.max(0, Math.floor((Date.now() - Date.parse(x.r.since)) / 86400000)) }));
@@ -645,12 +648,12 @@ function dailyProgram(user) {
   if (toCall.length) parts.push((toCall.length > 1 ? toCall.length + ' demandes à traiter en priorité : ' : 'Une demande à traiter en priorité : ') + toCall.slice(0, 4).map(c => c.name + (c.urgent ? ' (urgent)' : '')).join(', ') + '.');
   else parts.push('Aucune nouvelle demande en attente.');
   if (waiting.length) parts.push(waiting.length + ' client' + (waiting.length > 1 ? 's attendent' : ' attend') + ' une réponse, le plus ancien depuis ' + waitingList[0].days + ' jour' + (waitingList[0].days > 1 ? 's' : '') + '.');
-  if (qFollow.length) parts.push(qFollow.length + ' devis envoyé' + (qFollow.length > 1 ? 's' : '') + ' sans réponse depuis plus de 3 jours : ' + qFollow.slice(0, 3).map(q => q.client).join(', ') + '. Pensez à les relancer.');
+  if (relDue.length) parts.push(relDue.length + ' relance' + (relDue.length > 1 ? 's' : '') + ' à faire (demandes déjà traitées, sans réponse) : ' + relList.slice(0, 3).map(r => r.name + ' (relance n°' + r.level + ')').join(', ') + '.');
   if (qDraft) parts.push(qDraft + ' devis en brouillon à terminer.');
   if (postsToday.length) parts.push(postsToday.length + ' publication' + (postsToday.length > 1 ? 's' : '') + ' à mettre en ligne aujourd\'hui : ' + postsToday.map(p => p.title + ' à ' + p.time).join(' ; ') + '.');
   if (postsToValidate) parts.push(postsToValidate + ' publication' + (postsToValidate > 1 ? 's' : '') + ' à valider.');
   parts.push('Bonne journée !');
-  return { date: today, events, tomorrow: tomorrowN, to_call: toCall, waiting: waitingList, waiting_total: waiting.length, quotes_follow: qFollow, quotes_draft: qDraft, posts_today: postsToday, posts_to_validate: postsToValidate, brief: parts.join(' ') };
+  return { date: today, events, tomorrow: tomorrowN, to_call: toCall, waiting: waitingList, waiting_total: waiting.length, quotes_follow: qFollow, relances: relList, relances_total: relDue.length, quotes_draft: qDraft, posts_today: postsToday, posts_to_validate: postsToValidate, brief: parts.join(' ') };
 }
 app.get('/api/crm/today', (req, res) => res.json({ ok: true, data: dailyProgram(req.user) }));
 
@@ -957,7 +960,7 @@ app.get('/api/crm/leads/:id', (req, res) => {
   const l = db.leadById(req.params.id);
   if (!l) return res.status(404).json({ ok: false, error: 'Introuvable' });
   const client = l.client_id ? db.clientById(l.client_id) : null;
-  res.json({ ok: true, data: { ...l, client: client ? { id: client.id, interventions: client.interventions.length } : null } });
+  res.json({ ok: true, data: { ...l, relance_info: db.relanceFor(l), client: client ? { id: client.id, interventions: client.interventions.length } : null } });
 });
 app.post('/api/crm/leads', async (req, res) => {
   const b = req.body || {};
@@ -1009,6 +1012,28 @@ app.post('/api/crm/leads/:id/contact', (req, res) => {
   if (!l) return res.status(404).json({ ok: false, error: 'Introuvable' });
   res.json({ ok: true, data: l });
 });
+// ── Relances : échéance, texte préparé, et suite donnée (rien n'est envoyé automatiquement) ──
+const RELANCE_CHANNELS = ['email', 'whatsapp', 'appel', 'sms', 'autre'];
+app.get('/api/crm/leads/:id/relance', (req, res) => {
+  const l = db.leadById(req.params.id);
+  if (!l) return res.status(404).json({ ok: false, error: 'Introuvable' });
+  const info = db.relanceFor(l);
+  res.json({ ok: true, data: { info, draft: relance.draft(l, info.exhausted ? relance.MAX : (info.level || 1), info.quote) } });
+});
+app.post('/api/crm/leads/:id/relance', (req, res) => {
+  const l = db.leadById(req.params.id);
+  if (!l) return res.status(404).json({ ok: false, error: 'Introuvable' });
+  const b = req.body || {};
+  if (b.action === 'sent') { const ch = RELANCE_CHANNELS.includes(b.channel) ? b.channel : 'autre'; db.logContact(l.id, ch, null); db.relanceSent(l.id, ch); }
+  else if (b.action === 'snooze') db.relanceSet(l.id, { snooze_days: b.days });
+  else if (b.action === 'stop') db.relanceSet(l.id, { stop: true });
+  else if (b.action === 'resume') db.relanceSet(l.id, { stop: false });
+  else if (b.action === 'client_reply') db.clientReplied(l.id);
+  else if (b.action === 'lost') { db.relanceSet(l.id, { stop: true }); db.updateLead(l.id, { status: 'perdu' }); }
+  else return res.status(400).json({ ok: false, error: 'Action inconnue.' });
+  const out = db.leadById(l.id);
+  res.json({ ok: true, data: { ...out, relance_info: db.relanceFor(out) } });
+});
 const draftLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 60, standardHeaders: true, legacyHeaders: false, message: { ok: false, error: 'Trop de demandes à l\'assistant. Réessayez dans un moment.' } });
 // Contrôle d'un message avant envoi (sans IA)
 app.post('/api/crm/leads/:id/check', (req, res) => {
@@ -1047,7 +1072,9 @@ app.post('/api/crm/leads/:id/reply', replyLimiter, async (req, res) => {
     }
     db.logContact(l.id, 'email', null);
     db.addLeadEvent(l.id, 'reply_sent', 'E-mail envoyé : ' + subject);
-    res.json({ ok: true, data: db.leadById(l.id) });
+    if ((req.body || {}).relance) db.relanceSent(l.id, 'e-mail');
+    const sentLead = db.leadById(l.id);
+    res.json({ ok: true, data: { ...sentLead, relance_info: db.relanceFor(sentLead) } });
   } catch (e) {
     console.error('❌ Envoi réponse CRM:', e.message);
     res.status(502).json({ ok: false, error: 'Envoi impossible : ' + e.message });

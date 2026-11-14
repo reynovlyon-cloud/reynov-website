@@ -256,6 +256,7 @@
     const q = S.q.toLowerCase();
     return S.leads.filter((l) => {
       if (S.wait && !waiting(l)) return false;
+      if (S.rel && !(l.relance_info && l.relance_info.due)) return false;
       if (S.mine && S.user && l.assigned_to !== S.user.id) return false;
       if (S.cats.size && !((l.triage && l.triage.categories) || []).some((c) => S.cats.has(c))) return false;
       if (!q) return true;
@@ -263,6 +264,12 @@
     });
   }
   const waiting = (l) => !!(l.reply && l.reply.waiting);
+  const REL_LBL = { 1: '1re relance', 2: '2e relance', 3: 'Dernière relance' };
+  function relBadge(l) {
+    const r = l.relance_info; if (!r || !r.eligible || r.stale) return '';
+    if (r.due) return `<div class="contact-state wait" data-action="open" data-id="${l.id}" data-focus="relance">${ico('clock')} ${esc(REL_LBL[r.level] || 'Relance')} à faire · sans réponse depuis ${r.wait_days} j</div>`;
+    return r.level ? `<div class="contact-state no">${ico('clock')} ${esc(REL_LBL[r.level])} prévue ${esc(dt(r.due_at))}</div>` : '';
+  }
   function replyBadge(l) {
     const r = l.reply;
     if (!r || !r.waiting) return r && r.n_out ? `<div class="contact-state yes">${ico('mail')} ${r.n_out} réponse${r.n_out > 1 ? 's' : ''} envoyée${r.n_out > 1 ? 's' : ''}</div>` : '';
@@ -286,7 +293,7 @@
       <div class="lead-top"><span class="avatar" style="--c:${avColor(l)};width:32px;height:32px">${esc(initials(l))}</span><span class="nm">${esc(fullName(l))}</span><span class="when">${esc(ago(l.created_at))}</span></div>
       <div class="lead-sum">${esc(t.summary || (l.message || '').slice(0, 120) || 'Sans détail')}</div>
       <div class="chips">${cats}${urgent}<span class="chip src">${esc(SRC[l.source] || l.source)}</span>${(l.photos || []).length ? `<span class="chip">${ico('image')}${(l.photos || []).length}</span>` : ''}</div>
-      ${state}${replyBadge(l)}${rem}${l.assigned_to ? `<div style="margin-bottom:8px">${whoChip(l.assigned_to)}</div>` : ''}<div class="card-actions">${actions}</div></article>`;
+      ${state}${replyBadge(l)}${relBadge(l)}${rem}${l.assigned_to ? `<div style="margin-bottom:8px">${whoChip(l.assigned_to)}</div>` : ''}<div class="card-actions">${actions}</div></article>`;
   }
   function colHtml(c, list) {
     return `<div class="col" data-status="${c.id}" style="--c:${stColor(c.id)}"><div class="col-h"><span class="dot" style="--c:${stColor(c.id)}"></span>${esc(c.label)}<span class="count">${list.length}</span></div>${list.map(leadCard).join('') || `<div class="empty">${esc(c.empty)}</div>`}</div>`;
@@ -295,7 +302,8 @@
     const fl = filteredLeads();
     const present = Object.keys(S.cfg.categories).filter((c) => S.leads.some((l) => ((l.triage && l.triage.categories) || []).includes(c)));
     const nWait = S.leads.filter((l) => waiting(l)).length;
-    $('#lead-filters').innerHTML = `<span class="chip wait${S.wait ? ' on' : ''}" data-action="filter-wait">Sans réponse (${nWait})</span><span class="chip st-rdv${S.mine ? ' on' : ''}" data-action="filter-mine">Mes leads</span>` + present.map((c) => `<span class="chip cat-${esc(c)}${S.cats.has(c) ? ' on' : ''}" data-action="filter-cat" data-cat="${esc(c)}">${esc(catLabel(c))}</span>`).join('');
+    const nRel = S.leads.filter((l) => l.relance_info && l.relance_info.due).length;
+    $('#lead-filters').innerHTML = `<span class="chip wait${S.wait ? ' on' : ''}" data-action="filter-wait">Sans réponse (${nWait})</span><span class="chip wait${S.rel ? ' on' : ''}" data-action="filter-rel">À relancer (${nRel})</span><span class="chip st-rdv${S.mine ? ' on' : ''}" data-action="filter-mine">Mes leads</span>` + present.map((c) => `<span class="chip cat-${esc(c)}${S.cats.has(c) ? ' on' : ''}" data-action="filter-cat" data-cat="${esc(c)}">${esc(catLabel(c))}</span>`).join('');
     $('#board').innerHTML = COLS.map((c) => colHtml(c, fl.filter((l) => l.status === c.id))).join('');
     const done = fl.filter((l) => l.status === 'gagne' || l.status === 'perdu');
     $('#archived-sum').textContent = 'Terminés (' + done.length + ')';
@@ -311,14 +319,34 @@
       drawLead(j.data, focus);
       $('#drawer').classList.add('on'); $('#drawer').setAttribute('aria-hidden', 'false'); $('#overlay').classList.add('on');
       if (focus === 'reply') setTimeout(() => { const el = $('#reply-body'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 250);
+      if (focus === 'relance') setTimeout(() => { const el = $('#relance-card'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 250);
     } catch (e) { toast(e.message, true); }
   }
   function closeDrawer() {
-    stopMic(); S.undo = null;
+    stopMic(); S.undo = null; S.relanceMode = null;
     S.openId = null;
     $('#drawer').classList.remove('on'); $('#drawer').setAttribute('aria-hidden', 'true'); $('#overlay').classList.remove('on');
   }
   function kv(k, v) { return v ? `<dt>${esc(k)}</dt><dd>${esc(dec(v))}</dd>` : ''; }
+  function relanceCard(l) {
+    const r = l.relance_info; if (!r) return '';
+    const had = l.relance && l.relance.count;
+    if (!r.eligible && !r.stop && !had) return '';
+    const id = l.id, act = (a, lbl, extra) => `<button class="btn sm" data-action="relance-act" data-act="${a}" data-id="${id}"${extra || ''}>${lbl}</button>`;
+    let head, txt, btns;
+    if (r.stop) { head = 'Relances désactivées'; txt = 'Cette demande n\'est plus proposée à la relance.'; btns = act('resume', 'Réactiver les relances'); }
+    else if (r.exhausted) { head = 'Aucune réponse après 3 relances'; txt = r.closeable ? 'Vous pouvez classer cette demande comme perdue.' : 'Dernière relance envoyée : classement possible dans quelques jours.'; btns = act('lost', 'Classer perdu') + act('client_reply', 'Le client a répondu') + act('stop', 'Ne plus relancer'); }
+    else {
+      head = r.due ? (REL_LBL[r.level] + ' à faire') : (REL_LBL[r.level] + ' prévue ' + dt(r.due_at));
+      txt = r.due
+        ? `Sans réponse depuis ${r.wait_days} jour${r.wait_days > 1 ? 's' : ''}${r.quote ? ' · devis ' + r.quote.number : ''}. Un message est préparé pour vous : relisez-le, puis envoyez-le (rien ne part tout seul).`
+        : `${r.stale ? 'Demande ancienne (dernier message il y a ' + r.wait_days + ' jours) : la relance reste possible à la main.' : 'Dernier message envoyé il y a ' + r.wait_days + ' jour' + (r.wait_days > 1 ? 's' : '') + (r.quote ? ' · devis ' + r.quote.number : '') + '. La relance sera proposée à la date prévue ; vous pouvez aussi la préparer dès maintenant.'}`;
+      btns = `<button class="btn primary sm" data-action="relance-prepare" data-id="${id}">${ico('mail')}Préparer la relance</button>`
+        + (l.tel ? `<button class="btn sm wa" data-action="relance-wa" data-id="${id}">${ico('wa')}WhatsApp (message court)</button>${act('sent', 'Relance faite (WhatsApp)', ' data-channel="whatsapp"')}${act('sent', 'Relance faite (téléphone)', ' data-channel="appel"')}` : '')
+        + act('snooze', 'Reporter de 3 jours', ' data-days="3"') + act('client_reply', 'Le client a répondu') + act('stop', 'Ne plus relancer');
+    }
+    return `<div class="card" id="relance-card"><h4>${ico('clock')} Relance</h4><div style="font-weight:650;margin-bottom:6px">${esc(head)}</div><p class="muted" style="margin:0 0 12px">${esc(txt)}</p><div class="dr-actions">${btns}</div><div id="relance-note"></div></div>`;
+  }
   function drawLead(l, focus) {
     const t = l.triage || {};
     const f = l.form || {};
@@ -360,6 +388,7 @@
         ${t.ai_error ? `<p class="faint" style="font-size:12px;margin:8px 0 0">L'IA n'a pas répondu (${esc(t.ai_error)}) : analyse automatique utilisée.</p>` : ''}
       </div>
       <div class="card"><h4>${ico('image')} Photos du client (${(l.photos || []).length})</h4><div class="ch-photos" id="lead-photos"></div><p class="faint" id="lead-photos-hint" style="font-size:12px;margin:8px 0 0"></p><div class="dr-actions" style="margin-top:8px"><button class="btn sm" data-action="lead-photo-add" data-id="${l.id}">${ico('image')}Ajouter des photos</button></div></div>
+      ${relanceCard(l)}
       <div class="card"><h4>${ico('mail')} Réponse proposée</h4>
         <div class="field"><label>Modèle</label><select class="input" id="reply-tpl" data-id="${l.id}">${options}</select></div>
         <div class="field"><label>Objet</label><input class="input" id="reply-subject" value="${esc(fill(cur.subject, l))}" /></div>
@@ -562,13 +591,14 @@
     const wa = (x) => (x ? `<a class="mini-btn" href="https://wa.me/${esc(waNum(x))}" target="_blank" rel="noopener" aria-label="WhatsApp" data-action="noop">${ico('wa')}</a>` : '');
     const ev = t.events.map((e) => `<div class="prog-item"${e.lead_id ? ` data-action="open" data-id="${e.lead_id}"` : ''}><span class="time-pill">${e.time ? esc(e.time) : 'Journée'}</span><div class="grow"><div class="t">${esc(e.title)}</div><div class="s">${esc([e.client, e.location].filter(Boolean).join(' · '))}</div></div><div class="acts">${e.maps ? `<a class="mini-btn" href="${esc(e.maps)}" target="_blank" rel="noopener" aria-label="Itinéraire" data-action="noop">${ico('route')}</a>` : ''}${tel(e.tel)}</div></div>`).join('') || '<div class="prog-empty">Aucun rendez-vous aujourd\'hui.</div>';
     const call = t.to_call.map((c) => `<div class="prog-item" data-action="open" data-id="${c.id}"><span class="avatar" style="--c:${c.urgent ? 'var(--rose)' : 'var(--blue)'};width:30px;height:30px;font-size:11px">${esc(initials({ prenom: c.name.split(' ')[0], nom: c.name.split(' ')[1] || '' }))}</span><div class="grow"><div class="t">${esc(c.name)}${c.urgent ? ' · urgent' : ''}</div><div class="s">${esc(c.summary || ('reçu il y a ' + c.since_h + ' h'))}</div></div><div class="acts">${tel(c.tel)}${wa(c.tel)}</div></div>`).join('') || '<div class="prog-empty">Rien en attente.</div>';
-    const wait = t.waiting.map((c) => `<div class="prog-item" data-action="open" data-id="${c.id}" data-focus="reply"><span class="avatar" style="--c:var(--amber);width:30px;height:30px;font-size:11px">${esc(initials({ prenom: c.name.split(' ')[0], nom: c.name.split(' ')[1] || '' }))}</span><div class="grow"><div class="t">${esc(c.name)}</div><div class="s">attend une réponse depuis ${c.days} j</div></div><div class="acts">${wa(c.tel)}</div></div>`).join('') + (t.quotes_follow.length ? t.quotes_follow.map((q) => `<div class="prog-item" data-action="open-quote" data-id="${q.id}"><span class="time-pill">${esc(q.number.replace('DV-', ''))}</span><div class="grow"><div class="t">${esc(q.client)}</div><div class="s">devis sans réponse depuis ${q.days} j</div></div></div>`).join('') : '') || '<div class="prog-empty">Personne n\'attend de réponse.</div>';
+    const rel = (t.relances || []).map((c) => `<div class="prog-item" data-action="open" data-id="${c.id}" data-focus="relance"><span class="avatar" style="--c:var(--violet);width:30px;height:30px;font-size:11px">${esc(initials({ prenom: c.name.split(' ')[0], nom: c.name.split(' ')[1] || '' }))}</span><div class="grow"><div class="t">${esc(c.name)}</div><div class="s">${esc(REL_LBL[c.level] || 'Relance')} · ${c.days} j${c.quote ? ' · devis ' + esc(c.quote.replace('DV-', '')) : ''}</div></div><div class="acts">${tel(c.tel)}${wa(c.tel)}</div></div>`).join('');
+    const wait = t.waiting.map((c) => `<div class="prog-item" data-action="open" data-id="${c.id}" data-focus="reply"><span class="avatar" style="--c:var(--amber);width:30px;height:30px;font-size:11px">${esc(initials({ prenom: c.name.split(' ')[0], nom: c.name.split(' ')[1] || '' }))}</span><div class="grow"><div class="t">${esc(c.name)}</div><div class="s">attend une réponse depuis ${c.days} j</div></div><div class="acts">${wa(c.tel)}</div></div>`).join('')  || '';
     el.innerHTML = `<div class="hero-head"><h3>Programme du jour</h3><span class="eng ia">${ico('sparkle')} Assistant</span><div class="sp"><button class="btn sm" data-action="speak-brief">${ico('speaker')}Écouter</button><button class="btn sm" data-action="today-refresh" aria-label="Actualiser">↻</button></div></div>
       <p class="brief">${esc(t.brief)}</p>
       <div class="prog-cols">
         <div class="prog-col"><h4>${ico('calendar')} Rendez-vous<span class="n">${t.events.length}</span></h4>${ev}${t.tomorrow ? `<div class="prog-empty">Demain : ${t.tomorrow} rendez-vous</div>` : ''}</div>
         <div class="prog-col"><h4>${ico('phone')} À traiter<span class="n">${t.to_call.length}</span></h4>${call}</div>
-        <div class="prog-col"><h4>${ico('mail')} Relances<span class="n">${t.waiting_total + t.quotes_follow.length}</span></h4>${wait}</div>
+        <div class="prog-col"><h4>${ico('mail')} Relances<span class="n">${(t.relances_total || 0) + t.waiting_total}</span></h4>${rel}${wait}${!rel && !wait ? '<div class="prog-empty">Rien à relancer aujourd\'hui</div>' : ''}</div>
         <div class="prog-col"><h4>${ico('share')} Publications<span class="n">${(t.posts_today || []).length}</span></h4>${(t.posts_today || []).map((p) => `<div class="prog-item" data-action="open-post-id" data-id="${p.id}"><span class="time-pill">${esc(p.time)}</span><div class="grow"><div class="t">${esc(p.title)}</div><div class="s">${esc(p.platforms.map((x) => PF[x]).join(' + '))} · ${p.media} média(s)</div></div></div>`).join('') || '<div class="prog-empty">Rien à publier aujourd\'hui.</div>'}${t.posts_to_validate ? `<div class="prog-empty" style="cursor:pointer" data-nav="publications">${t.posts_to_validate} à valider</div>` : ''}</div>
       </div>`;
   }
@@ -1046,6 +1076,31 @@
     },
     'cal-sync': async () => { try { await api('POST', '/calendar/sync'); toast('Synchronisation lancée'); setTimeout(async () => { await loadCal(); if (S.view === 'settings') renderSettings(); if (S.view === 'planning') renderPlanning(); }, 4000); } catch (e) { toast(e.message, true); } },
     'filter-wait': () => { S.wait = !S.wait; renderLeads(); },
+    'filter-rel': () => { S.rel = !S.rel; renderLeads(); },
+    'relance-prepare': async (el) => {
+      const id = Number(el.dataset.id), l = S.leads.find((x) => x.id === id) || {};
+      try {
+        const j = (await api('GET', '/leads/' + id + '/relance')).data;
+        $('#reply-subject').value = fill(j.draft.subject, l); $('#reply-body').value = fill(j.draft.body, l);
+        S.relanceMode = { id, level: j.draft.level };
+        const n = $('#relance-note'); if (n) n.innerHTML = `<p class="faint" style="font-size:12px;margin:10px 0 0">${esc(REL_LBL[j.draft.level])} préparée dans « Réponse proposée » ci-dessous : relisez-la, modifiez-la si besoin, puis envoyez-la par e-mail. L'envoi sera compté comme relance.</p>`;
+        const b = $('#reply-body'); if (b) b.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } catch (e) { toast(e.message, true); }
+    },
+    'relance-wa': async (el) => {
+      const id = Number(el.dataset.id), l = S.leads.find((x) => x.id === id) || {};
+      try { const j = (await api('GET', '/leads/' + id + '/relance')).data; window.open('https://wa.me/' + waNum(l.tel) + '?text=' + encodeURIComponent(fill(j.draft.whatsapp, l)), '_blank', 'noopener'); toast('WhatsApp ouvert : une fois le message envoyé, cliquez sur « Relance faite (WhatsApp) ».'); } catch (e) { toast(e.message, true); }
+    },
+    'relance-act': async (el) => {
+      const id = Number(el.dataset.id), act = el.dataset.act;
+      if (act === 'lost' && !confirm('Classer cette demande comme perdue ?')) return;
+      try {
+        const j = await api('POST', '/leads/' + id + '/relance', { action: act, channel: el.dataset.channel, days: el.dataset.days });
+        replaceLead(j.data); S.relanceMode = null;
+        toast({ sent: 'Relance enregistrée', snooze: 'Relance reportée', stop: 'Relances désactivées', resume: 'Relances réactivées', client_reply: 'Réponse du client enregistrée', lost: 'Demande classée perdue' }[act] || 'Fait');
+        loadToday().then(renderTodayCard); openLead(id); render();
+      } catch (e) { toast(e.message, true); }
+    },
     'sync-now': async () => { try { await api('POST', '/mail/sync'); toast('Synchronisation lancée'); setTimeout(async () => { await loadMail(); if (S.view === 'settings') renderSettings(); }, 4000); } catch (e) { toast(e.message, true); } },
     'filter-cat': (el) => { const c = el.dataset.cat; S.cats.has(c) ? S.cats.delete(c) : S.cats.add(c); renderLeads(); },
     call: (el) => { logContact(Number(el.dataset.id), 'appel'); },
@@ -1071,7 +1126,8 @@
       try { warns = (await api('POST', '/leads/' + id + '/check', { subject, body, instruction: ($('#ai-instr') || {}).value || '' })).data.filter((c) => c.level === 'warn'); showChecks(await Promise.resolve(warns)); } catch (e) { /* contrôle facultatif */ }
       if (!confirm((warns.length ? 'Attention, ' + warns.length + ' point(s) à vérifier :\n- ' + warns.map((c) => c.text).join('\n- ') + '\n\n' : '') + 'Envoyer cet e-mail à ' + (l && l.email) + ' ?')) return;
       el.disabled = true;
-      try { const j = await api('POST', '/leads/' + id + '/reply', { subject, body }); replaceLead(j.data); toast('E-mail envoyé'); openLead(id); render(); } catch (e) { toast(e.message, true); el.disabled = false; }
+      const isRel = !!(S.relanceMode && S.relanceMode.id === id);
+      try { const j = await api('POST', '/leads/' + id + '/reply', { subject, body, relance: isRel }); replaceLead(j.data); S.relanceMode = null; toast(isRel ? 'Relance envoyée' : 'E-mail envoyé'); if (isRel) { loadToday().then(renderTodayCard); } openLead(id); render(); } catch (e) { toast(e.message, true); el.disabled = false; }
     },
     mic: (el) => micToggle(el),
     'check-reply': async (el) => { try { const j = await api('POST', '/leads/' + el.dataset.id + '/check', { subject: $('#reply-subject').value, body: $('#reply-body').value, instruction: $('#ai-instr').value }); showChecks(j.data, true); } catch (e) { toast(e.message, true); } },

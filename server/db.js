@@ -1,5 +1,6 @@
 const fs   = require('fs');
 const path = require('path');
+const relance = require('./relance');
 
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -203,7 +204,7 @@ function leadById(id) { return _db.leads.find(l => l.id === Number(id)) || null;
 function updateLead(id, patch) {
   const l = leadById(id);
   if (!l) return null;
-  const allowed = ['prenom', 'nom', 'email', 'tel', 'ville', 'adresse', 'sujet', 'message', 'notes', 'form', 'reminder_at', 'client_id', 'intervention_id', 'created_at', 'assigned_to'];
+  const allowed = ['prenom', 'nom', 'email', 'tel', 'ville', 'adresse', 'sujet', 'message', 'notes', 'form', 'reminder_at', 'client_id', 'intervention_id', 'created_at', 'assigned_to', 'relance'];
   allowed.forEach(k => { if (patch[k] !== undefined) l[k] = patch[k]; });
   if (patch.status !== undefined && LEAD_STATUS.includes(patch.status) && patch.status !== l.status) {
     addEventRaw(l, 'status', 'Statut : ' + l.status + ' → ' + patch.status);
@@ -256,7 +257,7 @@ function deleteLead(id) {
 
 // ── Suivi des e-mails (synchronisation Gmail) ──
 // Chaque échange est rangé dans l'historique du lead à sa vraie date, sans doublon (gid = identifiant Gmail).
-const OUT_TYPES = ['contact', 'reply_sent', 'mail_out'];
+const OUT_TYPES = ['contact', 'reply_sent', 'mail_out', 'relance'];
 function replyState(l) {
   const evs = l.events || [];
   const created = Date.parse(l.created_at) || 0;
@@ -264,7 +265,7 @@ function replyState(l) {
   let nIn = 0, nOut = 0;
   for (const e of evs) {
     const t = Date.parse(e.ts) || 0;
-    if (e.type === 'mail_in') { nIn++; if (t > lastIn) lastIn = t; }
+    if (e.type === 'mail_in' || e.type === 'client_reply') { nIn++; if (t > lastIn) lastIn = t; }
     else if (OUT_TYPES.includes(e.type) && t >= created - 60000) { nOut++; if (t > lastOut) lastOut = t; }   // un envoi antérieur à la demande n'y répond pas
   }
   const closed = l.status === 'gagne' || l.status === 'perdu';
@@ -432,7 +433,31 @@ function leadsList({ status, q, cat } = {}) {
     .filter(l => !cat || (l.triage && (l.triage.categories || []).includes(cat)))
     .filter(l => !s || [l.prenom, l.nom, l.email, l.tel, l.ville, l.message, (l.form || {}).marque, (l.form || {}).modele, l.triage && l.triage.summary].some(v => v && String(v).toLowerCase().includes(s)))
     .sort((a, b) => b.created_at.localeCompare(a.created_at))
-    .map(l => ({ ...l, reply: replyState(l) }));
+    .map(l => { const rs = replyState(l); return { ...l, reply: rs, relance_info: relance.compute(l, _db.quotes.map(quoteWithTotals), rs) }; });
+}
+function quoteWithTotals(q) { return { ...q, totals: quoteTotals(q) }; }
+
+// ── Relances des devis auxquels on a déjà répondu ──
+function relanceFor(l) { return relance.compute(l, _db.quotes.map(quoteWithTotals), replyState(l)); }
+function relanceSent(id, channel) {
+  const l = leadById(id); if (!l) return null;
+  const count = Math.min(relance.MAX, relanceFor(l).count + 1);
+  l.relance = { ...(l.relance || {}), count, last_at: now(), snooze_until: null };
+  addEventRaw(l, 'relance', 'Relance n°' + count + ' envoyée (' + (channel || 'autre') + ')');
+  l.updated_at = now(); save(); return l;
+}
+function relanceSet(id, patch) {
+  const l = leadById(id); if (!l) return null;
+  const st = { ...(l.relance || {}) };
+  if (patch.stop !== undefined) { st.stop = !!patch.stop; addEventRaw(l, 'relance', st.stop ? 'Relances désactivées pour cette demande' : 'Relances réactivées'); }
+  if (patch.snooze_days !== undefined) { st.snooze_until = new Date(Date.now() + Math.min(60, Math.max(1, Number(patch.snooze_days) || 3)) * 86400000).toISOString(); addEventRaw(l, 'relance', 'Relance reportée au ' + new Date(st.snooze_until).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' })); }
+  l.relance = st; l.updated_at = now(); save(); return l;
+}
+function clientReplied(id, note) {
+  const l = leadById(id); if (!l) return null;
+  addEventRaw(l, 'client_reply', note || 'Le client a répondu (téléphone, WhatsApp ou autre)');
+  l.relance = { ...(l.relance || {}), count: 0, last_at: null, snooze_until: null };
+  l.updated_at = now(); save(); return l;
 }
 
 function findRecentDuplicate(email, message, minutes = 10) {
@@ -499,7 +524,7 @@ function exportAll() {
 }
 
 module.exports = {
-  exportAll, LEAD_STATUS, DATA_DIR, POST_STATUS, postsList, postById, createPost, updatePost, deletePost, addPostMedia, removePostMedia, usersList, userById, userByUsername, createUser, updateUser, deleteUser, addInterventionPhoto, removeInterventionPhoto, interventionById, addLeadPhoto, removeLeadPhoto, findLeadNear, QUOTE_STATUS, quoteTotals, quotesList, quoteById, createQuote, updateQuote, deleteQuote, onEventChange, eventsList, eventById, eventByGid, allEvents, createEvent, updateEvent, setEventLink, deleteEvent, eventTombs, clearTomb, replyState, leadsByEmail, addMailEvent, allLeads: () => _db.leads,
+  relanceFor, relanceSent, relanceSet, clientReplied, exportAll, LEAD_STATUS, DATA_DIR, POST_STATUS, postsList, postById, createPost, updatePost, deletePost, addPostMedia, removePostMedia, usersList, userById, userByUsername, createUser, updateUser, deleteUser, addInterventionPhoto, removeInterventionPhoto, interventionById, addLeadPhoto, removeLeadPhoto, findLeadNear, QUOTE_STATUS, quoteTotals, quotesList, quoteById, createQuote, updateQuote, deleteQuote, onEventChange, eventsList, eventById, eventByGid, allEvents, createEvent, updateEvent, setEventLink, deleteEvent, eventTombs, clearTomb, replyState, leadsByEmail, addMailEvent, allLeads: () => _db.leads,
   createLead, leadById, updateLead, logContact, addLeadEvent, deleteLead, leadsList, findRecentDuplicate, leadExists, leadStats,
   stats, visitsByDay, logVisit,
   clientsList, clientById, findByEmail,
