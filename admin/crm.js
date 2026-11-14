@@ -905,7 +905,7 @@
       ? '<p><span class="chip st-rdv"><span class="dot"></span>Activée</span></p><p class="muted">Les messages sont analysés et une réponse est rédigée par l\'IA. Le nom, l\'e-mail et le téléphone du client ne lui sont jamais transmis. Rien n\'est envoyé sans votre clic.</p>'
       : '<p><span class="chip"><span class="dot" style="--c:var(--amber)"></span>Non activée</span></p><p class="muted">Le tri et les réponses proposées fonctionnent déjà sans IA (règles automatiques). Pour ajouter l\'IA : créez une clé sur console.anthropic.com, puis ajoutez la variable <strong>ANTHROPIC_API_KEY</strong> dans Railway (Variables) et redéployez.</p>';
     $('#set-mail').innerHTML = S.cfg.email
-      ? '<p><span class="chip st-rdv"><span class="dot"></span>Prêt</span></p><p class="muted">Les réponses partent de votre adresse REYNOV (Gmail) et apparaissent dans vos « Envoyés ».</p>'
+      ? '<p><span class="chip st-rdv"><span class="dot"></span>Prêt</span></p><p class="muted">Les réponses partent de votre adresse REYNOV (Gmail) et apparaissent dans vos « Envoyés ».</p><div class="field" style="margin-top:14px"><label>Tester où arrivent vos e-mails</label><div style="display:flex;gap:8px;flex-wrap:wrap"><input class="input" id="mail-test-to" type="email" placeholder="Adresse e-mail de test" style="flex:1;min-width:220px" /><button class="btn sm" data-action="mail-test" data-kind="ack">Accusé de réception</button><button class="btn sm" data-action="mail-test" data-kind="reply">Réponse type</button></div><p class="faint" style="font-size:12px;margin:8px 0 0">Envoyez-vous un test sur Gmail, Outlook, Orange… et regardez s\'il arrive en réception ou en indésirables. Pour un score détaillé, copiez l\'adresse donnée par mail-tester.com et envoyez-y le test.</p></div>'
       : '<p><span class="chip"><span class="dot" style="--c:var(--amber)"></span>Non configuré</span></p><p class="muted">Variables Gmail manquantes sur le serveur : l\'envoi depuis le CRM est désactivé (appel et WhatsApp restent disponibles).</p>';
     const ms = S.mail && S.mail.status, rp = S.mail && S.mail.report;
     let h;
@@ -1077,6 +1077,13 @@
     'cal-sync': async () => { try { await api('POST', '/calendar/sync'); toast('Synchronisation lancée'); setTimeout(async () => { await loadCal(); if (S.view === 'settings') renderSettings(); if (S.view === 'planning') renderPlanning(); }, 4000); } catch (e) { toast(e.message, true); } },
     'filter-wait': () => { S.wait = !S.wait; renderLeads(); },
     'filter-rel': () => { S.rel = !S.rel; renderLeads(); },
+    'mail-test': async (el) => {
+      const to = ($('#mail-test-to') || {}).value || '';
+      if (!to.trim()) return toast('Saisissez une adresse e-mail de test.', true);
+      el.disabled = true;
+      try { await api('POST', '/mail/test', { to: to.trim(), kind: el.dataset.kind }); toast('E-mail de test envoyé à ' + to.trim()); } catch (e) { toast(e.message, true); }
+      el.disabled = false;
+    },
     'relance-prepare': async (el) => {
       const id = Number(el.dataset.id), l = S.leads.find((x) => x.id === id) || {};
       try {

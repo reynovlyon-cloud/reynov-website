@@ -32,7 +32,6 @@ function shell({ title, preheader, hero = false, body, note = '' }) {
 <title>${esc(title || 'REYNOV')}</title>
 <style>@media only screen and (max-width:620px){.px{padding-left:24px!important;padding-right:24px!important}.h1{font-size:24px!important}.stack{display:block!important;width:100%!important}}</style></head>
 <body style="margin:0;padding:0;background:#ecebe7;">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#ecebe7;">${esc(preheader || '')}&#8199;&#847;&#8199;&#847;&#8199;&#847;</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ecebe7"><tr><td align="center" style="padding:28px 12px;">
   <table role="presentation" width="640" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:640px;background:#ffffff;border-radius:20px;overflow:hidden;">
     <tr><td bgcolor="${INK}" align="center" style="padding:36px 24px 30px;">
@@ -44,7 +43,7 @@ function shell({ title, preheader, hero = false, body, note = '' }) {
     <tr><td class="px" style="padding:42px 46px 38px;">${body}</td></tr>
     <tr><td bgcolor="${INK}" class="px" style="padding:30px 46px;font-family:${FONT};">
       <p style="margin:0 0 10px;font-size:12px;line-height:1.8;color:#b9b9c0;">REYNOV · 47 chemin du Pras, 69350 La Mulatière · <a href="tel:${TEL}" style="color:#ffffff;text-decoration:none;">${PHONE}</a></p>
-      <p style="margin:0 0 14px;font-size:12px;line-height:1.8;"><a href="${BASE}" style="color:#ffffff;text-decoration:underline;">reynov-jantes.fr</a> &nbsp;·&nbsp; <a href="https://www.instagram.com/reynov.jantes" style="color:#ffffff;text-decoration:underline;">Instagram</a> &nbsp;·&nbsp; <a href="https://www.tiktok.com/@reynov.lyon" style="color:#ffffff;text-decoration:underline;">TikTok</a></p>
+      <p style="margin:0 0 14px;font-size:12px;line-height:1.8;"><a href="${BASE}" style="color:#ffffff;text-decoration:underline;">reynov-jantes.fr</a></p>
       <p style="margin:0;font-size:11px;line-height:1.7;color:#7c7c85;">REYNOV SAS · SIRET 105 819 098 00016. ${esc(note) || 'Vous recevez cet e-mail suite à votre échange avec REYNOV.'}</p>
     </td></tr>
   </table>
@@ -69,7 +68,7 @@ function quoteAck(d) {
     ${para('Pour accélérer votre devis, envoyez-nous deux ou trois photos de vos jantes :', 'margin-bottom:14px;')}
     ${button('Envoyer des photos sur WhatsApp', WA)}${button('Appeler ' + PHONE, 'tel:' + TEL, false)}
     ${signature()}`;
-  return shell({ title: 'Votre demande de devis REYNOV', preheader: 'Votre demande est bien reçue : devis personnalisé sous 24 h.', hero: true, body, note: 'Vous recevez cet e-mail car vous avez demandé un devis sur reynov-jantes.fr.' });
+  return shell({ title: 'Votre demande de devis REYNOV', preheader: 'Votre demande est bien reçue : devis personnalisé sous 24 h.', hero: false, body, note: 'Vous recevez cet e-mail car vous avez demandé un devis sur reynov-jantes.fr. Pour ne rien manquer, ajoutez reynov.lyon@gmail.com à vos contacts ; si ce message est arrivé dans vos courriers indésirables, marquez-le « Pas un spam ».' });
 }
 
 // ── Accusé de réception d'un message de la page Contact ──
@@ -79,7 +78,7 @@ function contactAck(l) {
     ${para('Pour un devis précis, vous pouvez aussi nous envoyer deux photos de vos jantes sur WhatsApp :', 'margin-bottom:14px;')}
     ${button('Écrire sur WhatsApp', WA)}${button('Appeler ' + PHONE, 'tel:' + TEL, false)}
     ${signature()}`;
-  return shell({ title: 'Votre message à REYNOV', preheader: 'Nous avons bien reçu votre message : réponse sous 24 h.', hero: true, body, note: 'Vous recevez cet e-mail car vous avez écrit à REYNOV depuis reynov-jantes.fr.' });
+  return shell({ title: 'Votre message à REYNOV', preheader: 'Nous avons bien reçu votre message : réponse sous 24 h.', hero: false, body, note: 'Vous recevez cet e-mail car vous avez écrit à REYNOV depuis reynov-jantes.fr. Pour ne rien manquer, ajoutez reynov.lyon@gmail.com à vos contacts ; si ce message est arrivé dans vos courriers indésirables, marquez-le « Pas un spam ».' });
 }
 
 // ── Accusé de réception d'une demande professionnelle ──
@@ -89,7 +88,7 @@ function proAck(l, company) {
     ${para('Pour avancer plus vite, envoyez-nous quelques photos des jantes concernées (et le nombre de véhicules ou de jantes). Nous vous répondrons avec un diagnostic et un devis précisant les modalités avant tout accord : lieu d\'intervention, délais, conditions.', 'margin-bottom:14px;')}
     ${button('Envoyer des photos sur WhatsApp', WA)}${button('Appeler ' + PHONE, 'tel:' + TEL, false)}
     ${signature()}`;
-  return shell({ title: 'Votre demande professionnelle — REYNOV', preheader: 'Demande bien reçue : diagnostic et devis avant tout accord.', hero: true, body, note: 'Vous recevez cet e-mail car vous avez écrit à REYNOV depuis la page professionnels de reynov-jantes.fr.' });
+  return shell({ title: 'Votre demande professionnelle — REYNOV', preheader: 'Demande bien reçue : diagnostic et devis avant tout accord.', hero: false, body, note: 'Vous recevez cet e-mail car vous avez écrit à REYNOV depuis la page professionnels de reynov-jantes.fr. Pour ne rien manquer, ajoutez reynov.lyon@gmail.com à vos contacts ; si ce message est arrivé dans vos courriers indésirables, marquez-le « Pas un spam ».' });
 }
 
 // ── Réponse rédigée depuis le CRM (texte libre de l'équipe) ──

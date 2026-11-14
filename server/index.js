@@ -10,6 +10,7 @@ const crypto      = require('crypto');
 const db          = require('./db');
 const triage      = require('./triage');
 const relance     = require('./relance');
+const mime        = require('./mime');
 
 const app    = express();
 app.disable('x-powered-by');
@@ -205,50 +206,13 @@ async function getAccessToken(refreshToken = GMAIL_REFRESH_TOKEN) {
   return data.access_token;
 }
 
-async function sendEmail({ from, to, subject, html, attachments = [], origin = '' }) {
+async function sendEmail({ from, to, subject, html, text, attachments = [], origin = '' }) {
   const accessToken = await getAccessToken();
   // X-Reynov-Origin : permet à la synchronisation Gmail de ne pas confondre nos envois automatiques avec une vraie réponse
-  const tag = origin ? [`X-Reynov-Origin: ${origin}`] : [];
-
-  let rawParts;
-  if (attachments.length === 0) {
-    rawParts = [
-      `From: ${from}`,
-      `To: ${to}`,
-      `Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`,
-      ...tag,
-      'MIME-Version: 1.0',
-      'Content-Type: text/html; charset=UTF-8',
-      '',
-      html,
-    ];
-  } else {
-    const boundary = `boundary_${Date.now()}`;
-    rawParts = [
-      `From: ${from}`,
-      `To: ${to}`,
-      `Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`,
-      ...tag,
-      'MIME-Version: 1.0',
-      `Content-Type: multipart/mixed; boundary="${boundary}"`,
-      '',
-      `--${boundary}`,
-      'Content-Type: text/html; charset=UTF-8',
-      '',
-      html,
-      ...attachments.flatMap(a => [
-        `--${boundary}`,
-        `Content-Type: ${a.contentType}`,
-        'Content-Transfer-Encoding: base64',
-        `Content-Disposition: attachment; filename="${a.filename}"`,
-        '',
-        a.content.toString('base64'),
-      ]),
-      `--${boundary}--`,
-    ];
-  }
-
-  const raw = Buffer.from(rawParts.join('\r\n')).toString('base64url');
+  const headers = origin ? [`X-Reynov-Origin: ${origin}`] : [];
+  // Accusés de réception : message automatique (évite les réponses automatiques en boucle)
+  if (origin === 'ack') headers.push('Auto-Submitted: auto-generated', 'X-Auto-Response-Suppress: OOF, AutoReply');
+  const raw = Buffer.from(mime.build({ from, to, subject, html, text: text || mime.htmlToText(html), attachments, headers })).toString('base64url');
   const r = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/send`, {
     method: 'POST',
     headers: {
@@ -948,6 +912,20 @@ const slimLead = (l) => {
   return { ...rest, triage: t, events_count: (events || []).length };
 };
 const replyLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 60, standardHeaders: true, legacyHeaders: false, message: { ok: false, error: 'Trop d\'envois. Réessayez plus tard.' } });
+// E-mail de test (administrateur) : permet de vérifier où arrivent nos messages (boîte de réception ou courrier indésirable) et d'obtenir un score sur mail-tester.com
+app.post('/api/crm/mail/test', replyLimiter, async (req, res) => {
+  const b = req.body || {}; const to = cleanLine(b.to, 200);
+  if (!to || !EMAIL_RE.test(to)) return res.status(400).json({ ok: false, error: 'Adresse e-mail de test invalide.' });
+  const ack = b.kind !== 'reply';
+  const html = ack ? mailtpl.quoteAck({ prenom: 'Test', nom: 'REYNOV', email: to, prestation: 'Rénovation de jantes', nb_jantes: '4', marque: 'BMW', modele: 'X3', mode: 'À domicile' }) : mailtpl.reply('Bonjour,\n\nCeci est un message de test envoyé depuis le CRM REYNOV : il sert à vérifier qu\'il arrive bien dans votre boîte de réception.\n\nCordialement,\nL\'équipe REYNOV');
+  try {
+    if (process.env.CRM_TEST_MODE !== '1') {
+      if (!GMAIL_USER) throw new Error('Gmail non configuré sur le serveur');
+      await sendEmail({ from: `"REYNOV" <${GMAIL_USER}>`, to, subject: ack ? 'Votre demande de devis REYNOV a bien été reçue (test)' : 'Message de test REYNOV', html, origin: ack ? 'ack' : 'crm' });
+    }
+    res.json({ ok: true });
+  } catch (e) { console.error('❌ E-mail de test :', e.message); res.status(502).json({ ok: false, error: 'Envoi impossible : ' + e.message }); }
+});
 
 app.get('/api/crm/config', (_req, res) => {
   res.json({ ok: true, data: { user: _req.user, review_url: process.env.GOOGLE_REVIEW_URL || '', ai: triage.aiAvailable(), email: !!(GMAIL_USER && GMAIL_CLIENT_ID && GMAIL_CLIENT_SECRET && GMAIL_REFRESH_TOKEN) || process.env.CRM_TEST_MODE === '1', categories: triage.CATEGORIES, statuses: db.LEAD_STATUS } });
