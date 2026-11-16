@@ -318,8 +318,8 @@ const PITCH = {
 const PRICES = [
   { label: 'Rénovation couleur simple', ht: 110 },
   { label: 'Rénovation bi-ton', ht: 130 },
-  { label: 'Usinage complet', ht: 70 },
-  { label: 'Usinage et ponçage', ht: 80 },
+  { label: 'Usinage complet, sans ponçage', ht: 70 },
+  { label: 'Usinage complet, avec ponçage', ht: 80 },
   { label: 'Dévoilage', ht: 140 },
   { label: 'Jante fissurée (soudure)', ht: 140 },
 ];
