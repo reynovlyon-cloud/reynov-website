@@ -368,7 +368,13 @@ body.role-employe .admin-only { display: none !important; }
 .pchips { display: flex; flex-wrap: wrap; gap: 5px; }
 .pact { display: flex; gap: 8px; flex: 0 0 auto; }
 .btn.icon { width: 40px; height: 40px; padding: 0; flex: 0 0 auto; }
-.chip.prio { --c: var(--slate); flex: 0 0 auto; } .chip.prio.A { --c: var(--amber); }
+.chip.prio { --c: var(--slate); flex: 0 0 auto; } .chip.prio.A { --c: var(--amber); } .chip.prio.C { opacity: .65; }
+.card.know h4 { margin-bottom: 8px; }
+.know-angle { display: grid; gap: 2px; padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, var(--blue) 10%, transparent); font-size: 13px; line-height: 1.45; margin-bottom: 8px; }
+.know-angle b { font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: .02em; }
+.know-warn { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, var(--amber) 14%, transparent); font-size: 13px; line-height: 1.45; margin-bottom: 8px; }
+.know-warn svg, .know-alert svg { flex: 0 0 auto; width: 16px; height: 16px; margin-top: 2px; }
+.know-alert { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; line-height: 1.45; }
 .chip.warn { --c: var(--amber); cursor: pointer; }
 .pst-contacte { --c: var(--violet); } .pst-a_rappeler { --c: var(--amber); } .pst-rdv_pris { --c: var(--green); } .pst-essai_en_cours { --c: var(--blue); } .pst-partenaire { --c: var(--emerald); } .pst-perdu { --c: var(--slate); }
 .p-more { display: grid; place-items: center; padding: 14px 0 24px; }

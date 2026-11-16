@@ -19,17 +19,18 @@ const line = (v, max) => String(v == null ? '' : v).replace(/[\u0000-\u001F\u007
 const text = (v, max) => String(v == null ? '' : v).replace(/\r\n?/g, '\n').replace(/[\u0000-\u0008\u000B-\u001F\u007F\u200B-\u200F\u2028\u2029\uFEFF]/g, ' ').trim().slice(0, max);
 const fold = (s) => String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 const isDate = (v) => /^\d{4}-\d{2}-\d{2}$/.test(String(v || '')) && !isNaN(Date.parse(v));
-const num = (v) => { const n = Number(String(v == null ? '' : v).replace(',', '.')); return isFinite(n) && String(v).trim() !== '' ? n : null; };
+const num = (v) => { if (v == null) return null; const t = String(v).trim().replace(',', '.'); if (t === '') return null; const n = Number(t); return isFinite(n) ? n : null; };      // une valeur absente reste vide (et non 0)
 
 function email(v) {
   for (const part of String(v || '').split(/[;,\s]+/)) {
     const e = part.replace(/^mailto:/i, '').trim();
-    if (e.length <= 200 && /^[^\s@<>"'()\\]+@[^\s@<>"'()\\]+\.[^\s@<>"'()\\]{2,}$/.test(e)) return e.toLowerCase();
+    // adresse ASCII uniquement : une adresse avec accent est presque toujours une faute de saisie et ne serait jamais livrée
+    if (e.length <= 200 && /^[A-Za-z0-9.!#$%&*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/.test(e)) return e.toLowerCase();
   }
   return '';
 }
 function url(v) {
-  let s = line(v, 300); if (!s) return '';
+  let s = line(String(v == null ? '' : v).replace(/&amp;/gi, '&'), 300); if (!s) return '';
   if (!/^[a-z][a-z0-9+.-]*:/i.test(s)) s = 'https://' + s;
   try { const u = new URL(s); return /^https?:$/.test(u.protocol) && u.hostname.includes('.') ? u.href : ''; } catch (e) { return ''; }
 }
@@ -53,6 +54,9 @@ const phoneKey = (s) => { const d = digits(s); return d.length >= 9 ? d.slice(-9
 const telHref = (s) => { const d = String(s || '').replace(/[^\d+]/g, ''); return d.startsWith('0') ? '+33' + d.slice(1) : d; };
 const waDigits = (s) => { const d = telHref(s).replace(/^\+/, ''); return /^\d{8,15}$/.test(d) ? d : ''; };
 const siret = (v) => { const d = digits(v); return d.length === 14 ? d : ''; };
+const prio3 = (v) => { const s = String(v == null ? '' : v).trim().toUpperCase(); return s === 'A' || s === 'C' ? s : 'B'; };
+const km = (v) => { const n = num(v); return n != null && n >= 0 && n < 2000 ? Math.round(n * 10) / 10 : null; };
+const geo = (v, lo, hi) => { const n = num(v); return n != null && n >= lo && n <= hi ? Math.round(n * 1e5) / 1e5 : null; };
 const oneOf = (v, list, def) => (list.includes(v) ? v : def);
 const keyOf = (o, v, def) => (Object.prototype.hasOwnProperty.call(o, v) ? v : def);
 
@@ -63,13 +67,18 @@ function clean(raw) {
   const ph = phones(raw.phone);
   const p = {
     external_id: /^[A-Za-z0-9_.:-]{1,64}$/.test(String(raw.external_id || '')) ? String(raw.external_id) : '',
-    segment: keyOf(SEGMENTS, raw.segment, 'autre'), priority: raw.priority === 'A' ? 'A' : 'B',
+    segment: keyOf(SEGMENTS, raw.segment, 'autre'), priority: prio3(raw.priority),
     name, legal_name: line(raw.legal_name, 200), address: line(raw.address, 200), postcode: line(raw.postcode, 10), city: line(raw.city, 100), zone: line(raw.zone, 80),
-    distance_km: (() => { const n = num(raw.distance_km); return n != null && n >= 0 && n < 2000 ? Math.round(n * 10) / 10 : null; })(),
+    distance_km: km(raw.distance_km), distance_atelier_km: km(raw.distance_atelier_km),
     phone: ph[0] || '', phone_alt: ph.slice(1, 3).join(' ; '),
     website: url(raw.website), email: email(raw.email), brand: line(String(raw.brand || '').replace(/\s*;\s*/g, ', '), 120), employees: line(raw.employees, 30),
     siret: siret(raw.siret), maps_url: mapsUrl(raw.maps_url), source: line(raw.source, 40),
     relation: keyOf(RELATIONS, raw.relation, 'cible'), status: keyOf(STATUSES, raw.status, 'a_contacter'),
+    // informations du fichier d'import, en lecture seule dans la fiche (elles ne remplacent jamais ce que vous saisissez)
+    group: line(raw.group, 120), volume: line(raw.volume_estimate || raw.volume, 120), justification: line(raw.justification, 500), angle: line(raw.commercial_angle || raw.angle, 400),
+    decision_maker: line(raw.decision_maker, 200), inhouse: line(raw.wheel_workshop_inhouse || raw.inhouse, 200), contact_page: url(raw.contact_page),
+    lat: geo(raw.lat, -90, 90), lon: geo(raw.lon, -180, 180), verified_at: isDate(raw.verified_at) ? String(raw.verified_at) : '',
+    sources: (Array.isArray(raw.sources) ? raw.sources : []).map(url).filter((u, i, a) => u && a.indexOf(u) === i).slice(0, 6),
   };
   return p;
 }
@@ -85,11 +94,20 @@ function addToIndex(idx, p) {
   if (p.siret) idx.siret.set(p.siret, p);
   if (p.postcode) { const k = fold(p.name) + '|' + p.postcode; if (!idx.np.has(k)) idx.np.set(k, []); idx.np.get(k).push(p); }
 }
+// Distance à vol d'oiseau (km) quand les deux fiches ont des coordonnées ; au-delà de 2 km ce ne sont pas les mêmes lieux
+function far(a, b) {
+  if (a.lat == null || a.lon == null || b.lat == null || b.lon == null) return false;
+  const r = Math.PI / 180, dLat = (b.lat - a.lat) * r, dLon = (b.lon - a.lon) * r;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLon / 2) ** 2;
+  return 12742 * Math.asin(Math.sqrt(h)) > 2;
+}
 function findDuplicate(idx, c) {
   if (c.external_id && idx.ext.has(c.external_id)) return { p: idx.ext.get(c.external_id), by: 'identifiant' };
   if (c.siret && idx.siret.has(c.siret)) return { p: idx.siret.get(c.siret), by: 'SIRET' };
   if (c.postcode) {
     for (const o of idx.np.get(fold(c.name) + '|' + c.postcode) || []) {
+      if (c.siret && o.siret && c.siret !== o.siret) continue;          // deux SIRET différents : deux établissements distincts, même s'ils portent le même nom
+      if (far(c, o)) continue;                                          // deux adresses éloignées : deux établissements, même nom et même code postal
       const a = phoneKey(c.phone), b = phoneKey(o.phone);
       if (!a || !b || a === b) return { p: o, by: 'nom + code postal' };       // deux établissements avec des numéros différents ne sont pas des doublons
     }
@@ -101,13 +119,15 @@ const fingerprint = (p) => ({ ext: p.external_id || '', siret: p.siret || '', np
 function isBlocked(blocks, c) {
   return (blocks || []).some((b) => (b.ext && b.ext === c.external_id) || (b.siret && b.siret === c.siret) || (b.np && c.postcode && b.np === fold(c.name) + '|' + c.postcode));
 }
-const FILL = ['external_id', 'legal_name', 'address', 'postcode', 'city', 'zone', 'distance_km', 'phone', 'phone_alt', 'website', 'email', 'brand', 'employees', 'siret', 'maps_url', 'source'];
+const FILL = ['external_id', 'legal_name', 'address', 'postcode', 'city', 'zone', 'distance_km', 'distance_atelier_km', 'phone', 'phone_alt', 'website', 'email', 'brand', 'employees', 'siret', 'maps_url', 'source',
+  'group', 'volume', 'justification', 'angle', 'decision_maker', 'inhouse', 'contact_page', 'lat', 'lon', 'verified_at', 'sources'];
+const blank = (v) => v === '' || v == null || (Array.isArray(v) && !v.length);
 // Un ré-import complète seulement les champs vides : jamais d'écrasement de ce que vous avez saisi.
 function fillEmpty(existing, c) {
   const changed = [];
   for (const k of FILL) {
     const cur = existing[k], inc = c[k];
-    if ((cur === '' || cur == null) && inc !== '' && inc != null) { existing[k] = inc; changed.push(k); }
+    if (blank(cur) && !blank(inc)) { existing[k] = inc; changed.push(k); }
   }
   return changed;
 }
@@ -149,11 +169,18 @@ const bestEmail = (p) => p.contact_email || p.email || '';
 const lastInteraction = (p) => (p.interactions && p.interactions.length ? p.interactions[p.interactions.length - 1] : null);
 
 // Vue allégée pour les listes (sans l'historique complet)
-function slim(p, now) {
-  const { interactions, ...rest } = p; const li = lastInteraction(p);
-  return { ...rest, interactions_count: (interactions || []).length, last_interaction: li ? { ts: li.ts, channel: li.channel, result: li.result } : null, due: isDue(p, now), blocked: isBlockedRel(p), maps_link: mapsLink(p), route_link: routeLink(p) };
+// Signaux tirés du registre : à vérifier avant de démarcher (rien n'est bloqué automatiquement)
+function alerts(p) {
+  const a = [], dm = p.decision_maker || '';
+  if (/liquidateur/i.test(dm)) a.push({ k: 'liquidation', short: 'Liquidation ?', text: 'Le registre cite un liquidateur : l\'entreprise est peut-être en liquidation. À vérifier avant de la démarcher.' });
+  if (/commissaire aux comptes/i.test(dm)) a.push({ k: 'cac', short: '', text: 'Le registre cite un commissaire aux comptes, pas un dirigeant : le vrai décideur est à trouver.' });
+  return a;
 }
-function full(p, now) { const s = slim(p, now); s.interactions = (p.interactions || []).slice().reverse(); return s; }
+function slim(p, now) {
+  const { interactions, justification, angle, sources, lat, lon, ...rest } = p; const li = lastInteraction(p);
+  return { ...rest, alerts: alerts(p), km: kmOf(p) == null ? null : kmOf(p), interactions_count: (interactions || []).length, last_interaction: li ? { ts: li.ts, channel: li.channel, result: li.result } : null, due: isDue(p, now), blocked: isBlockedRel(p), maps_link: mapsLink(p), route_link: routeLink(p) };
+}
+function full(p, now) { const s = slim(p, now); s.justification = p.justification || ''; s.angle = p.angle || ''; s.sources = p.sources || []; s.interactions = (p.interactions || []).slice().reverse(); return s; }
 
 // ── Filtres, tri, pagination ──
 function matches(p, q, now) {
@@ -177,8 +204,9 @@ function matches(p, q, now) {
   }
   return true;
 }
-const prio = (p) => (p.priority === 'A' ? 0 : 1);
-const dist = (p) => (p.distance_km == null ? 9999 : p.distance_km);
+const prio = (p) => ({ A: 0, B: 1, C: 2 }[p.priority] ?? 1);
+const kmOf = (p) => (p.distance_atelier_km != null ? p.distance_atelier_km : p.distance_km);          // les trajets partent de l'atelier
+const dist = (p) => (kmOf(p) == null ? 9999 : kmOf(p));
 const SORTS = {
   priority: (a, b) => prio(a) - prio(b) || dist(a) - dist(b) || a.id - b.id,
   distance: (a, b) => dist(a) - dist(b) || a.id - b.id,
@@ -242,13 +270,13 @@ function cleanPatch(b) {
   if (b.offer !== undefined) o.offer = text(b.offer, 1000);
   if (b.tags !== undefined) o.tags = (Array.isArray(b.tags) ? b.tags : String(b.tags || '').split(',')).map((t) => line(t, 30)).filter(Boolean).slice(0, 12);
   if (b.segment !== undefined) o.segment = keyOf(SEGMENTS, b.segment, 'autre');
-  if (b.priority !== undefined) o.priority = b.priority === 'A' ? 'A' : 'B';
+  if (b.priority !== undefined) o.priority = prio3(b.priority);
   if (b.relation !== undefined && RELATIONS[b.relation]) o.relation = b.relation;
   if (b.status !== undefined && STATUSES[b.status]) o.status = b.status;
   if (b.next_at !== undefined) o.next_at = isDate(b.next_at) ? b.next_at : '';
   if (b.assigned_to !== undefined) o.assigned_to = b.assigned_to ? Number(b.assigned_to) || null : null;
   if (b.client_id !== undefined) o.client_id = b.client_id ? Number(b.client_id) || null : null;
-  if (b.distance_km !== undefined) { const n = num(b.distance_km); o.distance_km = n != null && n >= 0 && n < 2000 ? n : null; }
+  if (b.distance_km !== undefined) o.distance_km = km(b.distance_km);
   if (o.relation && BLOCKED.includes(o.relation)) { o.next_at = ''; o.next_action = ''; }      // un refus n'est jamais relancé
   return o;
 }
@@ -267,7 +295,7 @@ function stats(list, now) {
     if (p.email || p.contact_email) o.with_email++;
     if (isDue(p, now)) o.due++;
     if (p.relation === 'partenaire_actif' || p.status === 'partenaire') o.partners++;
-    if (p.zone) { const z = zones.get(p.zone) || { zone: p.zone, n: 0, km: p.distance_km == null ? 999 : p.distance_km }; z.n++; if (p.distance_km != null) z.km = Math.min(z.km, p.distance_km); zones.set(p.zone, z); }
+    if (p.zone) { const z = zones.get(p.zone) || { zone: p.zone, n: 0, km: kmOf(p) == null ? 999 : kmOf(p) }; z.n++; if (kmOf(p) != null) z.km = Math.min(z.km, kmOf(p)); zones.set(p.zone, z); }
     const its = p.interactions || [];
     const recent = its.filter((i) => Date.parse(i.ts) > since);
     o.week.contacts += recent.length; if (recent.length) o.week.prospects++;
@@ -287,11 +315,12 @@ function stats(list, now) {
 const CSV_COLS = [
   ['ID', (p) => p.id], ['Entreprise', (p) => p.name], ['Raison sociale', (p) => p.legal_name], ['Segment', (p) => SEGMENTS[p.segment]], ['Priorité', (p) => p.priority],
   ['Relation', (p) => RELATIONS[p.relation]], ['Statut', (p) => STATUSES[p.status]], ['Adresse', (p) => p.address], ['Code postal', (p) => p.postcode], ['Ville', (p) => p.city],
-  ['Zone', (p) => p.zone], ['Distance (km)', (p) => (p.distance_km == null ? '' : String(p.distance_km).replace('.', ','))], ['Téléphone', (p) => p.phone], ['Autre téléphone', (p) => p.phone_alt],
+  ['Zone', (p) => p.zone], ['Distance atelier (km)', (p) => (kmOf(p) == null ? '' : String(kmOf(p)).replace('.', ','))], ['Téléphone', (p) => p.phone], ['Autre téléphone', (p) => p.phone_alt],
   ['E-mail', (p) => p.email], ['Site', (p) => p.website], ['Marques', (p) => p.brand], ['Effectif', (p) => p.employees], ['SIRET', (p) => p.siret],
   ['Contact', (p) => p.contact_name], ['Fonction', (p) => p.contact_role], ['Téléphone direct', (p) => p.contact_phone], ['E-mail direct', (p) => p.contact_email], ['WhatsApp', (p) => p.contact_whatsapp],
   ['Dernier contact', (p) => (p.last_contact_at ? p.last_contact_at.slice(0, 10) : '')], ['Prochaine action', (p) => p.next_action], ['Date de rappel', (p) => p.next_at], ['Responsable', (p, ctx) => (p.assigned_to && ctx && ctx.userName ? ctx.userName(p.assigned_to) : '')],
   ['Offre / conditions', (p) => p.offer], ['Notes', (p) => p.notes], ['Étiquettes', (p) => (p.tags || []).join(', ')], ['Source', (p) => p.source],
+  ['Volume estimé', (p) => p.volume], ['Groupe', (p) => p.group], ['Dirigeant (registre)', (p) => p.decision_maker], ['Pourquoi ce prospect', (p) => p.justification], ['Angle d\'approche', (p) => p.angle],
 ];
 function csvCell(v) {
   let s = v == null ? '' : String(v).replace(/\r?\n/g, ' ');

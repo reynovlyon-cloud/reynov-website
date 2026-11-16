@@ -67,7 +67,7 @@
 <dialog id="dlg-pfilters" class="sheet"><div class="dlg" id="pf-box"></div></dialog>
 <dialog id="dlg-pimport"><div class="dlg">
   <h3>Importer des prospects</h3>
-  <p class="muted" style="margin:0 0 12px">Choisissez le fichier JSON (<em>REYNOV_prospects_import.json</em>). Vous verrez d'abord un aperçu : rien n'est enregistré avant que vous ne validiez. Un ré-import ajoute seulement les nouveaux prospects et complète les champs vides : il ne remplace jamais ce que vous avez saisi.</p>
+  <p class="muted" style="margin:0 0 12px">Choisissez le fichier JSON des prospects (par exemple <em>REYNOV_prospects_import_v2.json</em>). Vous verrez d'abord un aperçu : rien n'est enregistré avant que vous ne validiez. Un ré-import ajoute seulement les nouveaux prospects et complète les champs vides : il ne remplace jamais ce que vous avez saisi.</p>
   <input type="file" id="pimp-file" accept=".json,application/json" class="input" />
   <div id="pimp-report" aria-live="polite" style="margin-top:14px"></div>
   <div class="foot"><button class="btn" type="button" data-action="close-dlg">Fermer</button><button class="btn primary" type="button" id="pimp-go" data-action="p-import-go" disabled>Importer</button></div>
@@ -160,13 +160,33 @@
       <div id="p-rows" class="prows"></div><div id="p-more" class="p-more"></div>`;
     $('#p-sort').addEventListener('change', (e) => { P.sort = e.target.value; saveState(); loadList(true); });
   }
+  // « À savoir » : ce que le fichier d'import dit de ce prospect (lecture seule ; tout est échappé)
+  function know(p) {
+    const rows = [];
+    if (p.angle) rows.push(`<div class="know-angle"><b>Angle d'approche</b><span>${esc(p.angle)}</span></div>`);
+    if (p.inhouse) rows.push(`<div class="know-warn">${ico('alert')} Atelier de jantes en interne : ${esc(p.inhouse)}</div>`);
+    const kv = [
+      p.volume ? ['Volume estimé', esc(p.volume)] : null,
+      p.decision_maker ? ['Dirigeant (registre)', esc(p.decision_maker)] : null,
+      p.group ? ['Groupe', esc(p.group)] : null,
+      p.km != null && p.distance_km != null && p.distance_km !== p.km ? ['Depuis Bellecour', esc(p.distance_km) + ' km'] : null,
+      p.contact_page ? ['Page de contact', `<a href="${esc(p.contact_page)}" target="_blank" rel="noopener noreferrer">Ouvrir</a>`] : null,
+      p.verified_at ? ['Vérifié le', esc(p.verified_at.split('-').reverse().join('/'))] : null,
+    ].filter(Boolean);
+    if (kv.length) rows.push(`<dl class="kv">${kv.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('')}</dl>`);
+    if (p.justification) rows.push(`<p class="faint" style="font-size:12px;margin:8px 0 0">${esc(p.justification)}</p>`);
+    const src = (p.sources || []).map((u) => { let h = u; try { h = new URL(u).hostname.replace(/^www\./, ''); } catch (e) { /* adresse déjà nettoyée côté serveur */ } return `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(h)}</a>`; });
+    if (src.length) rows.push(`<p class="faint" style="font-size:12px;margin:6px 0 0">Sources : ${src.join(' · ')}</p>`);
+    return rows.length ? `<div class="card know"><h4>${ico('sparkle')} À savoir</h4>${rows.join('')}</div>` : '';
+  }
   function row(p) {
     const tel = bestTel(p), mail = bestMail(p);
     const sel = P.selMode ? `<label class="pcheck"><input type="checkbox" data-pcheck data-id="${p.id}"${P.sel.has(p.id) ? ' checked' : ''} aria-label="Sélectionner ${esc(p.name)}" /></label>` : '';
-    const meta = [SEG[p.segment], p.city, p.distance_km != null ? p.distance_km + ' km' : '', p.brand].filter(Boolean).map(esc).join(' · ');
+    const meta = [SEG[p.segment], p.city, p.km != null ? p.km + ' km' : '', p.brand].filter(Boolean).map(esc).join(' · ');
     const st = p.status !== 'a_contacter' ? `<span class="chip pst-${esc(p.status)}"><span class="dot"></span>${esc(STAT[p.status])}</span>` : '';
     const next = p.next_at ? `<span class="chip ${p.due ? 'urgent' : ''}">${ico('clock')}${esc(day(p.next_at))}${p.next_action ? ' · ' + esc(p.next_action) : ''}</span>` : '';
     const last = p.last_contact_at ? `<span class="chip">${esc(ago(p.last_contact_at))}</span>` : '';
+    const alertChip = (p.alerts || []).filter((a) => a.short).map((a) => `<span class="chip warn" title="${esc(a.text)}">${esc(a.short)}</span>`).join('');
     const noTel = !tel ? `<span class="chip warn" data-action="p-open" data-id="${p.id}" data-focus="phone">Téléphone à compléter</span>` : '';
     const acts = [
       tel ? `<a class="btn sm call icon" href="tel:${esc(telOf(tel))}" aria-label="Appeler" data-action="p-call" data-id="${p.id}">${ico('phone')}</a>` : '',
@@ -174,7 +194,7 @@
       mail && !p.blocked ? `<button class="btn sm mail icon" aria-label="E-mail de présentation" data-action="p-mail" data-id="${p.id}">${ico('mail')}</button>` : '',
     ].join('');
     return `<article class="prow${p.due ? ' due' : ''}${p.blocked ? ' blocked' : ''}" data-id="${p.id}">${sel}
-      <div class="pmain" data-action="p-open" data-id="${p.id}"><div class="pname"><span class="pn">${esc(p.name)}</span><span class="chip prio ${esc(p.priority)}">${esc(p.priority)}</span></div><div class="pmeta">${meta}</div><div class="pchips">${st}${chipRel(p)}${next}${last}${noTel}</div></div>
+      <div class="pmain" data-action="p-open" data-id="${p.id}"><div class="pname"><span class="pn">${esc(p.name)}</span><span class="chip prio ${esc(p.priority)}">${esc(p.priority)}</span></div><div class="pmeta">${meta}</div><div class="pchips">${st}${chipRel(p)}${alertChip}${next}${last}${noTel}</div></div>
       <div class="pact">${acts}</div></article>`;
   }
   async function loadList(reset) {
@@ -208,7 +228,7 @@
     $('#pf-box').innerHTML = `<h3>Filtres</h3>
       <div class="field"><label>Segment</label><select class="input" id="pfl-segment">${opt(SEG, f.segment, 'Tous')}</select></div>
       <div class="field"><label>Zone</label><select class="input" id="pfl-zone"><option value="">Toutes</option>${zones.map(([v, l]) => `<option value="${esc(v)}"${v === f.zone ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></div>
-      <div class="two"><div class="field"><label>Priorité</label><select class="input" id="pfl-priority"><option value="">Toutes</option><option value="A"${f.priority === 'A' ? ' selected' : ''}>A</option><option value="B"${f.priority === 'B' ? ' selected' : ''}>B</option></select></div>
+      <div class="two"><div class="field"><label>Priorité</label><select class="input" id="pfl-priority"><option value="">Toutes</option><option value="A"${f.priority === 'A' ? ' selected' : ''}>A</option><option value="B"${f.priority === 'B' ? ' selected' : ''}>B</option><option value="C"${f.priority === 'C' ? ' selected' : ''}>C</option></select></div>
       <div class="field"><label>Téléphone</label><select class="input" id="pfl-tel"><option value="">Tous</option><option value="avec"${f.tel === 'avec' ? ' selected' : ''}>Avec téléphone</option><option value="sans"${f.tel === 'sans' ? ' selected' : ''}>Sans téléphone</option></select></div></div>
       <div class="two"><div class="field"><label>Statut</label><select class="input" id="pfl-status">${opt(STAT, f.status, 'Tous')}</select></div>
       <div class="field"><label>Ville</label><input class="input" id="pfl-ville" value="${esc(f.ville)}" maxlength="60" autocomplete="off" /></div></div>
@@ -225,7 +245,7 @@
       <select class="mini" id="pb-field" aria-label="Champ à changer"><option value="status">Statut</option><option value="relation">Relation</option><option value="priority">Priorité</option></select>
       <select class="mini" id="pb-val" aria-label="Nouvelle valeur">${opt(STAT, 'contacte')}</select>
       <button class="btn primary sm" data-action="p-bulk-apply">Appliquer</button><button class="btn sm" data-action="p-bulk-clear">Annuler</button>`;
-    $('#pb-field').addEventListener('change', (e) => { $('#pb-val').innerHTML = e.target.value === 'status' ? opt(STAT, 'contacte') : e.target.value === 'relation' ? opt(REL, 'cible') : '<option value="A">A</option><option value="B">B</option>'; });
+    $('#pb-field').addEventListener('change', (e) => { $('#pb-val').innerHTML = e.target.value === 'status' ? opt(STAT, 'contacte') : e.target.value === 'relation' ? opt(REL, 'cible') : '<option value="A">A</option><option value="B">B</option><option value="C">C</option>'; });
   }
 
   // ── Fiche prospect (tiroir) ──
@@ -256,15 +276,17 @@
     $('#drawer').innerHTML = `
     <div class="dr-head">
       <div class="dr-title"><span class="avatar" style="--c:${REL_COLOR[p.relation] || 'var(--blue)'}">${esc((p.name || '?').trim()[0] || '?')}</span><h2>${esc(p.name)}</h2><button class="icon-btn" data-action="close-drawer" aria-label="Fermer">${ico('close')}</button></div>
-      <div class="dr-meta"><span class="chip">${esc(SEG[p.segment] || p.segment)}</span><span class="chip prio ${esc(p.priority)}">Priorité ${esc(p.priority)}</span>${p.distance_km != null ? `<span>${esc(p.distance_km)} km de l'atelier</span>` : ''}${p.zone ? `<span>${esc(p.zone)}</span>` : ''}${p.source ? `<span class="faint">Source : ${esc(p.source)}</span>` : ''}</div>
+      <div class="dr-meta"><span class="chip">${esc(SEG[p.segment] || p.segment)}</span><span class="chip prio ${esc(p.priority)}">Priorité ${esc(p.priority)}</span>${p.km != null ? `<span>${esc(p.km)} km de l'atelier</span>` : ''}${p.zone ? `<span>${esc(p.zone)}</span>` : ''}${p.source ? `<span class="faint">Source : ${esc(p.source)}</span>` : ''}</div>
       <div class="dr-actions">${actions}</div>
     </div>
     <div class="dr-body">
       ${blocked ? `<div class="card" style="border-color:var(--rose)"><b>${esc(REL[p.relation])}</b> — ce prospect ne reçoit ni relance ni message.</div>` : ''}
+      ${(p.alerts || []).map((a) => `<div class="card know-alert" style="border-color:var(--amber)">${ico('alert')}<span>${esc(a.text)}</span></div>`).join('')}
+      ${know(p)}
       <form id="pf" autocomplete="off">
       <div class="card"><h4>Relation et suivi</h4>
         <div class="two"><div class="field"><label>Relation</label><select class="input" id="pf-relation" name="relation" data-pquick>${opt(REL, p.relation)}</select></div><div class="field"><label>Statut</label><select class="input" id="pf-status" name="status" data-pquick>${opt(STAT, p.status)}</select></div></div>
-        <div class="two"><div class="field"><label>Priorité</label><select class="input" name="priority"><option value="A"${p.priority === 'A' ? ' selected' : ''}>A</option><option value="B"${p.priority === 'B' ? ' selected' : ''}>B</option></select></div><div class="field"><label>Responsable</label><select class="input" name="assigned_to">${C.userOptions(p.assigned_to)}</select></div></div>
+        <div class="two"><div class="field"><label>Priorité</label><select class="input" name="priority"><option value="A"${p.priority === 'A' ? ' selected' : ''}>A</option><option value="B"${p.priority === 'B' ? ' selected' : ''}>B</option><option value="C"${p.priority === 'C' ? ' selected' : ''}>C</option></select></div><div class="field"><label>Responsable</label><select class="input" name="assigned_to">${C.userOptions(p.assigned_to)}</select></div></div>
         <div class="field"><label for="pf-next_action">Prochaine action</label><input class="input" id="pf-next_action" name="next_action" value="${esc(p.next_action)}" maxlength="200" placeholder="Ex. : Rappeler, envoyer des photos…" ${blocked ? 'disabled' : ''} /></div>
         <div class="field"><label for="pf-next_at">Me rappeler le</label><div class="inline"><input class="input" type="date" id="pf-next_at" name="next_at" value="${esc(p.next_at)}" ${blocked ? 'disabled' : ''} />${blocked ? '' : `<button class="btn sm" type="button" data-action="p-date" data-d="1">Demain</button><button class="btn sm" type="button" data-action="p-date" data-d="3">+3 j</button><button class="btn sm" type="button" data-action="p-date" data-d="7">+1 sem.</button>`}</div></div>
       </div>
