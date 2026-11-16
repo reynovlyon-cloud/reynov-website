@@ -1,6 +1,11 @@
 server/data/*.db
 server/data/*.db-*
 server/data/*.json
+# Fichiers de prospection (CSV, Excel…) : données d'entreprises, jamais dans ce dépôt public
+server/data/*.csv
+server/data/*.tsv
+server/data/*.xls
+server/data/*.xlsx
 
 # Local Netlify folder
 .netlify

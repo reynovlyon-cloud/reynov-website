@@ -91,6 +91,30 @@ function proAck(l, company) {
   return shell({ title: 'Votre demande professionnelle — REYNOV', preheader: 'Demande bien reçue : diagnostic et devis avant tout accord.', hero: false, body, note: 'Vous recevez cet e-mail car vous avez écrit à REYNOV depuis la page professionnels de reynov-jantes.fr. Pour ne rien manquer, ajoutez reynov.lyon@gmail.com à vos contacts ; si ce message est arrivé dans vos courriers indésirables, marquez-le « Pas un spam ».' });
 }
 
+// ── E-mail de présentation envoyé à un professionnel (prospection) : un message à la fois, après aperçu, jamais en masse ──
+// d : { person, title, body, ask, personal, prices: [{ label, ht }], pricesNote, pageUrl, pageLabel } (texte brut : tout est échappé ici)
+function prospectOffer(d) {
+  const eur = (n) => Number(n).toLocaleString('fr-FR') + '&nbsp;€&nbsp;HT';
+  const rows = (d.prices || []).map((r, i) => `<tr><td style="padding:12px 0;${i ? `border-top:1px solid ${LINE};` : ''}font-family:${FONT};font-size:14.5px;color:${INK};">${esc(r.label)}</td><td align="right" style="padding:12px 0;${i ? `border-top:1px solid ${LINE};` : ''}font-family:${FONT};font-size:15px;font-weight:700;color:${INK};white-space:nowrap;">${eur(r.ht)}</td></tr>`).join('');
+  const body = `${eyebrow('Pour les professionnels')}${h1(esc(d.title))}
+    ${para('Bonjour,')}
+    ${d.personal ? para(esc(d.personal)) : ''}
+    ${para('Je suis ' + esc(d.person) + ', de <strong style="color:' + INK + ';">REYNOV</strong>, spécialiste de la rénovation de jantes à Lyon. ' + esc(d.body))}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:26px 0 8px;background:${SOFT};border-radius:16px;"><tr><td style="padding:22px 24px 12px;">
+      <p style="margin:0 0 4px;font-family:${FONT};font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:${MUTED};">Nos tarifs professionnels</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${rows}</table>
+      <p style="margin:6px 0 10px;font-family:${FONT};font-size:12.5px;line-height:1.7;color:${MUTED};">${esc(d.pricesNote)}</p>
+    </td></tr></table>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 26px;background:${SOFT};border-radius:16px;"><tr>
+      <td class="stack" align="center" style="padding:16px 8px;font-family:${FONT};font-size:12.5px;font-weight:600;color:${INK};">Intervention en atelier ou sur site</td>
+      <td class="stack" align="center" style="padding:16px 8px;font-family:${FONT};font-size:12.5px;font-weight:600;color:${INK};border-left:1px solid ${LINE};">Garantie satisfaction 30 jours</td>
+      <td class="stack" align="center" style="padding:16px 8px;font-family:${FONT};font-size:12.5px;font-weight:600;color:${INK};border-left:1px solid ${LINE};">Qualité d'origine</td></tr></table>
+    ${para(esc(d.ask), 'margin-bottom:14px;')}
+    ${button('Voir nos réalisations et conditions', esc(d.pageUrl))}${button('Écrire sur WhatsApp', WA, false)}${button('Appeler ' + PHONE, 'tel:' + TEL, false)}
+    ${signature()}`;
+  return shell({ title: 'REYNOV — rénovation de jantes pour les professionnels', body, hero: false, note: 'Vous recevez ce message car votre entreprise exerce une activité liée à l\'automobile près de Lyon. Pour ne plus recevoir de proposition de REYNOV, répondez simplement « STOP » : nous ne vous écrirons plus.' });
+}
+
 // ── Réponse rédigée depuis le CRM (texte libre de l'équipe) ──
 function reply(text) {
   const paras = String(text).split(/\n{2,}/).map((p) => para(esc(p).replace(/\n/g, '<br>'))).join('');
@@ -100,4 +124,4 @@ function reply(text) {
   return shell({ title: 'REYNOV', preheader: String(text).replace(/\s+/g, ' ').slice(0, 110), body, note: 'Vous recevez cet e-mail en réponse à votre demande auprès de REYNOV.' });
 }
 
-module.exports = { shell, button, eyebrow, h1, para, signature, quoteAck, contactAck, proAck, reply, esc, BASE, LOGO, FONT, INK, MUTED, LINE, SOFT };
+module.exports = { shell, button, eyebrow, h1, para, signature, quoteAck, contactAck, proAck, prospectOffer, reply, esc, BASE, LOGO, FONT, INK, MUTED, LINE, SOFT };

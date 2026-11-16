@@ -46,6 +46,7 @@
     mic: P('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>'),
     trash: P('<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>'),
     close: P('<path d="M6 6l12 12M18 6 6 18"/>'),
+    sms: P('<path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-5 4V6a1 1 0 0 1 1-1z"/><path d="M8 10h8M8 13h5"/>'),
   };
   const ico = (n) => ICO[n] || '';
 
@@ -142,6 +143,7 @@
     await refreshAll();
     S.polled = true;
     go((location.hash.replace(/^#\/?/, '') || 'dashboard'));
+    hooks.ready.forEach((fn) => { try { fn(); } catch (e) { /* facultatif */ } });
     setInterval(poll, 30000);
   }
 
@@ -173,12 +175,16 @@
         }
       }
       updateBadge();
+      hooks.poll.forEach((fn) => { try { fn(); } catch (e) { /* facultatif */ } });
       if (!S.openId && (S.view === 'leads' || S.view === 'dashboard')) render();
     } catch (e) { /* silencieux */ }
   }
   function updateBadge() {
     const n = S.leads.filter((l) => l.status === 'nouveau' && !l.contacted).length;
     const b = $('#nav-badge'); b.hidden = !n; b.textContent = n;
+    // Barre du bas (téléphone) : nouveaux leads + rappels dus + clients qui attendent une réponse
+    const act = S.leads.filter((l) => (l.status === 'nouveau' && !l.contacted) || (l.status === 'a_rappeler' && l.reminder_at && Date.parse(l.reminder_at) <= Date.now()) || (l.reply && l.reply.waiting)).length;
+    const tb = $('#tab-badge-leads'); if (tb) { tb.hidden = !act; tb.textContent = act; }
     document.title = (n ? '(' + n + ') ' : '') + 'REYNOV — CRM';
   }
 
@@ -186,19 +192,24 @@
   const ADMIN_VIEWS = ['devis', 'interventions', 'stats', 'settings'];
   const isAdmin = () => !S.user || S.user.role === 'admin';
   const TITLES = { dashboard: 'Tableau de bord', leads: 'Leads', clients: 'Clients', interventions: 'Interventions', stats: 'Statistiques', planning: 'Planning', chantiers: 'Chantiers', publications: 'Publications', devis: 'Devis', settings: 'Paramètres' };
+  const VIEWS = {};                                   // vues ajoutées par d'autres fichiers (prospects.js…) via window.CRM.addView
+  const hooks = { ready: [], poll: [], view: [], close: [] };
   function go(view) {
+    S.scroll = S.scroll || {}; if (S.view) S.scroll[S.view] = window.scrollY;
     if (!TITLES[view] || (ADMIN_VIEWS.includes(view) && !isAdmin())) view = 'dashboard';
     S.view = view;
     if (location.hash !== '#/' + view) history.replaceState(null, '', '#/' + view);
     $$('.view').forEach((v) => { v.hidden = v.id !== 'view-' + view; });
     $$('[data-nav]').forEach((b) => b.classList.toggle('active', b.getAttribute('data-nav') === view));
     $('#view-title').textContent = TITLES[view];
-    $('#global-search').placeholder = view === 'clients' ? 'Rechercher un client…' : 'Rechercher un lead, un client…';
+    $('#global-search').placeholder = view === 'clients' ? 'Rechercher un client…' : (view === 'prospection' ? 'Rechercher un prospect…' : 'Rechercher un lead, un client…');
     $('#sidebar').classList.remove('on');
+    hooks.view.forEach((fn) => { try { fn(view); } catch (e) { /* facultatif */ } });
     render();
+    const y = S.scroll[view] || 0; window.scrollTo(0, y); if (y) setTimeout(() => window.scrollTo(0, y), 450);
   }
   function render() {
-    ({ dashboard: renderDashboard, leads: renderLeads, clients: renderClients, interventions: renderInters, stats: renderStats, planning: renderPlanning, chantiers: renderChantiers, publications: renderPublications, devis: renderDevis, settings: renderSettings }[S.view] || renderDashboard)();
+    ({ dashboard: renderDashboard, leads: renderLeads, clients: renderClients, interventions: renderInters, stats: renderStats, planning: renderPlanning, chantiers: renderChantiers, publications: renderPublications, devis: renderDevis, settings: renderSettings }[S.view] || VIEWS[S.view] || renderDashboard)();
   }
 
   // ── Tableau de bord ───────────────────────────────────────
@@ -317,15 +328,44 @@
       try { S.leadQuotes = (await api('GET', '/quotes?lead_id=' + id)).data; } catch (e) { S.leadQuotes = []; }
       S.openId = id;
       drawLead(j.data, focus);
-      $('#drawer').classList.add('on'); $('#drawer').setAttribute('aria-hidden', 'false'); $('#overlay').classList.add('on');
+      showDrawer();
       if (focus === 'reply') setTimeout(() => { const el = $('#reply-body'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 250);
       if (focus === 'relance') setTimeout(() => { const el = $('#relance-card'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 250);
     } catch (e) { toast(e.message, true); }
   }
-  function closeDrawer() {
+  // Le tiroir (fiche lead ou prospect) prend une entrée dans l'historique : le bouton « retour » du téléphone le ferme au lieu de quitter l'appli.
+  let drawerPushed = false, pendingBack = 0, ignoreHash = false;   // pendingBack : retours d'historique demandés par le code (à ne pas prendre pour un appui sur « retour »)
+  function showDrawer() {
+    $('#drawer').classList.add('on'); $('#drawer').setAttribute('aria-hidden', 'false'); $('#overlay').classList.add('on');
+    if (!drawerPushed) { try { history.pushState({ crm: 'drawer' }, '', location.href); drawerPushed = true; } catch (e) { /* ignoré */ } }
+  }
+  function closeDrawer(fromPop) {
+    hooks.close.forEach((fn) => { try { fn(S.openId); } catch (e) { /* facultatif */ } });
     stopMic(); S.undo = null; S.relanceMode = null;
     S.openId = null;
     $('#drawer').classList.remove('on'); $('#drawer').setAttribute('aria-hidden', 'true'); $('#overlay').classList.remove('on');
+    if (drawerPushed && fromPop !== true) { drawerPushed = false; histBack(); } else drawerPushed = false;
+  }
+  const histBack = () => { pendingBack++; try { history.back(); } catch (e) { pendingBack--; } };
+  window.addEventListener('popstate', () => {
+    if (pendingBack > 0) { pendingBack--; ignoreHash = true; setTimeout(() => { ignoreHash = false; }, 80); return; }     // retour demandé par le code : l'adresse revenue ne doit pas changer de vue
+    const dlg = Array.from(document.querySelectorAll('dialog[open]')).pop();
+    if (dlg) { dlg._byPop = true; dlg.close(); return; }          // « retour » ferme d'abord la fenêtre ouverte, puis la fiche
+    if (S.openId) closeDrawer(true);
+  });
+  // Chaque fenêtre (dialogue, feuille) prend aussi une entrée d'historique : « retour » la ferme au lieu de quitter l'appli
+  const _showModal = HTMLDialogElement.prototype.showModal;
+  HTMLDialogElement.prototype.showModal = function () { _showModal.call(this); try { history.pushState({ crm: 'dlg' }, '', location.href); this._pushed = true; } catch (e) { /* ignoré */ } };
+  document.addEventListener('close', (e) => { const d = e.target; if (d && d.tagName === 'DIALOG' && d._pushed) { d._pushed = false; if (!d._byPop) histBack(); d._byPop = false; } }, true);
+  // Barre d'actions fixée en bas des fiches (visible sur téléphone) : répondre en un appui
+  const telHref = (t) => String(t || '').replace(/[^\d+]/g, '').replace(/^0/, '+33');
+  function actionBar(o) {
+    const off = (c, ic, lbl) => `<span class="btn ${c} disabled" aria-disabled="true">${ico(ic)}<span>${lbl}</span></span>`;
+    const tel = telHref(o.tel), id = o.id != null ? ` data-id="${esc(o.id)}"` : '';
+    return `<div class="dr-bar">${tel ? `<a class="btn call" href="tel:${esc(tel)}" data-action="${o.call}"${id}>${ico('phone')}<span>Appeler</span></a>` : off('call', 'phone', 'Appeler')}`
+      + (tel ? `<a class="btn wa" href="https://wa.me/${esc(waNum(o.tel))}" target="_blank" rel="noopener" data-action="${o.wa}"${id}>${ico('wa')}<span>WhatsApp</span></a>` : off('wa', 'wa', 'WhatsApp'))
+      + (tel ? `<a class="btn" href="sms:${esc(tel)}" data-action="${o.sms}"${id}>${ico('sms')}<span>SMS</span></a>` : off('', 'sms', 'SMS'))
+      + (o.mail ? `<button class="btn mail" data-action="${o.mail}"${id}>${ico('mail')}<span>E-mail</span></button>` : off('mail', 'mail', 'E-mail')) + '</div>';
   }
   function kv(k, v) { return v ? `<dt>${esc(k)}</dt><dd>${esc(dec(v))}</dd>` : ''; }
   function relanceCard(l) {
@@ -423,7 +463,7 @@
       </div>
       <div class="card"><h4>Historique</h4><div class="timeline">${events || '<div class="muted">Aucun événement</div>'}</div></div>
       <div><button class="btn sm danger admin-only" data-action="delete-lead" data-id="${l.id}">${ico('trash')}Supprimer ce lead</button></div>
-    </div>`;
+    </div>${actionBar({ id: l.id, tel: l.tel, call: 'call', wa: 'wa', sms: 'sms', mail: l.email ? 'scroll-reply' : '' })}`;
     drawLeadPhotos(l);
   }
   function db_status_options(cur) {
@@ -473,8 +513,9 @@
         bl('Rendez-vous', (c.events || []).map((e) => `<span>· ${esc(e.all_day ? e.start : new Date(e.start).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }))} — ${esc(e.title)}</span>`)) +
         bl('Chantiers', (c.interventions || []).map((i) => `<span>· ${esc(dec(i.prestation) || 'Intervention')} ${esc(dec([i.marque, i.modele].filter(Boolean).join(' ')))} — ${esc(INTER_ST[i.statut] || i.statut)}${i.montant ? ' — ' + esc(i.montant) + ' €' : ''}</span>`)) + '</div>';
       $('#btn-del-client').hidden = false;
+      const ca = $('#client-actions'); if (ca) ca.innerHTML = c.tel ? `<a class="btn sm call" href="tel:${esc(telHref(c.tel))}">${ico('phone')}Appeler</a><a class="btn sm wa" href="https://wa.me/${esc(waNum(c.tel))}" target="_blank" rel="noopener">${ico('wa')}WhatsApp</a><a class="btn sm" href="sms:${esc(telHref(c.tel))}">${ico('sms')}SMS</a>${c.email ? `<a class="btn sm mail" href="mailto:${esc(c.email)}">${ico('mail')}E-mail</a>` : ''}` : (c.email ? `<a class="btn sm mail" href="mailto:${esc(c.email)}">${ico('mail')}E-mail</a>` : '');
     } else {
-      $('#client-title').textContent = 'Nouveau client'; f.elements.id.value = ''; $('#client-inters').innerHTML = ''; $('#btn-del-client').hidden = true;
+      $('#client-title').textContent = 'Nouveau client'; f.elements.id.value = ''; { const ca = $('#client-actions'); if (ca) ca.innerHTML = ''; } $('#client-inters').innerHTML = ''; $('#btn-del-client').hidden = true;
     }
     $('#dlg-client').showModal();
   }
@@ -593,12 +634,14 @@
     const call = t.to_call.map((c) => `<div class="prog-item" data-action="open" data-id="${c.id}"><span class="avatar" style="--c:${c.urgent ? 'var(--rose)' : 'var(--blue)'};width:30px;height:30px;font-size:11px">${esc(initials({ prenom: c.name.split(' ')[0], nom: c.name.split(' ')[1] || '' }))}</span><div class="grow"><div class="t">${esc(c.name)}${c.urgent ? ' · urgent' : ''}</div><div class="s">${esc(c.summary || ('reçu il y a ' + c.since_h + ' h'))}</div></div><div class="acts">${tel(c.tel)}${wa(c.tel)}</div></div>`).join('') || '<div class="prog-empty">Rien en attente.</div>';
     const rel = (t.relances || []).map((c) => `<div class="prog-item" data-action="open" data-id="${c.id}" data-focus="relance"><span class="avatar" style="--c:var(--violet);width:30px;height:30px;font-size:11px">${esc(initials({ prenom: c.name.split(' ')[0], nom: c.name.split(' ')[1] || '' }))}</span><div class="grow"><div class="t">${esc(c.name)}</div><div class="s">${esc(REL_LBL[c.level] || 'Relance')} · ${c.days} j${c.quote ? ' · devis ' + esc(c.quote.replace('DV-', '')) : ''}</div></div><div class="acts">${tel(c.tel)}${wa(c.tel)}</div></div>`).join('');
     const wait = t.waiting.map((c) => `<div class="prog-item" data-action="open" data-id="${c.id}" data-focus="reply"><span class="avatar" style="--c:var(--amber);width:30px;height:30px;font-size:11px">${esc(initials({ prenom: c.name.split(' ')[0], nom: c.name.split(' ')[1] || '' }))}</span><div class="grow"><div class="t">${esc(c.name)}</div><div class="s">attend une réponse depuis ${c.days} j</div></div><div class="acts">${wa(c.tel)}</div></div>`).join('')  || '';
+    const pros = isAdmin() ? (t.prospects || []).map((c) => `<div class="prog-item" data-action="p-open" data-id="${c.id}"><span class="avatar" style="--c:var(--amber);width:30px;height:30px;font-size:11px">${esc((c.name || '?').trim()[0] || '?')}</span><div class="grow"><div class="t">${esc(c.name)}</div><div class="s">${esc((c.at || '').split('-').reverse().slice(0, 2).join('/'))}${c.action ? ' · ' + esc(c.action) : ''}${c.city ? ' · ' + esc(c.city) : ''}</div></div><div class="acts">${c.tel ? `<a class="mini-btn" href="tel:${esc(String(c.tel).replace(/[^\d+]/g, '').replace(/^0/, '+33'))}" aria-label="Appeler" data-action="p-call" data-id="${c.id}">${ico('phone')}</a>` : ''}</div></div>`).join('') : '';
     el.innerHTML = `<div class="hero-head"><h3>Programme du jour</h3><span class="eng ia">${ico('sparkle')} Assistant</span><div class="sp"><button class="btn sm" data-action="speak-brief">${ico('speaker')}Écouter</button><button class="btn sm" data-action="today-refresh" aria-label="Actualiser">↻</button></div></div>
       <p class="brief">${esc(t.brief)}</p>
       <div class="prog-cols">
         <div class="prog-col"><h4>${ico('calendar')} Rendez-vous<span class="n">${t.events.length}</span></h4>${ev}${t.tomorrow ? `<div class="prog-empty">Demain : ${t.tomorrow} rendez-vous</div>` : ''}</div>
         <div class="prog-col"><h4>${ico('phone')} À traiter<span class="n">${t.to_call.length}</span></h4>${call}</div>
         <div class="prog-col"><h4>${ico('mail')} Relances<span class="n">${(t.relances_total || 0) + t.waiting_total}</span></h4>${rel}${wait}${!rel && !wait ? '<div class="prog-empty">Rien à relancer aujourd\'hui</div>' : ''}</div>
+        ${isAdmin() ? `<div class="prog-col"><h4>${ico('target')} Prospection<span class="n">${t.prospects_total || 0}</span></h4>${pros || '<div class="prog-empty">Aucun prospect à rappeler aujourd\'hui</div>'}</div>` : ''}
         <div class="prog-col"><h4>${ico('share')} Publications<span class="n">${(t.posts_today || []).length}</span></h4>${(t.posts_today || []).map((p) => `<div class="prog-item" data-action="open-post-id" data-id="${p.id}"><span class="time-pill">${esc(p.time)}</span><div class="grow"><div class="t">${esc(p.title)}</div><div class="s">${esc(p.platforms.map((x) => PF[x]).join(' + '))} · ${p.media} média(s)</div></div></div>`).join('') || '<div class="prog-empty">Rien à publier aujourd\'hui.</div>'}${t.posts_to_validate ? `<div class="prog-empty" style="cursor:pointer" data-nav="publications">${t.posts_to_validate} à valider</div>` : ''}</div>
       </div>`;
   }
@@ -758,6 +801,8 @@
       const d = (await api('GET', '/stats/objectifs')).data, P = d.periodes;
       const rows = [['Demandes reçues', 'demandes'], ['dont retour de leasing', 'leasing'], ['dont revente', 'revente'], ['dont professionnels', 'pro'], ['Devis envoyés', 'devis_envoyes'], ['Devis acceptés', 'devis_acceptes'], ['Devis professionnels acceptés', 'devis_pro_acceptes'], ['Jantes confiées par les professionnels', 'jantes_pros']];
       body.innerHTML = rows.map(([lbl, k]) => `<tr><td>${esc(lbl)}</td><td><strong>${P[30][k]}</strong></td><td>${P[60][k]}</td><td>${P[90][k]}</td></tr>`).join('');
+      const pr = d.prospection, pe = $('#stats-prospection');
+      if (pe && pr) { pe.hidden = false; pe.innerHTML = `<h3>Prospection</h3><div class="muted" style="margin-bottom:10px">démarchage des professionnels (carrosseries, concessions, loueurs…)</div><div class="grid stats" style="margin:0"><div><div class="muted">Prospects</div><strong style="font-size:22px">${pr.total.toLocaleString('fr-FR')}</strong></div><div><div class="muted">Contactés</div><strong style="font-size:22px">${pr.contacted}</strong></div><div><div class="muted">Taux de réponse</div><strong style="font-size:22px">${pr.response_rate == null ? '—' : pr.response_rate + ' %'}</strong></div><div><div class="muted">Partenaires actifs</div><strong style="font-size:22px">${pr.partners}</strong></div></div><p class="faint" style="margin:10px 0 0;font-size:12px">${pr.week.prospects} prospect(s) contacté(s) cette semaine · ${pr.due} à rappeler aujourd'hui</p>`; }
       pb.innerHTML = d.partenaires.length ? d.partenaires.map((p) => `<tr><td><strong>${esc(p.entreprise)}</strong></td><td>${esc(p.contact)}</td><td>${p.devis}</td><td>${p.jantes}</td><td>${esc(p.ca_ttc.toLocaleString('fr-FR'))} €</td><td>${p.actif ? 'Partenaire actif' : 'Premier devis'}</td></tr>`).join('') : '<tr><td colspan="6" class="faint">Aucun partenaire pour l\'instant : un devis professionnel accepté apparaîtra ici.</td></tr>';
     } catch (e) { /* facultatif */ }
   }
@@ -1111,6 +1156,7 @@
     'sync-now': async () => { try { await api('POST', '/mail/sync'); toast('Synchronisation lancée'); setTimeout(async () => { await loadMail(); if (S.view === 'settings') renderSettings(); }, 4000); } catch (e) { toast(e.message, true); } },
     'filter-cat': (el) => { const c = el.dataset.cat; S.cats.has(c) ? S.cats.delete(c) : S.cats.add(c); renderLeads(); },
     call: (el) => { logContact(Number(el.dataset.id), 'appel'); },
+    sms: (el) => { logContact(Number(el.dataset.id), 'sms'); },
     wa: (el) => { logContact(Number(el.dataset.id), 'whatsapp'); },
     'mark-contacted': async (el) => { await logContact(Number(el.dataset.id), 'autre'); toast('Marqué comme contacté'); openLead(Number(el.dataset.id)); },
     'set-status': (el) => setStatus(Number(el.dataset.id), el.dataset.status),
@@ -1333,7 +1379,18 @@
     try { await api('POST', '/interventions', Object.assign({ statut: 'confirme' }, f)); $('#dlg-inter').close(); if (S.view === 'chantiers') renderChantiers(); else renderInters(); toast('Chantier créé'); } catch (er) { toast(er.message, true); }
   });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && S.openId) closeDrawer(); });
-  window.addEventListener('hashchange', () => { if (S.token) go(location.hash.replace(/^#\/?/, '')); });
+  window.addEventListener('hashchange', () => {
+    if (ignoreHash) { try { history.replaceState(null, '', '#/' + S.view); } catch (e) { /* ignoré */ } return; }
+    if (S.token) go(location.hash.replace(/^#\/?/, ''));
+  });
+
+  // ── Pont pour les fichiers complémentaires (prospects.js, mobile.js) : mêmes outils, aucune duplication ──
+  window.CRM = {
+    S, api, esc, dec, txt, ico, ICO, P, toast, dt, ago, waNum, fullName, initials, avColor, userName, userOptions, toLocalInput, actions, isAdmin, go, render, $, $$,
+    showDrawer, closeDrawer, stopMic, micToggle, actionBar, telHref, histBack,
+    addView(name, def) { TITLES[name] = def.title; VIEWS[name] = def.render; if (def.admin && !ADMIN_VIEWS.includes(name)) ADMIN_VIEWS.push(name); },
+    on(evt, fn) { if (hooks[evt]) hooks[evt].push(fn); },
+  };
 
   // ── Démarrage ─────────────────────────────────────────────
   applyTheme(document.documentElement.getAttribute('data-theme') || 'light');

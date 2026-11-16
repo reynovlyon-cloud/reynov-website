@@ -1,13 +1,14 @@
 const fs   = require('fs');
 const path = require('path');
 const relance = require('./relance');
+const prospects = require('./prospects');
 
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 const DB_FILE = path.join(DATA_DIR, 'crm.json');
 
-let _db = { clients: [], interventions: [], visits: {}, leads: [], events: [], event_tombs: [], quotes: [], users: [], posts: [], _pid: 1, _uid: 1, _qid: 1, _cid: 1, _iid: 1, _lid: 1, _eid: 1 };
+let _db = { clients: [], interventions: [], visits: {}, leads: [], events: [], event_tombs: [], quotes: [], users: [], posts: [], prospects: [], _pblock: [], _prid: 1, _pid: 1, _uid: 1, _qid: 1, _cid: 1, _iid: 1, _lid: 1, _eid: 1 };
 
 if (fs.existsSync(DB_FILE)) {
   try {
@@ -20,6 +21,9 @@ if (fs.existsSync(DB_FILE)) {
     if (!Array.isArray(_db.quotes)) _db.quotes = [];
     if (!Array.isArray(_db.users)) _db.users = [];
     if (!Array.isArray(_db.posts)) _db.posts = [];
+    if (!Array.isArray(_db.prospects)) _db.prospects = [];
+    if (!Array.isArray(_db._pblock)) _db._pblock = [];
+    if (!_db._prid) _db._prid = 1 + _db.prospects.reduce((m, x) => Math.max(m, x.id || 0), 0);
     if (!_db._pid) _db._pid = 1 + _db.posts.reduce((m, x) => Math.max(m, x.id || 0), 0);
     if (!_db._uid) _db._uid = 1 + _db.users.reduce((m, u) => Math.max(m, u.id || 0), 0);
     if (!_db._qid) _db._qid = 1 + _db.quotes.reduce((m, q) => Math.max(m, q.id || 0), 0);
@@ -139,6 +143,7 @@ function updateClient(id, data) {
 }
 
 function deleteClient(id) {
+  _db.prospects.forEach(p => { if (p.client_id === Number(id)) p.client_id = null; });
   _db.clients       = _db.clients.filter(c => c.id !== Number(id));
   _db.interventions = _db.interventions.filter(i => i.client_id !== Number(id));
   save();
@@ -359,6 +364,7 @@ function deleteUser(id) {
   const n = _db.users.length; _db.users = _db.users.filter(u => u.id !== Number(id));
   if (_db.users.length === n) return false;
   _db.leads.forEach(l => { if (l.assigned_to === Number(id)) l.assigned_to = null; });
+  _db.prospects.forEach(p => { if (p.assigned_to === Number(id)) p.assigned_to = null; });
   _db.events.forEach(e => { if (e.assigned_to === Number(id)) e.assigned_to = null; });
   _db.interventions.forEach(i => { if (i.assigned_to === Number(id)) i.assigned_to = null; });
   save(); return true;
@@ -519,11 +525,77 @@ function stats() {
   };
 }
 
+// ── Prospection (professionnels à démarcher) ──
+const blankProspect = () => ({ contact_name: '', contact_role: '', contact_phone: '', contact_email: '', contact_whatsapp: '', notes: '', tags: [], next_action: '', next_at: '', last_contact_at: null, assigned_to: null, offer: '', client_id: null, interactions: [] });
+const prospectsAll = () => _db.prospects;
+const prospectById = (id) => _db.prospects.find(p => p.id === Number(id)) || null;
+function createProspect(data) {
+  const base = prospects.clean(data); if (!base) return null;
+  const extra = prospects.cleanPatch(data); delete extra.name;
+  const t = now();
+  const p = Object.assign(blankProspect(), base, extra, { id: _db._prid++, created_at: t, updated_at: t, imported_at: null, source: base.source || 'manuel' });
+  if (prospects.BLOCKED.includes(p.relation)) { p.next_at = ''; p.next_action = ''; }
+  _db.prospects.push(p); save();
+  return p;
+}
+function updateProspect(id, patch) {
+  const p = prospectById(id); if (!p) return null;
+  Object.assign(p, prospects.cleanPatch(patch));
+  if (prospects.BLOCKED.includes(p.relation)) { p.next_at = ''; p.next_action = ''; }      // un refus n'est jamais relancé
+  p.updated_at = now(); save();
+  return p;
+}
+// Suppression à la demande du prospect : toutes ses données partent ; seule une empreinte (identifiant, SIRET, nom + code postal) reste
+// pour qu'un ré-import du fichier ne ressuscite pas la fiche.
+function deleteProspect(id) {
+  const p = prospectById(id); if (!p) return false;
+  _db._pblock.push(prospects.fingerprint(p)); _db._pblock = _db._pblock.slice(-5000);
+  _db.prospects = _db.prospects.filter(x => x.id !== p.id); save();
+  return true;
+}
+function addProspectInteraction(id, raw, by) {
+  const p = prospectById(id); if (!p) return null;
+  const r = prospects.applyInteraction(p, raw, Date.now(), by); save();
+  return { prospect: p, interaction: r.interaction, changes: r.changes };
+}
+function bulkUpdateProspects(ids, patch) {
+  const allowed = {}; ['relation', 'status', 'priority', 'assigned_to', 'next_at'].forEach(k => { if (patch && patch[k] !== undefined) allowed[k] = patch[k]; });
+  const clean = prospects.cleanPatch(allowed); let n = 0; const t = now();
+  for (const id of (ids || []).slice(0, 500)) {
+    const p = prospectById(id); if (!p) continue;
+    Object.assign(p, clean);
+    if (prospects.BLOCKED.includes(p.relation)) { p.next_at = ''; p.next_action = ''; }
+    p.updated_at = t; n++;
+  }
+  if (n) save();
+  return n;
+}
+// Aperçu (dry) ou import réel : un ré-import ne fait qu'ajouter les nouveaux prospects et compléter les champs vides.
+function importProspects(items, { dry } = {}) {
+  const plan = prospects.planImport(_db.prospects, items, _db._pblock);
+  if (!dry) {
+    const t = now();
+    for (const c of plan.add) _db.prospects.push(Object.assign(blankProspect(), c, { id: _db._prid++, created_at: t, updated_at: t, imported_at: t }));
+    for (const x of plan.complete) { const p = prospectById(x.id); if (p) { Object.assign(p, x.patch); p.updated_at = t; } }
+    if (plan.add.length || plan.complete.length) save();
+  }
+  return plan;
+}
+// Jantes confiées et chiffre d'affaires d'un prospect lié à un client (devis acceptés)
+function prospectBusiness(p) {
+  if (!p.client_id) return { jantes_confiees: 0, ca_ttc: 0, devis_acceptes: 0, interventions: 0 };
+  const leadIds = new Set(_db.leads.filter(l => l.client_id === p.client_id).map(l => l.id));
+  const qs = _db.quotes.filter(q => q.status === 'accepte' && (q.client_id === p.client_id || leadIds.has(q.lead_id)));
+  const jantes = qs.reduce((n, q) => n + (q.lines || []).filter(x => /jante/i.test(x.label) && !/option/i.test(x.label)).reduce((m, x) => m + (Number(x.qty) || 0), 0), 0);
+  return { jantes_confiees: jantes, ca_ttc: Math.round(qs.reduce((t, q) => t + quoteTotals(q).ttc, 0)), devis_acceptes: qs.length, interventions: _db.interventions.filter(i => i.client_id === p.client_id).length };
+}
+
 function exportAll() {
-  return { clients: _db.clients, interventions: _db.interventions, leads: _db.leads, events: _db.events, quotes: _db.quotes, posts: _db.posts, users: _db.users.map(({ pass, ...u }) => u) };
+  return { clients: _db.clients, interventions: _db.interventions, leads: _db.leads, events: _db.events, quotes: _db.quotes, posts: _db.posts, prospects: _db.prospects, users: _db.users.map(({ pass, ...u }) => u) };
 }
 
 module.exports = {
+  prospectsAll, prospectById, createProspect, updateProspect, deleteProspect, addProspectInteraction, bulkUpdateProspects, importProspects, prospectBusiness,
   relanceFor, relanceSent, relanceSet, clientReplied, exportAll, LEAD_STATUS, DATA_DIR, POST_STATUS, postsList, postById, createPost, updatePost, deletePost, addPostMedia, removePostMedia, usersList, userById, userByUsername, createUser, updateUser, deleteUser, addInterventionPhoto, removeInterventionPhoto, interventionById, addLeadPhoto, removeLeadPhoto, findLeadNear, QUOTE_STATUS, quoteTotals, quotesList, quoteById, createQuote, updateQuote, deleteQuote, onEventChange, eventsList, eventById, eventByGid, allEvents, createEvent, updateEvent, setEventLink, deleteEvent, eventTombs, clearTomb, replyState, leadsByEmail, addMailEvent, allLeads: () => _db.leads,
   createLead, leadById, updateLead, logContact, addLeadEvent, deleteLead, leadsList, findRecentDuplicate, leadExists, leadStats,
   stats, visitsByDay, logVisit,

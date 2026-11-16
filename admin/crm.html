@@ -2,7 +2,8 @@
 <html lang="fr" data-theme="light">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+<meta name="theme-color" content="#111113" />
 <meta name="robots" content="noindex, nofollow, noarchive" />
 <title>REYNOV — CRM</title>
 <link rel="icon" type="image/webp" href="/assets/images/logo-160.webp" />
@@ -31,6 +32,7 @@
     <div class="side-label">Activité</div>
     <button class="nav-item" data-nav="dashboard"><span data-ico="grid"></span>Tableau de bord</button>
     <button class="nav-item" data-nav="leads"><span data-ico="funnel"></span>Leads<span class="badge" id="nav-badge" hidden>0</span></button>
+    <button class="nav-item admin-only" data-nav="prospection"><span data-ico="target"></span>Prospection<span class="badge" id="nav-pbadge" hidden>0</span></button>
     <button class="nav-item" data-nav="clients"><span data-ico="users"></span>Clients</button>
     <button class="nav-item" data-nav="planning"><span data-ico="calendar"></span>Planning</button>
     <button class="nav-item" data-nav="chantiers"><span data-ico="wrench"></span>Chantiers</button>
@@ -93,6 +95,9 @@
         <details class="archived" id="archived"><summary id="archived-sum">Terminés (0)</summary><div class="board" id="board-done" style="grid-template-columns:repeat(2,minmax(260px,1fr))"></div></details>
       </section>
 
+      <!-- Prospection (contenu construit par prospects.js) -->
+      <section class="view" id="view-prospection" hidden></section>
+
       <!-- Clients -->
       <section class="view" id="view-clients" hidden>
         <div class="toolbar"><button class="btn" data-action="new-client"><span data-ico="plus"></span>Nouveau client</button><span class="hint" id="clients-count"></span></div>
@@ -153,6 +158,7 @@
         </div>
         <div class="card table-card" style="margin-top:16px"><h3 style="padding:14px 14px 0">Rentabilité par origine</h3><div class="muted" style="padding:0 14px">de la demande au devis accepté (depuis toujours)</div><table class="tbl"><thead><tr><th>Origine</th><th>Demandes</th><th>Gagnées</th><th>Conversion</th><th>Devis envoyés</th><th>Devis acceptés</th><th>CA accepté TTC</th></tr></thead><tbody id="stats-roi"></tbody></table></div>
         <div class="card table-card" style="margin-top:16px"><h3 style="padding:14px 14px 0">Objectifs : 30, 60 et 90 jours</h3><div class="muted" style="padding:0 14px">demandes par intention, devis et partenaires professionnels</div><table class="tbl"><thead><tr><th>Indicateur</th><th>30 jours</th><th>60 jours</th><th>90 jours</th></tr></thead><tbody id="stats-goals"></tbody></table></div>
+        <div class="card" id="stats-prospection" style="margin-top:16px" hidden></div>
         <div class="card table-card" style="margin-top:16px"><h3 style="padding:14px 14px 0">Partenaires professionnels</h3><div class="muted" style="padding:0 14px">entreprises ayant un devis accepté · actif = au moins 2 devis acceptés</div><table class="tbl"><thead><tr><th>Entreprise</th><th>Contact</th><th>Devis acceptés</th><th>Jantes confiées</th><th>CA TTC</th><th>Statut</th></tr></thead><tbody id="stats-partners"></tbody></table></div>
       </section>
 
@@ -179,6 +185,16 @@
   </div>
 </div>
 
+<!-- Navigation du téléphone (affichée sous 900 px) -->
+<nav id="tabbar" aria-label="Navigation principale">
+  <button class="tab" data-nav="dashboard"><span data-ico="grid"></span><i>Aujourd'hui</i></button>
+  <button class="tab" data-nav="leads"><span data-ico="funnel"></span><i>Leads</i><span class="badge" id="tab-badge-leads" hidden>0</span></button>
+  <button class="tab admin-only" data-nav="prospection"><span data-ico="target"></span><i>Prospection</i><span class="badge" id="tab-badge-p" hidden>0</span></button>
+  <button class="tab" data-nav="clients"><span data-ico="users"></span><i>Clients</i></button>
+  <button class="tab" data-action="more-open" aria-haspopup="dialog"><span data-ico="menu"></span><i>Plus</i></button>
+</nav>
+<button id="fab" data-action="quick-open" aria-label="Ajouter" aria-haspopup="dialog"><span data-ico="plus"></span></button>
+
 <!-- Fiche lead -->
 <div id="overlay" data-action="close-drawer"></div>
 <aside id="drawer" aria-label="Fiche lead" aria-hidden="true"></aside>
@@ -195,6 +211,7 @@
 
 <dialog id="dlg-client"><form method="dialog" class="dlg" id="form-client">
   <h3 id="client-title">Client</h3><input type="hidden" name="id" />
+  <div class="dr-actions" id="client-actions" style="margin:-6px 0 14px"></div>
   <div class="two"><div class="field"><label>Prénom *</label><input class="input" name="prenom" required /></div><div class="field"><label>Nom</label><input class="input" name="nom" /></div></div>
   <div class="two"><div class="field"><label>E-mail</label><input class="input" name="email" type="email" /></div><div class="field"><label>Téléphone</label><input class="input" name="tel" type="tel" /></div></div>
   <div class="two"><div class="field"><label>Ville</label><input class="input" name="ville" /></div><div class="field"><label>Adresse</label><input class="input" name="adresse" /></div></div>
@@ -281,5 +298,7 @@
 
 <div id="toasts" aria-live="polite"></div>
 <script src="crm.js"></script>
+<script src="prospects.js"></script>
+<script src="mobile.js"></script>
 </body>
 </html>

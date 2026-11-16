@@ -10,6 +10,7 @@ const crypto      = require('crypto');
 const db          = require('./db');
 const triage      = require('./triage');
 const relance     = require('./relance');
+const prospects   = require('./prospects');
 const mime        = require('./mime');
 
 const app    = express();
@@ -159,6 +160,8 @@ app.get(['/.well-known/security.txt', '/security.txt'], (_req, res) => {
 const ONE_YEAR = 365 * 24 * 60 * 60;
 app.use(express.static(path.join(__dirname, '..'), {
   setHeaders: (res, filePath) => {
+    // Images des e-mails (logo, bandeau) : lisibles depuis une messagerie web qui les charge directement (sinon la protection « même origine » les bloque)
+    if (/[\\/]assets[\\/]images[\\/]email-[a-z-]+\.(png|jpe?g)$/i.test(filePath)) res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     if (filePath.includes(`${path.sep}admin${path.sep}`)) {
       res.setHeader('Cache-Control', 'no-store');
     } else if (filePath.endsWith('.html')) {
@@ -206,12 +209,13 @@ async function getAccessToken(refreshToken = GMAIL_REFRESH_TOKEN) {
   return data.access_token;
 }
 
-async function sendEmail({ from, to, subject, html, text, attachments = [], origin = '' }) {
+async function sendEmail({ from, to, subject, html, text, attachments = [], origin = '', headers: extra = [] }) {
   const accessToken = await getAccessToken();
   // X-Reynov-Origin : permet à la synchronisation Gmail de ne pas confondre nos envois automatiques avec une vraie réponse
   const headers = origin ? [`X-Reynov-Origin: ${origin}`] : [];
   // Accusés de réception : message automatique (évite les réponses automatiques en boucle)
   if (origin === 'ack') headers.push('Auto-Submitted: auto-generated', 'X-Auto-Response-Suppress: OOF, AutoReply');
+  headers.push(...extra);
   const raw = Buffer.from(mime.build({ from, to, subject, html, text: text || mime.htmlToText(html), attachments, headers })).toString('base64url');
   const r = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/send`, {
     method: 'POST',
@@ -335,7 +339,7 @@ function crmAuth(req, res, next) {
 // Droits : un « employé » ne voit ni les chiffres d'affaires, ni les devis, ni les réglages, et ne supprime rien (sauf ses rendez-vous et photos).
 function roleGuard(req, res, next) {
   if (req.user && req.user.role === 'admin') return next();
-  const blocked = /^\/(stats|export|diag|users(?!\/basic)|mail\/|calendar\/(list|select|sync)|quotes|leads\/import)/.test(req.path)
+  const blocked = /^\/(stats|export|diag|users(?!\/basic)|mail\/|calendar\/(list|select|sync)|quotes|leads\/import|prospects)/.test(req.path)
     || (req.method === 'DELETE' && !/^\/(events|photos|posts\/\d+\/media)\//.test(req.path));
   if (blocked) return res.status(403).json({ ok: false, error: 'Réservé à l\'administrateur.' });
   next();
@@ -389,6 +393,24 @@ app.post('/api/crm/leads/import', crmLimiter, crmAuth, express.json({ limit: '8m
   res.json({ ok: true, added: c.added, duplicates: c.duplicate, skipped: c.skipped });
 });
 
+// ── Import de prospects (JSON) : déclaré AVANT le montage général (corps plus volumineux), réservé à l'administrateur.
+// Sans « confirm: true », rien n'est écrit : la réponse est un aperçu (ajoutés, complétés, doublons, ignorés).
+app.post('/api/crm/prospects/import', crmLimiter, crmAuth, express.json({ limit: '3mb' }), (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ ok: false, error: 'Réservé à l\'administrateur.' });
+  const b = req.body || {};
+  const items = Array.isArray(b.prospects) ? b.prospects : (Array.isArray(b) ? b : null);
+  if (!items || !items.length) return res.status(400).json({ ok: false, error: 'Aucun prospect dans le fichier.' });
+  if (items.length > 3000) return res.status(400).json({ ok: false, error: 'Maximum 3000 prospects par import.' });
+  const dry = b.confirm !== true;
+  const plan = db.importProspects(items, { dry });
+  const bySeg = {}; let noPhone = 0;
+  plan.add.forEach((c) => { bySeg[c.segment] = (bySeg[c.segment] || 0) + 1; if (!c.phone) noPhone++; });
+  if (!dry) console.log(`📥 Import prospects : ${plan.add.length} ajoutés, ${plan.complete.length} complétés, ${plan.duplicates.length} doublons, ${plan.skipped.length} ignorés`);
+  res.json({ ok: true, dry, report: { received: items.length, added: plan.add.length, completed: plan.complete.length, duplicates: plan.duplicates.length, skipped: plan.skipped.length, blocked: plan.blocked, added_without_phone: noPhone, added_by_segment: bySeg },
+    sample_added: plan.add.slice(0, 6).map((c) => ({ name: c.name, city: c.city, segment: c.segment, phone: !!c.phone })),
+    duplicates: plan.duplicates.slice(0, 100), completed: plan.complete.slice(0, 100).map((x) => ({ name: x.name, changed: x.changed })), skipped: plan.skipped.slice(0, 50) });
+});
+
 const diag = require('./diag').create({ dir: db.DATA_DIR });
 const mailsync = require('./mailsync').create({
   db, getAccessToken: () => getAccessToken(GMAIL_READ_TOKEN || GMAIL_REFRESH_TOKEN), owner: GMAIL_USER, importLeadItem, photoSaver: (leadId, buf, meta) => saveLeadPhoto(leadId, buf, meta),
@@ -426,6 +448,74 @@ app.get('/api/pub/media/:id/:file', (req, res) => {
 const social = require('./social').create({ db, publicUrl: (id, file) => 'https://' + CANONICAL_HOST + '/api/pub/media/' + id + '/' + file + '?s=' + mediaSig(id, file) });
 
 app.use('/api/crm', crmLimiter, express.json({ limit: '100kb' }), crmAuth, roleGuard);
+
+// ── CRM : prospection (administrateur uniquement pour l'instant : voir roleGuard) ──
+const PROSPECT_MAIL_PER_DAY = 60;
+const prospectMailLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 30, standardHeaders: true, legacyHeaders: false, message: { ok: false, error: 'Trop d\'envois. Réessayez plus tard.' } });
+const userNameOf = (id) => { const u = db.userById(id); return u ? u.name : ''; };
+const pid = (req) => { const n = Number(req.params.id); return Number.isInteger(n) ? n : 0; };
+const pFull = (p) => ({ ...prospects.full(p), business: db.prospectBusiness(p), message: prospects.messageFor(p), prices: prospects.PRICES, prices_note: prospects.PRICES_NOTE, partner_url: prospects.partnerUrl(p.segment, 'message') });
+const pNotFound = (res) => res.status(404).json({ ok: false, error: 'Prospect introuvable.' });
+app.get('/api/crm/prospects/stats', (_req, res) => res.json({ ok: true, data: prospects.stats(db.prospectsAll()) }));
+app.get('/api/crm/prospects/export', (req, res) => {
+  const rows = prospects.select(db.prospectsAll(), req.query);
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="reynov-prospects-${new Date().toISOString().slice(0, 10)}.csv"`);
+  res.send(prospects.toCsv(rows, { userName: userNameOf }));
+});
+app.get('/api/crm/prospects', (req, res) => { const r = prospects.query(db.prospectsAll(), req.query); res.json({ ok: true, total: r.total, data: r.items }); });
+app.post('/api/crm/prospects/bulk', (req, res) => {
+  const b = req.body || {}; if (!Array.isArray(b.ids) || !b.ids.length) return res.status(400).json({ ok: false, error: 'Aucun prospect sélectionné.' });
+  res.json({ ok: true, updated: db.bulkUpdateProspects(b.ids.map(Number).filter(Number.isInteger), b.patch || {}) });
+});
+app.post('/api/crm/prospects', (req, res) => {
+  const p = db.createProspect(req.body || {});
+  if (!p) return res.status(400).json({ ok: false, error: 'Le nom de l\'entreprise est obligatoire.' });
+  res.json({ ok: true, data: pFull(p) });
+});
+app.get('/api/crm/prospects/:id', (req, res) => { const p = db.prospectById(pid(req)); if (!p) return pNotFound(res); res.json({ ok: true, data: pFull(p) }); });
+app.patch('/api/crm/prospects/:id', (req, res) => {
+  const b = { ...(req.body || {}) };
+  if (b.client_id && !db.clientById(b.client_id)) b.client_id = null;
+  const p = db.updateProspect(pid(req), b); if (!p) return pNotFound(res);
+  res.json({ ok: true, data: pFull(p) });
+});
+// Supprime TOUTES les données du prospect (demande d'effacement) ; seule une empreinte sans coordonnée reste pour bloquer un ré-import.
+app.delete('/api/crm/prospects/:id', (req, res) => { if (!db.deleteProspect(pid(req))) return pNotFound(res); res.json({ ok: true }); });
+app.post('/api/crm/prospects/:id/interactions', (req, res) => {
+  const r = db.addProspectInteraction(pid(req), req.body || {}, req.user.name); if (!r) return pNotFound(res);
+  res.json({ ok: true, data: pFull(r.prospect), changes: r.changes });
+});
+// E-mail de présentation : aperçu d'abord, envoi seulement au clic (un prospect à la fois), refusé pour « refus » et « ne pas contacter ».
+function prospectMail(p, b) {
+  if (prospects.isBlockedRel(p)) return { error: 'Ce prospect est classé « ' + prospects.RELATIONS[p.relation] + ' » : aucun message ne peut lui être envoyé.' };
+  const to = prospects.bestEmail(p);
+  if (!to || !EMAIL_RE.test(to)) return { error: 'Ce prospect n\'a pas d\'adresse e-mail : utilisez WhatsApp ou l\'appel.' };
+  const t = prospects.pitchFor(p);
+  const subject = cleanLine(b.subject, 150) || t.subject;
+  const html = mailtpl.prospectOffer({ person: prospects.PERSON, title: t.title, body: t.body, ask: t.ask, personal: clean(b.personal, 400), prices: prospects.PRICES, pricesNote: prospects.PRICES_NOTE, pageUrl: prospects.partnerUrl(p.segment, 'email') });
+  return { to, subject, html };
+}
+app.post('/api/crm/prospects/:id/email/preview', (req, res) => {
+  const p = db.prospectById(pid(req)); if (!p) return pNotFound(res);
+  const m = prospectMail(p, req.body || {}); if (m.error) return res.status(400).json({ ok: false, error: m.error });
+  res.json({ ok: true, data: { to: m.to, subject: m.subject, html: m.html, text: mime.htmlToText(m.html), can_send: process.env.CRM_TEST_MODE === '1' || !!(GMAIL_USER && GMAIL_REFRESH_TOKEN) } });
+});
+app.post('/api/crm/prospects/:id/email', prospectMailLimiter, async (req, res) => {
+  const p = db.prospectById(pid(req)); if (!p) return pNotFound(res);
+  const m = prospectMail(p, req.body || {}); if (m.error) return res.status(400).json({ ok: false, error: m.error });
+  const day = prospects.parisDay(Date.now());
+  const sentToday = db.prospectsAll().reduce((n, x) => n + (x.interactions || []).filter((i) => i.channel === 'email' && i.result === 'envoye' && prospects.parisDay(i.ts) === day).length, 0);
+  if (sentToday >= PROSPECT_MAIL_PER_DAY) return res.status(429).json({ ok: false, error: 'Limite de ' + PROSPECT_MAIL_PER_DAY + ' e-mails de prospection par jour atteinte : reprenez demain.' });
+  try {
+    if (process.env.CRM_TEST_MODE !== '1') {
+      if (!GMAIL_USER) throw new Error('Gmail non configuré sur le serveur');
+      await sendEmail({ from: `"REYNOV" <${GMAIL_USER}>`, to: m.to, subject: m.subject, html: m.html, origin: 'crm', headers: [`List-Unsubscribe: <mailto:${GMAIL_USER}?subject=STOP>`] });
+    }
+    const r = db.addProspectInteraction(p.id, { channel: 'email', result: 'envoye', note: 'E-mail de présentation envoyé à ' + m.to + ' : « ' + m.subject + ' »' }, req.user.name);
+    res.json({ ok: true, data: pFull(r.prospect), changes: r.changes });
+  } catch (e) { console.error('❌ E-mail prospect :', e.message); res.status(502).json({ ok: false, error: 'Envoi impossible : ' + e.message }); }
+});
 
 // ── CRM : planning (rendez-vous), synchronisé avec Google Agenda ──
 function eventFields(b, cur) {
@@ -601,6 +691,8 @@ function dailyProgram(user) {
   const quotes = mine ? [] : db.quotesList();
   const qFollow = quotes.filter(q => q.status === 'envoye' && Date.now() - Date.parse(q.sent_at) > 3 * 86400000).map(q => ({ id: q.id, number: q.number, client: nameOf(q.lead_id ? db.leadById(q.lead_id) : null), ttc: q.totals.ttc, days: Math.floor((Date.now() - Date.parse(q.sent_at)) / 86400000) }));
   const qDraft = quotes.filter(q => q.status === 'brouillon').length;
+  const pDue = mine ? { total: 0, items: [] } : prospects.query(db.prospectsAll(), { due: '1', sort: 'next', limit: 8 });
+  const prospDue = pDue.items.map(x => ({ id: x.id, name: x.name, city: x.city, tel: prospects.bestPhone(x), action: x.next_action || '', at: x.next_at }));
   const postsToday = db.postsList().filter(p => p.status === 'approuve' && p.scheduled_at && parisDay(p.scheduled_at) === today && !(p.platforms || []).every(x => (p.done || {})[x])).map(p => ({ id: p.id, title: p.title, time: parisTime(p.scheduled_at), platforms: p.platforms, media: (p.media || []).length }));
   const postsToValidate = mine ? 0 : db.postsList().filter(p => p.status === 'a_valider').length;
   // Texte du programme (règles locales : aucune donnée client n'est envoyée à un service externe)
@@ -613,11 +705,12 @@ function dailyProgram(user) {
   else parts.push('Aucune nouvelle demande en attente.');
   if (waiting.length) parts.push(waiting.length + ' client' + (waiting.length > 1 ? 's attendent' : ' attend') + ' une réponse, le plus ancien depuis ' + waitingList[0].days + ' jour' + (waitingList[0].days > 1 ? 's' : '') + '.');
   if (relDue.length) parts.push(relDue.length + ' relance' + (relDue.length > 1 ? 's' : '') + ' à faire (demandes déjà traitées, sans réponse) : ' + relList.slice(0, 3).map(r => r.name + ' (relance n°' + r.level + ')').join(', ') + '.');
+  if (pDue.total) parts.push(pDue.total + ' prospect' + (pDue.total > 1 ? 's' : '') + ' à rappeler aujourd\'hui : ' + prospDue.slice(0, 3).map(r => r.name).join(', ') + (pDue.total > 3 ? '…' : '') + '.');
   if (qDraft) parts.push(qDraft + ' devis en brouillon à terminer.');
   if (postsToday.length) parts.push(postsToday.length + ' publication' + (postsToday.length > 1 ? 's' : '') + ' à mettre en ligne aujourd\'hui : ' + postsToday.map(p => p.title + ' à ' + p.time).join(' ; ') + '.');
   if (postsToValidate) parts.push(postsToValidate + ' publication' + (postsToValidate > 1 ? 's' : '') + ' à valider.');
   parts.push('Bonne journée !');
-  return { date: today, events, tomorrow: tomorrowN, to_call: toCall, waiting: waitingList, waiting_total: waiting.length, quotes_follow: qFollow, relances: relList, relances_total: relDue.length, quotes_draft: qDraft, posts_today: postsToday, posts_to_validate: postsToValidate, brief: parts.join(' ') };
+  return { date: today, events, tomorrow: tomorrowN, to_call: toCall, waiting: waitingList, waiting_total: waiting.length, quotes_follow: qFollow, relances: relList, relances_total: relDue.length, prospects: prospDue, prospects_total: pDue.total, quotes_draft: qDraft, posts_today: postsToday, posts_to_validate: postsToValidate, brief: parts.join(' ') };
 }
 app.get('/api/crm/today', (req, res) => res.json({ ok: true, data: dailyProgram(req.user) }));
 
@@ -727,6 +820,7 @@ app.get('/api/crm/stats/objectifs', (_req, res) => {
     const c = byPartner.get(key) || { entreprise: String(l.sujet || '').split('·').pop().trim() || [l.prenom, l.nom].filter(Boolean).join(' '), contact: [l.prenom, l.nom].filter(Boolean).join(' '), devis: 0, jantes: 0, ca_ttc: 0, dernier: '' };
     c.devis++; c.jantes += jantes(q); c.ca_ttc += q.totals.ttc; if (when > c.dernier) c.dernier = when; byPartner.set(key, c);
   }
+  { const ps = prospects.stats(db.prospectsAll()); out.prospection = { total: ps.total, contacted: ps.response.contacted, answered: ps.response.answered, response_rate: ps.response.rate, partners: ps.partners, due: ps.due, week: ps.week, funnel: ps.funnel }; }
   out.partenaires = [...byPartner.values()].map(c => ({ ...c, ca_ttc: Math.round(c.ca_ttc), actif: c.devis >= 2 })).sort((a, b) => b.devis - a.devis || b.jantes - a.jantes);
   res.json({ ok: true, data: out });
 });
