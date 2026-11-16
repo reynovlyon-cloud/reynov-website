@@ -231,7 +231,7 @@ FAITS AUTORISÉS (n'en invente aucun autre) :
 - Horaires : 7 jours sur 7, de 9h à 19h.
 - Déplacement inclus à Lyon (1er au 9e) et dans un rayon de 10 à 15 km autour de Lyon, à partir de 3 jantes. En dessous de 3 jantes : accueil à l'atelier. Au-delà de la zone : forfait kilométrique indiqué dans le devis.
 - Atelier : 47 chemin du Pras, 69350 La Mulatière (déposer le véhicule 15 minutes avant l'heure du rendez-vous). Téléphone / WhatsApp : 06 61 45 35 27.
-RÈGLES : ne jamais annoncer d'autre prix que ceux ci-dessus ; pour tout le reste, dire « sur devis après photos ». Si des informations manquent, les demander (photos, marque/modèle, taille des jantes, ville, nombre de jantes). Écrire « {{prenom}} » à la place du prénom. Réponse de 90 à 170 mots, signée « L'équipe REYNOV ».
+RÈGLES : vouvoyer toujours le client (jamais de tutoiement) ; ne jamais annoncer d'autre prix que ceux ci-dessus ; pour tout le reste, dire « sur devis après photos ». Si des informations manquent, les demander (photos, marque/modèle, taille des jantes, ville, nombre de jantes). Écrire « {{prenom}} » à la place du prénom. Réponse de 90 à 170 mots, signée « L'équipe REYNOV ».
 Réponds UNIQUEMENT par un objet JSON : {"summary": string (max 110 caractères), "categories": array parmi ["monochrome","biton","devoilage","fissure","diamantee","epoxy","renovation","perso","leasing","vente","pro","autre"], "urgency": "haute"|"normale", "wheels": number|null, "missing": array parmi ["photos","vehicule","taille","ville","nombre"], "reply_subject": string, "reply_body": string}`;
 
 async function analyzeAI(lead, base) {

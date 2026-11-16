@@ -42,7 +42,7 @@ function compute(l, quotes, rs, now) {
 const fmtDate = (iso) => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris', day: '2-digit', month: '2-digit', year: 'numeric' }); };
 const SIGN = 'Cordialement,\nL\'équipe REYNOV\n06 61 45 35 27 · www.reynov-jantes.fr';
 
-// Textes de relance : courts, sans pression, sans prix ni promesse. {{prenom}} est remplacé à l'affichage et à l'envoi.
+// Textes de relance : courts, sans pression, sans prix ni promesse, toujours au vouvoiement. {{prenom}} est remplacé à l'affichage et à l'envoi.
 function draft(l, level, quote, now) {
   now = now || Date.now();
   const lvl = Math.min(MAX, Math.max(1, Number(level) || 1));
