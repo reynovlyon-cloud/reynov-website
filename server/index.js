@@ -459,6 +459,7 @@ const pNotFound = (res) => res.status(404).json({ ok: false, error: 'Prospect in
 app.get('/api/crm/prospects/stats', (_req, res) => res.json({ ok: true, data: prospects.stats(db.prospectsAll()) }));
 // Zones dans l'ordre fixe, avec compteurs (non prospectés / déjà prospectés / total) et communes
 app.get('/api/crm/prospects/groups', (req, res) => res.json({ ok: true, data: prospects.groups(db.prospectsAll(), req.query) }));
+app.get('/api/crm/prospects/map', (req, res) => res.json({ ok: true, data: prospects.mapData(db.prospectsAll(), req.query) }));
 app.get('/api/crm/prospects/export', (req, res) => {
   const rows = prospects.select(db.prospectsAll(), req.query);
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');

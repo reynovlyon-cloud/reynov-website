@@ -236,7 +236,38 @@ function context(list) {
   for (const [c, m] of pcz) pdef.set(c, major(m));
   const key = (p) => (ck.has(p) ? ck.get(p) : communeKey(p.city));
   const zone = (p) => zoneCode(p.zone_code) || zdef.get(key(p)) || pdef.get(p.postcode) || '';           // sinon par code postal
-  return { key, zone, label: (p) => labels.get(key(p)) || line(p.city, 100), zoneLabel: (p) => { const z = zone(p); return z ? ZONE_BY_CODE[z].label : (p.zone || ''); } };
+  // « Lieu » = commune, ou arrondissement pour Lyon (ex. « Lyon 9e ») : c'est ce qu'on choisit et ce qui regroupe les fiches
+  const pk = new Map(), pst = new Map(); let hasArr = false;
+  for (const p of list) {
+    const k = key(p), a = k === 'lyon' ? arrOf(p) : 0; if (a) hasArr = true;
+    const kk = a ? 'lyon-' + a : (k === 'lyon' ? 'lyon-0' : k); pk.set(p, kk);
+    const s = pst.get(kk) || { key: kk, ck: k, arr: a, d: [], la: 0, lo: 0, c: 0, n: 0 }; s.n++;
+    const d = kmOf(p); if (d != null && isFinite(d)) s.d.push(d);
+    const la = num(p.lat), lo = num(p.lon); if (la != null && lo != null) { s.la += la; s.lo += lo; s.c++; }
+    pst.set(kk, s);
+  }
+  for (const s of pst.values()) {
+    s.d.sort((x, y) => x - y); s.km = s.d.length ? s.d[Math.floor(s.d.length / 2)] : null; s.rank = s.km == null ? 9999 : s.km;      // distance médiane depuis l'atelier : sert à ranger du plus proche au plus loin
+    s.lat = s.c ? Math.round(s.la / s.c * 1e5) / 1e5 : null; s.lon = s.c ? Math.round(s.lo / s.c * 1e5) / 1e5 : null;
+    s.label = s.arr ? 'Lyon ' + (s.arr === 1 ? '1er' : s.arr + 'e') : (s.key === 'lyon-0' ? (hasArr ? 'Lyon (arrondissement non précisé)' : 'Lyon') : (labels.get(s.key) || s.key || 'Commune non renseignée'));
+  }
+  const pkey = (p) => (pk.has(p) ? pk.get(p) : key(p)), pinfo = (k) => pst.get(k) || null;
+  return { key, zone, pkey, pinfo, place: (p) => (pinfo(pkey(p)) || { label: line(p.city, 100) }).label, prank: (p) => (pinfo(pkey(p)) || { rank: 9999 }).rank, places: () => [...pst.values()],
+    label: (p) => labels.get(key(p)) || line(p.city, 100), zoneLabel: (p) => { const z = zone(p); return z ? ZONE_BY_CODE[z].label : (p.zone || ''); } };
+}
+// Arrondissement de Lyon (1 à 9) d'une fiche, ou 0 s'il n'est pas connu. Le code postal 69001 est celui que le fichier donne par défaut
+// aux fiches « Lyon » sans précision : il ne vaut que s'il est confirmé par la position. Sans position fiable, on ne devine pas.
+const ARR_CENTRES = [[1, 45.7676, 4.8330], [2, 45.7522, 4.8280], [3, 45.7540, 4.8720], [4, 45.7793, 4.8280], [5, 45.7590, 4.8040], [6, 45.7700, 4.8530], [7, 45.7370, 4.8420], [8, 45.7320, 4.8700], [9, 45.7790, 4.8010]];
+function arrOf(p) {
+  const c = /\blyon\s*0?([1-9])\s*(?:er|e|eme)?\b/.exec(fold(p.city)); if (c) return Number(c[1]);
+  const pc = /^690(0[1-9])$/.exec(String(p.postcode || '').trim());
+  if (pc && pc[1] !== '01') return Number(pc[1]);
+  const la = num(p.lat), lo = num(p.lon);
+  if (la != null && lo != null && la > 45.70 && la < 45.81 && lo > 4.76 && lo < 4.91) {
+    let best = 0, bd = Infinity; for (const [n, a, o] of ARR_CENTRES) { const d = (la - a) ** 2 + ((lo - o) * 0.7) ** 2; if (d < bd) { bd = d; best = n; } }
+    return best;
+  }
+  return 0;
 }
 // « À appeler en premier » : priorité A, pas encore prospecté, avec un téléphone, encore à démarcher
 const isFirst = (p) => p.relation === 'cible' && p.priority === 'A' && !p.prospected && !!(p.phone || p.contact_phone) && !['perdu', 'partenaire'].includes(p.status);
@@ -263,7 +294,7 @@ function slim(p, now, x) {
   const { interactions, justification, angle, sources, lat, lon, ...rest } = p; const li = lastInteraction(p);
   return { ...rest, ...(x || {}), alerts: alerts(p), km: kmOf(p) == null ? null : kmOf(p), interactions_count: (interactions || []).length, last_interaction: li ? { ts: li.ts, channel: li.channel, result: li.result } : null, due: isDue(p, now), blocked: isBlockedRel(p), maps_link: mapsLink(p), route_link: routeLink(p) };
 }
-function full(p, now, cx) { const s = slim(p, now, cx ? { ckey: cx.key(p), commune: cx.label(p), zone_code: cx.zone(p), zone: cx.zoneLabel(p) } : null); s.justification = p.justification || ''; s.angle = p.angle || ''; s.sources = p.sources || []; s.interactions = (p.interactions || []).slice().reverse(); return s; }
+function full(p, now, cx) { const s = slim(p, now, cx ? { ckey: cx.key(p), pkey: cx.pkey(p), commune: cx.label(p), place: cx.place(p), zone_code: cx.zone(p), zone: cx.zoneLabel(p) } : null); s.justification = p.justification || ''; s.angle = p.angle || ''; s.sources = p.sources || []; s.interactions = (p.interactions || []).slice().reverse(); return s; }
 
 // ── Filtres, tri, pagination ──
 function matches(p, q, now, cx) {
@@ -271,7 +302,7 @@ function matches(p, q, now, cx) {
   if (q.tab === 'premier' && !isFirst(p)) return false;
   if (q.prospected === 'no' && p.prospected) return false; if (q.prospected === 'yes' && !p.prospected) return false;
   if (cx && q.zone_code) { const z = cx.zone(p); if (q.zone_code === 'none' ? z !== '' : z !== q.zone_code) return false; }
-  if (cx && q.commune && cx.key(p) !== q.commune) return false;
+  if (cx && q.commune && cx.key(p) !== q.commune && cx.pkey(p) !== q.commune) return false;           // « lyon » = tous les arrondissements, « lyon-9 » = le 9e seulement
   if (q.relation && !String(q.relation).split(',').includes(p.relation)) return false;
   if (q.status && !String(q.status).split(',').includes(p.status)) return false;
   if (q.segment && p.segment !== q.segment) return false;
@@ -306,10 +337,10 @@ const SEG_ORDER = Object.keys(SEGMENTS);
 const zi = (cx, p) => { const z = cx.zone(p); return z ? ZONE_BY_CODE[z].i : 99; };
 // Zone (ordre fixe), puis commune, puis priorité A, B, C, puis catégorie : toutes les carrosseries, concessions… d'une commune sont ensemble
 function sortZone(rows, cx) {
-  const dec = new Map(rows.map((p) => [p, [zi(cx, p), cx.key(p) || '~']]));
+  const dec = new Map(rows.map((p) => [p, [zi(cx, p), cx.prank(p), cx.pkey(p) || '~']]));          // zone, puis du lieu le plus proche de l'atelier au plus loin
   rows.sort((a, b) => {
     const x = dec.get(a), y = dec.get(b);
-    return x[0] - y[0] || (x[1] < y[1] ? -1 : x[1] > y[1] ? 1 : 0) || prio(a) - prio(b) || SEG_ORDER.indexOf(a.segment) - SEG_ORDER.indexOf(b.segment) || fold(a.name).localeCompare(fold(b.name)) || a.id - b.id;
+    return x[0] - y[0] || x[1] - y[1] || (x[2] < y[2] ? -1 : x[2] > y[2] ? 1 : 0) || prio(a) - prio(b) || SEG_ORDER.indexOf(a.segment) - SEG_ORDER.indexOf(b.segment) || dist(a) - dist(b) || fold(a.name).localeCompare(fold(b.name)) || a.id - b.id;
   });
 }
 function select(list, q, now) {
@@ -323,7 +354,7 @@ function query(list, q, now) {
   const rows = list.filter((p) => matches(p, q, now, cx));
   if (q.sort === 'zone') sortZone(rows, cx); else rows.sort(SORTS[q.sort] || SORTS.priority);
   const limit = Math.min(200, Math.max(1, parseInt(q.limit, 10) || 50)), offset = Math.max(0, parseInt(q.offset, 10) || 0);
-  return { total: rows.length, items: rows.slice(offset, offset + limit).map((p) => slim(p, now, { ckey: cx.key(p), commune: cx.label(p), zone_code: cx.zone(p), zone: cx.zoneLabel(p) })) };
+  return { total: rows.length, items: rows.slice(offset, offset + limit).map((p) => slim(p, now, { ckey: cx.key(p), pkey: cx.pkey(p), commune: cx.label(p), place: cx.place(p), zone_code: cx.zone(p), zone: cx.zoneLabel(p) })) };
 }
 // Zones dans l'ordre fixe, avec compteurs (non prospectés / déjà prospectés / total) et communes de la sélection courante.
 // Les compteurs ignorent le filtre « prospecté » pour que les trois nombres restent visibles ; les communes suivent ce filtre.
@@ -338,11 +369,27 @@ function groups(list, q, now) {
     g.total++; if (p.prospected) g.prospected++; else g.not_prospected++;
     if ((sel === 'no' && p.prospected) || (sel === 'yes' && !p.prospected)) continue;
     g.shown++; shown++; if (p.priority === 'A') g.a++;
-    const k = cx.key(p), c = g.communes.get(k) || { key: k, label: cx.label(p), n: 0, a: 0, by_segment: {} };
+    const k = cx.pkey(p), pi = cx.pinfo(k) || {}, c = g.communes.get(k) || { key: k, ck: cx.key(p), label: cx.place(p), km: pi.km == null ? null : pi.km, rank: cx.prank(p), n: 0, a: 0, by_segment: {} };
     c.n++; if (p.priority === 'A') c.a++; c.by_segment[p.segment] = (c.by_segment[p.segment] || 0) + 1; g.communes.set(k, c);
   }
-  const zs = [...Z.values()].map((g) => ({ ...g, communes: [...g.communes.values()].sort((a, b) => ((a.key || '~') < (b.key || '~') ? -1 : 1)) }));
+  const zs = [...Z.values()].map((g) => ({ ...g, communes: [...g.communes.values()].sort((a, b) => a.rank - b.rank || ((a.key || '~') < (b.key || '~') ? -1 : 1)).map(({ rank, ...c }) => c) }));
   return { selected: sel, total: shown, zones: zs.filter((g) => g.code || g.total) };
+}
+
+// Points pour la carte : chaque fiche de la sélection avec sa position (ou, à défaut, le centre de son lieu), et un cercle par lieu.
+// Rien d'autre que ce qui est déjà dans la fiche ; aucune donnée ne part vers un service extérieur.
+function mapData(list, q, now) {
+  q = { ...(q || {}) }; delete q.zone_code; if (!q.commune) delete q.commune;
+  const cx = context(list), rows = list.filter((p) => matches(p, q, now, cx));
+  const pts = [], pl = new Map(); let approx = 0, unplaced = 0;
+  for (const p of rows) {
+    const k = cx.pkey(p), pi = cx.pinfo(k) || {}; let la = num(p.lat), lo = num(p.lon), x = 0;
+    const s = pl.get(k) || { k, l: cx.place(p), ck: cx.key(p), z: cx.zone(p), n: 0, a: 0, la: pi.lat == null ? null : pi.lat, lo: pi.lon == null ? null : pi.lon, km: pi.km == null ? null : pi.km };
+    s.n++; if (p.priority === 'A') s.a++; pl.set(k, s);
+    if (la == null || lo == null) { if (pi.lat == null) { unplaced++; continue; } la = pi.lat; lo = pi.lon; x = 1; approx++; }
+    if (pts.length < 3000) pts.push({ i: p.id, n: p.name, la: Math.round(la * 1e5) / 1e5, lo: Math.round(lo * 1e5) / 1e5, s: p.segment, p: p.priority, d: p.prospected ? 1 : 0, k, x, t: p.phone || p.contact_phone ? 1 : 0 });
+  }
+  return { total: rows.length, shown: pts.length, approx, unplaced, points: pts, places: [...pl.values()].sort((a, b) => (a.km == null ? 9999 : a.km) - (b.km == null ? 9999 : b.km)) };
 }
 
 // ── Historique et automatismes ──
@@ -464,7 +511,7 @@ function stats(list, now) {
 const CSV_COLS = [
   ['ID', (p) => p.id], ['Entreprise', (p) => p.name], ['Raison sociale', (p) => p.legal_name], ['Segment', (p) => SEGMENTS[p.segment]], ['Priorité', (p) => p.priority],
   ['Relation', (p) => RELATIONS[p.relation]], ['Statut', (p) => STATUSES[p.status]], ['Adresse', (p) => p.address], ['Code postal', (p) => p.postcode], ['Ville', (p) => p.city],
-  ['Commune', (p, c) => (c && c.cx ? c.cx.label(p) : p.city)], ['Zone', (p, c) => (c && c.cx ? c.cx.zoneLabel(p) : p.zone)], ['Distance atelier (km)', (p) => (kmOf(p) == null ? '' : String(kmOf(p)).replace('.', ','))], ['Téléphone', (p) => p.phone], ['Autre téléphone', (p) => p.phone_alt],
+  ['Commune', (p, c) => (c && c.cx ? c.cx.place(p) : p.city)], ['Zone', (p, c) => (c && c.cx ? c.cx.zoneLabel(p) : p.zone)], ['Distance atelier (km)', (p) => (kmOf(p) == null ? '' : String(kmOf(p)).replace('.', ','))], ['Téléphone', (p) => p.phone], ['Autre téléphone', (p) => p.phone_alt],
   ['E-mail', (p) => p.email], ['Site', (p) => p.website], ['Marques', (p) => p.brand], ['Effectif', (p) => p.employees], ['SIRET', (p) => p.siret],
   ['Contact', (p) => p.contact_name], ['Fonction', (p) => p.contact_role], ['Téléphone direct', (p) => p.contact_phone], ['E-mail direct', (p) => p.contact_email], ['WhatsApp', (p) => p.contact_whatsapp],
   ['Dernier contact', (p) => (p.last_contact_at ? p.last_contact_at.slice(0, 10) : '')], ['Prochaine action', (p) => p.next_action], ['Date de rappel', (p) => p.next_at], ['Responsable', (p, ctx) => (p.assigned_to && ctx && ctx.userName ? ctx.userName(p.assigned_to) : '')],
@@ -515,7 +562,7 @@ function messageFor(p) {
 module.exports = {
   SEGMENTS, RELATIONS, STATUSES, CHANNELS, RESULTS, BLOCKED, TABS, PRICES, PRICES_NOTE, PERSON, ATELIER, MAX_INTERACTIONS,
   clean, cleanPatch, planImport, fingerprint, isBlocked, fillEmpty, buildIndex, findDuplicate,
-  ZONES, NO_ZONE, ZONE_BY_CODE, context, groups, isFirst, afterChange, migrate, communeKey, zoneCode,
+  ZONES, NO_ZONE, ZONE_BY_CODE, context, groups, mapData, arrOf, isFirst, afterChange, migrate, communeKey, zoneCode,
   slim, full, select, query, stats, toCsv, csvCell, applyInteraction, isDue, isBlockedRel, parisDay, addDays,
   messageFor, pitchFor, partnerUrl, mapsLink, routeLink, bestPhone, bestEmail,
   normPhone, phones, phoneKey, telHref, waDigits, email, url, mapsUrl, fold, line, text,

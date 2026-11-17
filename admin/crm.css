@@ -393,6 +393,40 @@ body.role-employe .admin-only { display: none !important; }
 .pseg-b:focus-visible, .pzn:focus-visible, .pzh:focus-visible, .hbar.zgo:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .pmode { margin-left: auto; }
 .pctl-note { color: var(--muted); font-size: 13px; font-weight: 600; padding: 0 8px; }
+/* Choix du lieu (commune ou arrondissement de Lyon) */
+.pplaces { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin: 0 0 10px; }
+.pplrow, .pplyon { min-width: 0; }
+.pplaces:empty { display: none; }
+.pplrow { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.pplrow .input { flex: 1 1 260px; min-width: 0; width: auto; }
+.pplbl { font-size: 12px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); flex: 0 0 auto; }
+.pplyon { display: flex; gap: 8px; align-items: center; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.pplyon::-webkit-scrollbar { display: none; }
+.pplyon .pzn { min-width: 44px; justify-content: center; }
+.pcom-go { margin-left: auto; min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--edge); background: var(--glass-2); color: var(--muted); font: inherit; font-size: 12.5px; font-weight: 650; cursor: pointer; }
+.pcom-go:hover { color: var(--text); background: var(--glass-strong); }
+/* Carte */
+.pmapwrap { position: relative; }
+.pmap { position: relative; z-index: 0; isolation: isolate; height: clamp(380px, 66vh, 700px); border-radius: 26px; overflow: hidden; border: 1px solid var(--edge); background: var(--glass-2); box-shadow: var(--shadow); }
+.pmap.loading::after { content: 'Chargement de la carte…'; position: absolute; inset: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--bg) 70%, transparent); color: var(--muted); font-weight: 650; z-index: 800; }
+.pmap-leg { margin: 8px 4px 0; font-size: 12.5px; line-height: 1.45; }
+.pmaphead { margin: 12px 0 8px; scroll-margin-top: var(--pz-top, 150px); }
+.pmh { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 10px 12px; border-radius: 20px; background: var(--glass-strong); border: 1px solid var(--edge); }
+.pmh b { font-size: 16px; letter-spacing: -.01em; }
+.pmh-b { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+.pm-b { display: grid; place-items: center; border-radius: 50%; color: #fff; font-weight: 800; font-size: 13px; background: color-mix(in srgb, var(--zc, var(--blue)) 88%, #000 0%); border: 2.5px solid #fff; box-shadow: 0 3px 10px rgba(0,0,0,.35); cursor: pointer; }
+.pm-b.sel { outline: 3px solid var(--accent); outline-offset: 2px; }
+.z-lyon_villeurbanne { --zc: #0a84ff; } .z-ouest_monts_dor { --zc: #1f9d6b; } .z-nord_val_de_saone { --zc: #7d5cf0; } .z-est_nord_est { --zc: #e08a00; }
+.z-sud_est { --zc: #d6455d; } .z-sud { --zc: #178a8a; } .z-sud_ouest { --zc: #5c6b7a; } .z-none { --zc: #8e8e93; }
+.pmap-leg { display: grid; gap: 4px; }
+.pm-lg { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.pm-lg i { display: inline-block; width: 11px; height: 11px; border-radius: 50%; background: var(--zc, var(--blue)); margin-right: -6px; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--line); }
+.pm-lg i.pa { --zc: var(--amber); } .pm-lg i.pb { --zc: var(--blue); } .pm-lg i.pc { --zc: var(--slate); } .pm-lg i.pd { background: transparent; border: 2px solid var(--slate); box-shadow: none; }
+.pm-atelier span { display: block; text-align: center; font-size: 11px; font-weight: 800; letter-spacing: .04em; padding: 3px 8px; border-radius: 99px; background: #111113; color: #fff; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,.4); }
+.pm-pop { display: grid; gap: 6px; min-width: 190px; font-size: 13px; line-height: 1.4; color: #1d1d1f; }
+.pm-pop b { font-size: 14.5px; }
+.pm-pop .btn { justify-self: start; }
+.leaflet-container { font: inherit; }
 .pznav { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 12px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .pznav::-webkit-scrollbar { display: none; }
 .pznav:empty { display: none; }
@@ -534,4 +568,10 @@ dialog.sheet { width: min(520px, 96vw); }
   .pcom { padding: 14px 4px 2px; }
   .pcheckrow { min-height: 52px; }
   #view-prospection .hbar.zgo { grid-template-columns: minmax(90px, 1fr) 1fr 62px; margin: 2px -6px; padding: 10px 6px; min-height: 44px; }
+  .pplyon { margin: 0 -10px; padding: 2px 10px 8px; }
+  .pplrow .input { flex: 1 1 100%; }
+  .pcom-go { min-height: 44px; }
+  .pmap { height: 58dvh; min-height: 340px; border-radius: 22px; }
+  .pmh-b .btn { flex: 1 1 auto; }
+  .leaflet-control-zoom a { width: 40px !important; height: 40px !important; line-height: 40px !important; }
 }
