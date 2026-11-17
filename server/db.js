@@ -24,6 +24,7 @@ if (fs.existsSync(DB_FILE)) {
     if (!Array.isArray(_db.prospects)) _db.prospects = [];
     if (!Array.isArray(_db._pblock)) _db._pblock = [];
     if (!_db._prid) _db._prid = 1 + _db.prospects.reduce((m, x) => Math.max(m, x.id || 0), 0);
+    _db.prospects.forEach(prospects.migrate);
     if (!_db._pid) _db._pid = 1 + _db.posts.reduce((m, x) => Math.max(m, x.id || 0), 0);
     if (!_db._uid) _db._uid = 1 + _db.users.reduce((m, u) => Math.max(m, u.id || 0), 0);
     if (!_db._qid) _db._qid = 1 + _db.quotes.reduce((m, q) => Math.max(m, q.id || 0), 0);
@@ -526,7 +527,7 @@ function stats() {
 }
 
 // ── Prospection (professionnels à démarcher) ──
-const blankProspect = () => ({ contact_name: '', contact_role: '', contact_phone: '', contact_email: '', contact_whatsapp: '', notes: '', tags: [], next_action: '', next_at: '', last_contact_at: null, assigned_to: null, offer: '', client_id: null, interactions: [] });
+const blankProspect = () => ({ prospected: false, first_contacted_at: '', priority_manual: false, zone_manual: false, contact_name: '', contact_role: '', contact_phone: '', contact_email: '', contact_whatsapp: '', notes: '', tags: [], next_action: '', next_at: '', last_contact_at: null, assigned_to: null, offer: '', client_id: null, interactions: [] });
 const prospectsAll = () => _db.prospects;
 const prospectById = (id) => _db.prospects.find(p => p.id === Number(id)) || null;
 function createProspect(data) {
@@ -535,12 +536,17 @@ function createProspect(data) {
   const t = now();
   const p = Object.assign(blankProspect(), base, extra, { id: _db._prid++, created_at: t, updated_at: t, imported_at: null, source: base.source || 'manuel' });
   if (prospects.BLOCKED.includes(p.relation)) { p.next_at = ''; p.next_action = ''; }
+  if (p.status !== 'a_contacter') p.prospected = true;
+  if (p.prospected && !p.first_contacted_at) p.first_contacted_at = t;
+  if (!p.zone_code) { const z = prospects.context(_db.prospects.concat([p])).zone(p); if (z) { p.zone_code = z; p.zone = prospects.ZONE_BY_CODE[z].label; } }      // zone de la commune
   _db.prospects.push(p); save();
   return p;
 }
 function updateProspect(id, patch) {
   const p = prospectById(id); if (!p) return null;
-  Object.assign(p, prospects.cleanPatch(patch));
+  const before = { status: p.status, priority: p.priority }, clean = prospects.cleanPatch(patch);
+  Object.assign(p, clean);
+  prospects.afterChange(p, before, clean);
   if (prospects.BLOCKED.includes(p.relation)) { p.next_at = ''; p.next_action = ''; }      // un refus n'est jamais relancé
   p.updated_at = now(); save();
   return p;
@@ -559,11 +565,13 @@ function addProspectInteraction(id, raw, by) {
   return { prospect: p, interaction: r.interaction, changes: r.changes };
 }
 function bulkUpdateProspects(ids, patch) {
-  const allowed = {}; ['relation', 'status', 'priority', 'assigned_to', 'next_at'].forEach(k => { if (patch && patch[k] !== undefined) allowed[k] = patch[k]; });
+  const allowed = {}; ['relation', 'status', 'priority', 'prospected', 'assigned_to', 'next_at'].forEach(k => { if (patch && patch[k] !== undefined) allowed[k] = patch[k]; });
   const clean = prospects.cleanPatch(allowed); let n = 0; const t = now();
   for (const id of (ids || []).slice(0, 500)) {
     const p = prospectById(id); if (!p) continue;
+    const before = { status: p.status, priority: p.priority };
     Object.assign(p, clean);
+    prospects.afterChange(p, before, clean);
     if (prospects.BLOCKED.includes(p.relation)) { p.next_at = ''; p.next_action = ''; }
     p.updated_at = t; n++;
   }

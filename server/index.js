@@ -406,7 +406,7 @@ app.post('/api/crm/prospects/import', crmLimiter, crmAuth, express.json({ limit:
   const bySeg = {}; let noPhone = 0;
   plan.add.forEach((c) => { bySeg[c.segment] = (bySeg[c.segment] || 0) + 1; if (!c.phone) noPhone++; });
   if (!dry) console.log(`📥 Import prospects : ${plan.add.length} ajoutés, ${plan.complete.length} complétés, ${plan.duplicates.length} doublons, ${plan.skipped.length} ignorés`);
-  res.json({ ok: true, dry, report: { received: items.length, added: plan.add.length, completed: plan.complete.length, duplicates: plan.duplicates.length, skipped: plan.skipped.length, blocked: plan.blocked, added_without_phone: noPhone, added_by_segment: bySeg },
+  res.json({ ok: true, dry, report: { received: items.length, added: plan.add.length, completed: plan.complete.length, duplicates: plan.duplicates.length, skipped: plan.skipped.length, blocked: plan.blocked, added_without_phone: noPhone, added_by_segment: bySeg, changes: plan.summary },
     sample_added: plan.add.slice(0, 6).map((c) => ({ name: c.name, city: c.city, segment: c.segment, phone: !!c.phone })),
     duplicates: plan.duplicates.slice(0, 100), completed: plan.complete.slice(0, 100).map((x) => ({ name: x.name, changed: x.changed })), skipped: plan.skipped.slice(0, 50) });
 });
@@ -454,14 +454,16 @@ const PROSPECT_MAIL_PER_DAY = 60;
 const prospectMailLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 30, standardHeaders: true, legacyHeaders: false, message: { ok: false, error: 'Trop d\'envois. Réessayez plus tard.' } });
 const userNameOf = (id) => { const u = db.userById(id); return u ? u.name : ''; };
 const pid = (req) => { const n = Number(req.params.id); return Number.isInteger(n) ? n : 0; };
-const pFull = (p) => ({ ...prospects.full(p), business: db.prospectBusiness(p), message: prospects.messageFor(p), prices: prospects.PRICES, prices_note: prospects.PRICES_NOTE, partner_url: prospects.partnerUrl(p.segment, 'message') });
+const pFull = (p) => ({ ...prospects.full(p, undefined, prospects.context(db.prospectsAll())), business: db.prospectBusiness(p), message: prospects.messageFor(p), prices: prospects.PRICES, prices_note: prospects.PRICES_NOTE, partner_url: prospects.partnerUrl(p.segment, 'message') });
 const pNotFound = (res) => res.status(404).json({ ok: false, error: 'Prospect introuvable.' });
 app.get('/api/crm/prospects/stats', (_req, res) => res.json({ ok: true, data: prospects.stats(db.prospectsAll()) }));
+// Zones dans l'ordre fixe, avec compteurs (non prospectés / déjà prospectés / total) et communes
+app.get('/api/crm/prospects/groups', (req, res) => res.json({ ok: true, data: prospects.groups(db.prospectsAll(), req.query) }));
 app.get('/api/crm/prospects/export', (req, res) => {
   const rows = prospects.select(db.prospectsAll(), req.query);
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="reynov-prospects-${new Date().toISOString().slice(0, 10)}.csv"`);
-  res.send(prospects.toCsv(rows, { userName: userNameOf }));
+  res.send(prospects.toCsv(rows, { userName: userNameOf, cx: prospects.context(db.prospectsAll()) }));
 });
 app.get('/api/crm/prospects', (req, res) => { const r = prospects.query(db.prospectsAll(), req.query); res.json({ ok: true, total: r.total, data: r.items }); });
 app.post('/api/crm/prospects/bulk', (req, res) => {
