@@ -5,8 +5,9 @@
     params = params || {}; params.page_path = location.pathname; params.transport_type = 'beacon';
     window.gtag('event', name, params);
   }
-  // Pixel Meta (ID 1385475270132092) : chargé uniquement si le visiteur a accepté la mesure et la publicité.
-  var PIXEL_ID = '1385475270132092';
+  // Pixels Meta (IDs 1385475270132092 et 1129575169478650) : chargés uniquement si le visiteur a accepté la mesure et la publicité.
+  // Un seul script Meta, plusieurs identifiants : chaque événement (PageView, Lead, Contact…) part vers les deux pixels.
+  var PIXEL_IDS = ['1385475270132092', '1129575169478650'];
   function loadPixel() {
     if (window.fbq || !consented()) return;
     (function (f, b, e, v, n, t, s) {
@@ -14,8 +15,11 @@
       if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = '2.0'; n.queue = [];
       t = b.createElement(e); t.async = !0; t.src = v; s = b.getElementsByTagName(e)[0]; s.parentNode.insertBefore(t, s);
     })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
-    window.fbq('set', 'autoConfig', false, PIXEL_ID);   // pas de détection automatique de boutons ni de champs de formulaire
-    window.fbq('init', PIXEL_ID); window.fbq('track', 'PageView');
+    PIXEL_IDS.forEach(function (id) {
+      window.fbq('set', 'autoConfig', false, id);   // pas de détection automatique de boutons ni de champs de formulaire
+      window.fbq('init', id);
+    });
+    window.fbq('track', 'PageView');
   }
   window.reynovPixel = loadPixel;
   window.reynovRevokePixel = function () { if (typeof window.fbq === 'function') window.fbq('consent', 'revoke'); };
