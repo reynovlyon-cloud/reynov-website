@@ -78,7 +78,7 @@ function create({ db, log = console, retryMs = 3000 } = {}) {
     const v = (k) => String(process.env[k] || '').trim();
     const token = /^[A-Za-z0-9_|.-]{20,600}$/.test(v('META_CAPI_TOKEN')) ? v('META_CAPI_TOKEN') : '';
     const pixel = /^\d{8,20}$/.test(v('META_PIXEL_ID')) ? v('META_PIXEL_ID') : PIXEL_DEFAULT;
-    const version = /^v\d{1,2}\.\d$/.test(v('META_API_VERSION')) ? v('META_API_VERSION') : 'v23.0';
+    const version = /^v\d{1,2}\.\d$/.test(v('META_API_VERSION')) ? v('META_API_VERSION') : 'v27.0';
     const testCode = /^[A-Za-z0-9_-]{3,40}$/.test(v('META_TEST_EVENT_CODE')) ? v('META_TEST_EVENT_CODE') : '';
     // Adresse de l'API : modifiable uniquement par les tests automatiques (jamais en production)
     const base = process.env.CRM_TEST_MODE === '1' && /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(v('META_GRAPH_URL')) ? v('META_GRAPH_URL') : GRAPH;
