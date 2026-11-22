@@ -965,6 +965,20 @@
     }
     $('#set-sync').innerHTML = h + (ms && ms.enabled && ms.state !== 'scope_missing' ? `<button class="btn" data-action="sync-now">${ico('mail')}Synchroniser maintenant</button>` : '');
     loadTeam();
+    api('GET', '/meta/status').then((j) => {
+      const m = j.data;
+      const stages = m.stages.map((s) => `<li><strong>${esc(s.label)}</strong> → évènement « ${esc(s.event)} »${s.event === 'Purchase' ? ' (montant HT du devis)' : ''}</li>`).join('');
+      if (!m.configured) {
+        $('#set-meta').innerHTML = '<p><span class="chip"><span class="dot" style="--c:var(--amber)"></span>Non connecté</span></p>'
+          + '<p class="muted">Quand une demande venue de vos annonces Meta devient un rendez-vous ou un devis accepté, le CRM peut le dire à Meta : vos publicités apprennent quels clients comptent vraiment. Il manque le <strong>jeton d\'accès</strong> : Meta &gt; Gestionnaire d\'évènements &gt; ensemble « REYNOV » &gt; Paramètres &gt; API Conversions &gt; « Générer un jeton d\'accès ». Ajoutez-le dans Railway sous le nom <strong>META_CAPI_TOKEN</strong>.</p>';
+      } else {
+        const ls = m.last ? `<p class="muted">Dernier envoi : ${esc(m.last.event)} — ${m.last.ok ? '<strong>réussi</strong>' : '<strong>échoué</strong> (' + esc(m.last.error || '') + ')'}${m.last.test ? ' (essai)' : ''}.</p>` : '';
+        $('#set-meta').innerHTML = `<p><span class="chip st-rdv"><span class="dot"></span>Connecté</span>${m.test_mode ? ' <span class="chip"><span class="dot" style="--c:var(--amber)"></span>Mode test : rien n\'est compté chez Meta</span>' : ''}</p>`
+          + `<ul class="muted" style="margin:8px 0 8px 18px;padding:0">${stages}</ul>`
+          + `<p class="muted">Envoyés : ${Object.entries(m.sent).map(([k, v]) => '<strong>' + v + '</strong> ' + esc(k)).join(' · ')}${m.failed ? ' · <strong>' + m.failed + '</strong> échec(s) (voir la fiche de la demande)' : ''}. Seules les demandes arrivées par une annonce Meta, <strong>cookies acceptés</strong>, sont concernées (${m.eligible} actuellement). Nom, e-mail, téléphone et ville sont chiffrés avant l'envoi.</p>${ls}`
+          + '<div class="field" style="margin-top:14px"><label>Vérifier la connexion (code de l\'onglet « Évènements de test » de Meta)</label><div style="display:flex;gap:8px;flex-wrap:wrap"><input class="input" id="meta-test-code" placeholder="Code de test, ex. TEST12345" autocomplete="off" style="flex:1;min-width:180px" /><button class="btn" data-action="meta-test">Envoyer un évènement de test</button></div></div>';
+      }
+    }).catch(() => { $('#set-meta').innerHTML = '<p class="muted">État indisponible.</p>'; });
     api('GET', '/social/status').then((j) => {
       const g = j.data; S.igStatus = g;
       $('#set-ig').innerHTML = !g.configured ? '<p><span class="chip"><span class="dot" style="--c:var(--amber)"></span>Non connecté</span></p><p class="muted">Sans connexion, vos équipes publient en un geste depuis le téléphone (bouton « Partager »). Pour la publication automatique à l\'heure programmée, suivez le guide « Connecter Instagram » puis ajoutez les variables <strong>IG_ACCESS_TOKEN</strong> et <strong>IG_USER_ID</strong> dans Railway.</p>'
@@ -1128,6 +1142,13 @@
       el.disabled = true;
       try { await api('POST', '/mail/test', { to: to.trim(), kind: el.dataset.kind }); toast('E-mail de test envoyé à ' + to.trim()); } catch (e) { toast(e.message, true); }
       el.disabled = false;
+    },
+    'meta-test': async (el) => {
+      const code = (($('#meta-test-code') || {}).value || '').trim();
+      if (!code) return toast('Copiez le code de test affiché dans l\'onglet « Évènements de test » de Meta.', true);
+      el.disabled = true;
+      try { await api('POST', '/meta/test', { test_event_code: code }); toast('Évènement de test envoyé : regardez l\'onglet « Évènements de test » de Meta'); } catch (e) { toast(e.message, true); }
+      el.disabled = false; if (S.view === 'settings') renderSettings();
     },
     'relance-prepare': async (el) => {
       const id = Number(el.dataset.id), l = S.leads.find((x) => x.id === id) || {};

@@ -207,13 +207,19 @@ function createLead(data) {
 
 function leadById(id) { return _db.leads.find(l => l.id === Number(id)) || null; }
 
+// Crochet appelé APRÈS l'enregistrement d'un changement de statut (utilisé pour remonter les étapes à Meta). Ne bloque jamais la sauvegarde.
+let _leadStatusHook = null;
+function onLeadStatusChange(fn) { _leadStatusHook = typeof fn === 'function' ? fn : null; }
+
 function updateLead(id, patch) {
   const l = leadById(id);
   if (!l) return null;
-  const allowed = ['prenom', 'nom', 'email', 'tel', 'ville', 'adresse', 'sujet', 'message', 'notes', 'form', 'reminder_at', 'client_id', 'intervention_id', 'created_at', 'assigned_to', 'relance'];
+  const allowed = ['prenom', 'nom', 'email', 'tel', 'ville', 'adresse', 'sujet', 'message', 'notes', 'form', 'reminder_at', 'client_id', 'intervention_id', 'created_at', 'assigned_to', 'relance', 'meta_sent'];
   allowed.forEach(k => { if (patch[k] !== undefined) l[k] = patch[k]; });
+  let statusFrom = null;
   if (patch.status !== undefined && LEAD_STATUS.includes(patch.status) && patch.status !== l.status) {
     addEventRaw(l, 'status', 'Statut : ' + l.status + ' → ' + patch.status);
+    statusFrom = l.status;
     l.status = patch.status;
     if (patch.status === 'contacte' || patch.status === 'rdv') markContactedRaw(l, null, true);
     if (patch.status !== 'a_rappeler') l.reminder_at = patch.reminder_at !== undefined ? patch.reminder_at : null;
@@ -222,6 +228,10 @@ function updateLead(id, patch) {
   if (patch.categories && l.triage) l.triage.categories = patch.categories;
   l.updated_at = now();
   save();
+  if (statusFrom !== null && _leadStatusHook) {
+    const to = l.status, hook = _leadStatusHook;
+    setImmediate(() => { try { Promise.resolve(hook(l, statusFrom, to)).catch(() => {}); } catch (e) { /* jamais bloquant */ } });
+  }
   return l;
 }
 
@@ -605,7 +615,7 @@ function exportAll() {
 module.exports = {
   prospectsAll, prospectById, createProspect, updateProspect, deleteProspect, addProspectInteraction, bulkUpdateProspects, importProspects, prospectBusiness,
   relanceFor, relanceSent, relanceSet, clientReplied, exportAll, LEAD_STATUS, DATA_DIR, POST_STATUS, postsList, postById, createPost, updatePost, deletePost, addPostMedia, removePostMedia, usersList, userById, userByUsername, createUser, updateUser, deleteUser, addInterventionPhoto, removeInterventionPhoto, interventionById, addLeadPhoto, removeLeadPhoto, findLeadNear, QUOTE_STATUS, quoteTotals, quotesList, quoteById, createQuote, updateQuote, deleteQuote, onEventChange, eventsList, eventById, eventByGid, allEvents, createEvent, updateEvent, setEventLink, deleteEvent, eventTombs, clearTomb, replyState, leadsByEmail, addMailEvent, allLeads: () => _db.leads,
-  createLead, leadById, updateLead, logContact, addLeadEvent, deleteLead, leadsList, findRecentDuplicate, leadExists, leadStats,
+  createLead, leadById, updateLead, onLeadStatusChange, logContact, addLeadEvent, deleteLead, leadsList, findRecentDuplicate, leadExists, leadStats,
   stats, visitsByDay, logVisit,
   clientsList, clientById, findByEmail,
   createClient, updateClient, deleteClient,

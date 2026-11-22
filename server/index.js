@@ -339,7 +339,7 @@ function crmAuth(req, res, next) {
 // Droits : un « employé » ne voit ni les chiffres d'affaires, ni les devis, ni les réglages, et ne supprime rien (sauf ses rendez-vous et photos).
 function roleGuard(req, res, next) {
   if (req.user && req.user.role === 'admin') return next();
-  const blocked = /^\/(stats|export|diag|users(?!\/basic)|mail\/|calendar\/(list|select|sync)|quotes|leads\/import|prospects)/.test(req.path)
+  const blocked = /^\/(stats|export|diag|users(?!\/basic)|mail\/|meta\/|calendar\/(list|select|sync)|quotes|leads\/import|prospects)/.test(req.path)
     || (req.method === 'DELETE' && !/^\/(events|photos|posts\/\d+\/media)\//.test(req.path));
   if (blocked) return res.status(403).json({ ok: false, error: 'Réservé à l\'administrateur.' });
   next();
@@ -412,6 +412,9 @@ app.post('/api/crm/prospects/import', crmLimiter, crmAuth, express.json({ limit:
 });
 
 const diag = require('./diag').create({ dir: db.DATA_DIR });
+// Remontée des étapes (rendez-vous, devis accepté) vers Meta : inactive tant que META_CAPI_TOKEN n'est pas défini
+const meta = require('./meta').create({ db });
+db.onLeadStatusChange(meta.onLeadStatus);
 const mailsync = require('./mailsync').create({
   db, getAccessToken: () => getAccessToken(GMAIL_READ_TOKEN || GMAIL_REFRESH_TOKEN), owner: GMAIL_USER, importLeadItem, photoSaver: (leadId, buf, meta) => saveLeadPhoto(leadId, buf, meta),
   enabled: () => !!(GMAIL_USER && GMAIL_CLIENT_ID && GMAIL_CLIENT_SECRET && (GMAIL_READ_TOKEN || GMAIL_REFRESH_TOKEN)) && process.env.CRM_TEST_MODE !== '1' && process.env.MAIL_SYNC !== '0',
@@ -1071,6 +1074,12 @@ app.patch('/api/crm/leads/:id', (req, res) => {
     db.updateLead(l.id, { triage: out.triage });
   }
   res.json({ ok: true, data: db.leadById(l.id) });
+});
+// Meta (API Conversions) : état de la connexion et évènement d'essai (réservé à l'administrateur par roleGuard)
+app.get('/api/crm/meta/status', (_req, res) => res.json({ ok: true, data: meta.status() }));
+app.post('/api/crm/meta/test', replyLimiter, async (req, res) => {
+  const r = await meta.sendTest(cleanLine((req.body || {}).test_event_code, 40));
+  res.status(r.ok ? 200 : 400).json(r.ok ? { ok: true } : { ok: false, error: r.error });
 });
 app.post('/api/crm/leads/:id/analyze', async (req, res) => {
   const l = db.leadById(req.params.id);
