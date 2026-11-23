@@ -534,3 +534,42 @@ ul, ol { padding: 0; list-style: none; }
 .film__note:hover { background: rgba(255, 255, 255, .14); }
 .film__etoiles { color: var(--or); letter-spacing: 2px; font-size: 15px; }
 .film__note b { font-weight: 700; }
+
+/* ══ Devis sur téléphone : chaque écran tient d'un bloc, sans défiler (mesuré à 390 × 664, zone visible de Safari) ══ */
+.recap { margin: 0 0 14px; padding: 10px 14px; font-size: 14.5px; line-height: 1.45; }
+.recap dl { display: block; }
+.recap dt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.recap dd { display: inline; text-align: left; color: var(--txt-2); }
+.recap dd:not(:first-of-type)::before { content: ' · '; color: var(--txt-3); }
+.recap__ph { margin-top: 8px; }
+.recap__ph img { width: 40px; height: 40px; }
+.dvq[data-q="contact"] .dvq__aide { display: none; }
+.dvq[data-q="contact"] .champ { position: relative; gap: 4px; margin-bottom: 10px; }
+.dvq[data-q="contact"] .deux { gap: 8px; }
+.champ > label:is([for="dv-prenom"], [for="dv-nom"], [for="dv-tel"], [for="dv-email"]) { position: absolute; z-index: 1; top: 8px; left: 16px; font-size: 12.5px; font-weight: 600; color: var(--txt-3); pointer-events: none; }
+:is(#dv-prenom, #dv-nom, #dv-tel, #dv-email) { min-height: 58px; padding: 26px 16px 8px; }
+.dvq[data-q="contact"] .dv__plus { margin: 0 0 10px; }
+.dvq[data-q="contact"] .dv__plus summary { min-height: 40px; font-size: 15px; }
+.dv__delai { margin-top: 10px; font-size: 15px; }
+.dv__rgpd { margin-top: 2px; font-size: 13.5px; }
+@media (max-width: 767px) {
+  .dv { padding-top: 14px; }
+  .dvq__t { margin-bottom: 14px; font-size: 26px; }
+  .dvq__aide { margin: -6px 0 12px; }
+  .dvq__suite { margin-top: 14px; }
+  .ch { min-height: 62px; }
+  .ch--tuile { min-height: 108px; }
+  .dv__offre { margin-bottom: 12px; padding: 8px 12px; font-size: 14px; }
+  .dv__offre-plus { display: none; }
+}
+@media (max-width: 767px) and (max-height: 620px) {
+  .dvq__t { margin-bottom: 10px; font-size: 24px; }
+  .dvq__aide { margin-bottom: 8px; font-size: 15px; }
+  .ch { min-height: 56px; padding-block: 8px; }
+  .ch--tuile { min-height: 96px; gap: 10px; padding: 12px; }
+  .guide { gap: 4px; margin-bottom: 10px; }
+  .guide li { font-size: 15px; }
+  .depot { min-height: 72px; }
+  .dvq__suite { margin-top: 10px; }
+  .dv__cp { margin-top: 10px; }
+}

@@ -72,6 +72,7 @@
     if (q === 'lieu') majLieu();
     if (q === 'photos') majPhotosUI();
     if (q === 'contact') recap();
+    if (S.offre) $('[data-offre]').hidden = i !== 0;   // bandeau de l'offre au 1er écran seulement : chaque écran tient sur le téléphone
     barre.style.width = Math.max(8, Math.round((i + 1) / p.length * 100)) + '%';
     compteur.textContent = 'Étape ' + (i + 1) + ' sur ' + p.length;
     retourBtn.hidden = i === 0;
@@ -264,7 +265,7 @@
       r.push(['Lieu', (S.lieu === 'domicile' ? 'À domicile' : 'À l’atelier') + (val(champ.cp) ? ', ' + val(champ.cp) : '')]);
       if (S.offre) r.push(['Passage', SEMAINES[S.semaine] || '—'], ['Acompte', '20 % du devis, lien envoyé sur WhatsApp']);
     }
-    r.push(['Photos', photos.length ? photos.length + (photos.length > 1 ? ' photos' : ' photo') : 'Envoyées plus tard']);
+    r.push(['Photos', photos.length ? photos.length + (photos.length > 1 ? ' photos' : ' photo') : 'Photos envoyées plus tard']);
     return r;
   }
   function recap() {
