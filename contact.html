@@ -352,6 +352,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     e.preventDefault();
     var btn = f.querySelector('button[type=submit]');
     var data = {}; new FormData(f).forEach(function (v, k) { data[k] = v; }); data._t = t0;
+    // provenance de la visite (annonce, recherche, réseau social…), lue dans le CRM comme pour les devis
+    try { var at = window.reynovAttr ? window.reynovAttr() : {}; if (at && Object.keys(at).length) data.attr = JSON.stringify(at); } catch (x) { /* facultatif */ }
     btn.disabled = true; btn.querySelector('span').textContent = 'Envoi en cours…';
     document.getElementById('contact-status').textContent = '';
     fetch('/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
