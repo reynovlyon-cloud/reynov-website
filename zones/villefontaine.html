@@ -48,6 +48,8 @@
   <meta property="og:locale" content="fr_FR" />
   <meta property="og:site_name" content="REYNOV" />
   <link rel="stylesheet" href="../assets/css/style.css?v=4" />
+  <link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/assets/css/habillage.css?v=1">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -130,60 +132,127 @@
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NBF6BXN8"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
+<!--habillage:sprite-->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-fleche" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-retour" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
+  <symbol id="i-tel" viewBox="0 0 24 24"><path d="M21.5 16.4v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 1.6 3.7 2 2 0 0 1 3.6 1.5h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L7.6 9.4a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></symbol>
+  <symbol id="i-wa" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.3.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.2-.3-.2-.5-.3z"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="i-bas" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-loupe" viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></symbol>
+  <symbol id="i-lieu" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></symbol>
+  <symbol id="i-heure" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-camion" viewBox="0 0 24 24"><path d="M2.5 6.5h11v10h-11zM13.5 9.5h4l3.5 3.5v3.5h-7.5"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></symbol>
+  <symbol id="i-cle" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></symbol>
+  <symbol id="i-ok" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-atelier" viewBox="0 0 24 24"><path d="M3 10l9-6 9 6v10H3z"/><path d="M7 20v-6h10v6"/></symbol>
+  <symbol id="i-pro" viewBox="0 0 24 24"><path d="M4 21V8l8-4 8 4v13"/><path d="M9 21v-5h6v5M8 11h.01M12 11h.01M16 11h.01"/></symbol>
+  <symbol id="i-photo" viewBox="0 0 24 24"><path d="M3.5 8h3l2-3h7l2 3h3v11.5h-17z"/><circle cx="12" cy="13.2" r="3.6"/></symbol>
+  <symbol id="i-question" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.4c-.6.3-1 .9-1 1.6v.5M12 17h.01"/></symbol>
+  <symbol id="i-ext" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
+  <symbol id="i-couches" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></symbol>
+  <symbol id="i-avis" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></symbol>
+  <symbol id="i-article" viewBox="0 0 24 24"><path d="M5 3.5h10l4 4v13H5z"/><path d="M14.5 3.5v4.5H19M8.5 12h7M8.5 15.5h7"/></symbol>
+  <symbol id="i-courrier" viewBox="0 0 24 24"><path d="M3.5 5.5h17v13h-17z"/><path d="M3.5 6l8.5 7 8.5-7"/></symbol>
+  <!-- icônes de prestations : reprises du devis d'origine (rayures, voile, fissure, soudure, palette, couleur, autre, atelier, domicile) + dessinées dans le même trait (diamant, époxy, réalisations) -->
+  <symbol id="i-p-renovation" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 3v4M17 5h4M5 17v4M3 19h4"/></symbol>
+  <symbol id="i-p-rayures" viewBox="0 0 24 24"><path d="M4 20L20 4M9 21L21 9M3 15L15 3"/></symbol>
+  <symbol id="i-p-devoilage" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.2"/><path d="M12 3v6.8M12 14.2V21M3 12h6.8M14.2 12H21"/></symbol>
+  <symbol id="i-p-voilee" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="10" ry="7.2" transform="rotate(-24 12 12)"/><circle cx="12" cy="12" r="2"/></symbol>
+  <symbol id="i-p-fissure" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M13 3l-2.5 5.5 3.5 2.5-3 4 2 5.5"/></symbol>
+  <symbol id="i-p-soudure" viewBox="0 0 24 24"><path d="M12 2c.8 3.6 5 5 5 10a5 5 0 01-10 0c0-2 .9-3.2 2-4.2 0 1.8.8 3 2 3 0-3-.9-5.2 1-8.8z"/></symbol>
+  <symbol id="i-p-diamant" viewBox="0 0 24 24"><path d="M6.5 4h11L21 9.2 12 20 3 9.2z"/><path d="M3 9.2h18M9.4 9.2L12 4l2.6 5.2M9.4 9.2L12 20l2.6-10.8"/></symbol>
+  <symbol id="i-p-epoxy" viewBox="0 0 24 24"><path d="M12 3.5l8.5 4.3L12 12 3.5 7.8z"/><path d="M3.5 12L12 16.3l8.5-4.3"/><path d="M3.5 16.2L12 20.5l8.5-4.3"/></symbol>
+  <symbol id="i-p-perso" viewBox="0 0 24 24"><path d="M12 3a9 9 0 100 18c1.2 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 004-4c0-4.4-4-8-9-8z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10.5" cy="7" r="1"/><circle cx="15.2" cy="7.6" r="1"/></symbol>
+  <symbol id="i-p-couleur" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 010 18z" fill="currentColor"/></symbol>
+  <symbol id="i-p-autre" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="18" cy="12" r="1.2" fill="currentColor"/></symbol>
+  <symbol id="i-p-atelier" viewBox="0 0 24 24"><path d="M3 21V9l6 3V9l6 3V4h6v17z"/><path d="M7 21v-3M12 21v-3M17 21v-3"/></symbol>
+  <symbol id="i-p-domicile" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></symbol>
+  <symbol id="i-p-realisations" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="2"/><path d="M12 2.5v19"/><path d="M10.2 10.5L8.5 12l1.7 1.5M13.8 10.5l1.7 1.5-1.7 1.5"/></symbol>
+  <symbol id="i-etoile" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12 2.6l2.8 6 6.6.8-4.9 4.5 1.3 6.5L12 17.1 6.2 20.4l1.3-6.5L2.6 9.4l6.6-.8z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></symbol>
+  <symbol id="i-lecture" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol>
+  <symbol id="i-google" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.4h6.5a5.6 5.6 0 0 1-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.7z"/><path fill="currentColor" stroke="none" d="M12 24c3.2 0 6-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9H1.4v3.1A12 12 0 0 0 12 24z"/><path fill="currentColor" stroke="none" d="M5.4 14.4a7.2 7.2 0 0 1 0-4.7V6.6H1.4a12 12 0 0 0 0 10.9z"/><path fill="currentColor" stroke="none" d="M12 4.8c1.7 0 3.3.6 4.6 1.8l3.4-3.4A12 12 0 0 0 1.4 6.6l4 3.1C6.3 6.9 8.9 4.8 12 4.8z"/></symbol>
+</svg>
+<!--/habillage:sprite-->
 
-<nav class="nav" role="navigation">
-  <div class="nav__inner">
-    <a href="/" class="nav__logo">
-      <img src="../assets/images/logo-160.webp" alt="REYNOV" />
-      <span class="nav__logo-text" style="display:none">REYNOV</span>
-    </a>
-    <div class="nav__links">
-      <div class="nav__item">
-        <a href="/prestations/" class="nav__link">Prestations</a>
-        <div class="nav__dropdown">
-          <a href="../prestations/renovation.html" class="nav__dropdown-link">Rénovation de jantes</a>
-          <a href="../prestations/reparation.html" class="nav__dropdown-link">Réparation de jantes</a>
-          <a href="../prestations/personnalisation.html" class="nav__dropdown-link">Personnalisation</a>
-          <a href="../prestations/retour-leasing.html" class="nav__dropdown-link">Retour leasing</a>
-          <a href="../prestations/soudure.html" class="nav__dropdown-link">Soudure</a>
-          <a href="../prestations/devoilage.html" class="nav__dropdown-link">Dévoilage</a><a href="../prestations/jante-diamantee.html" class="nav__dropdown-link">Jante diamantée</a>
-        </div>
-      </div>
-      <a href="../service-mobile.html" class="nav__link">Service mobile</a>
-      <div class="nav__item"><a href="/professionnels.html" class="nav__link">Professionnels</a><div class="nav__dropdown"><a href="/professionnels.html" class="nav__dropdown-link">Tous les professionnels</a><a href="/professionnels/carrosseries.html" class="nav__dropdown-link">Carrosseries</a><a href="/professionnels/garages.html" class="nav__dropdown-link">Garages</a><a href="/professionnels/concessions-automobiles.html" class="nav__dropdown-link">Concessions</a><a href="/professionnels/centres-reconditionnement.html" class="nav__dropdown-link">Reconditionnement</a><a href="/professionnels/marchands-vo.html" class="nav__dropdown-link">Marchands VO</a><a href="/professionnels/loueurs-flottes.html" class="nav__dropdown-link">Loueurs et flottes</a></div></div>
-      <a href="../realisations.html" class="nav__link">Réalisations</a>
-      <a href="/blog/" class="nav__link">Blog</a>
-    </div>
-    <div class="nav__actions">
-      <a href="../devis.html" class="nav__cta">Devis gratuit</a>
-      <a href="tel:+33661453527" class="nav__phone">06 61 45 35 27</a>
-    </div>
-    <button class="nav__burger" aria-label="Menu"><span></span><span></span><span></span></button>
+<!--habillage:entete-->
+<header class="hd" id="hd" data-hv="v4">
+  <a class="saut" href="#contenu">Aller au contenu</a>
+  <div class="hd__bar">
+    <a class="hd__logo" href="/" aria-label="REYNOV, retour à l’accueil"><img src="/assets/images/logo-160.webp" width="160" height="160" alt=""></a>
+    <nav class="hd__nav" aria-label="Navigation principale">
+      <ul>
+        <li class="hd__item"><button class="hd__lien" type="button" aria-expanded="false" aria-controls="dd-prest">Prestations<svg class="ico" aria-hidden="true"><use href="#i-bas"/></svg></button>
+          <div class="dd" id="dd-prest" hidden>
+            <a class="dd__l" href="/prestations/renovation.html"><span class="pic"><svg class="ico ico--p" aria-hidden="true"><use href="#i-p-renovation"/></svg></span><span><span class="dd__t">Jante rayée</span><span class="dd__d">Rénovation, rayures, trottoir</span></span></a>
+            <a class="dd__l" href="/prestations/devoilage.html"><span class="pic"><svg class="ico ico--p" aria-hidden="true"><use href="#i-p-devoilage"/></svg></span><span><span class="dd__t">Dévoilage</span><span class="dd__d">Vibrations, jante voilée</span></span></a>
+            <a class="dd__l" href="/prestations/soudure.html"><span class="pic"><svg class="ico ico--p" aria-hidden="true"><use href="#i-p-soudure"/></svg></span><span><span class="dd__t">Fissure et soudure</span><span class="dd__d">Après un diagnostic honnête</span></span></a>
+            <a class="dd__l" href="/prestations/personnalisation.html"><span class="pic"><svg class="ico ico--p" aria-hidden="true"><use href="#i-p-perso"/></svg></span><span><span class="dd__t">Personnalisation</span><span class="dd__d">Changer de couleur</span></span></a>
+            <a class="dd__pied" href="/devis.html" data-cta>Votre devis gratuit en 2 minutes<svg class="ico" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+          </div></li>
+        <li><a class="hd__lien" href="/#atelier">Atelier</a></li>
+        <li><a class="hd__lien" href="/service-mobile.html">À domicile</a></li>
+        <li><a class="hd__lien" href="/professionnels.html">Professionnels</a></li>
+        <li><a class="hd__lien" href="/realisations.html">Réalisations</a></li>
+        <li><a class="hd__lien" href="/avis-clients.html">Avis</a></li>
+      </ul>
+    </nav>
+    <a class="hd__ic hd__tel" href="tel:+33661453527" aria-label="Appeler le 06 61 45 35 27"><svg class="ico" aria-hidden="true"><use href="#i-tel"/></svg></a>
+    <button class="hd__ic hd__plus" type="button" aria-expanded="false" aria-controls="menu" aria-label="Ouvrir le menu"><svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg></button>
+    <a class="btn btn--bleu hd__cta" href="/devis.html" data-cta>Devis gratuit</a>
   </div>
-</nav>
-<div class="nav__mobile">
-  <a href="/" class="nav__mobile-link">Accueil</a>
-  <a href="/prestations/" class="nav__mobile-link">Prestations</a>
-  <a href="../service-mobile.html" class="nav__mobile-link">Service mobile</a>
-  <a href="../realisations.html" class="nav__mobile-link">Réalisations</a>
-  <a href="../devis.html" class="nav__mobile-link" style="color:var(--white)">Devis gratuit</a>
-  <a href="tel:+33661453527" class="nav__mobile-phone">06 61 45 35 27</a>
+</header>
+<div class="menu" id="menu" hidden>
+  <nav aria-label="Menu">
+    <div class="menu__g">
+      <p class="menu__tt">Prestations</p>
+      <div class="menu__liste">
+        <a class="menu__l" href="/prestations/renovation.html"><span class="pic"><svg class="ico ico--p" aria-hidden="true"><use href="#i-p-renovation"/></svg></span><span class="menu__lt">Jante rayée<small>Rénovation, rayures, trottoir</small></span><svg class="ico" aria-hidden="true"><use href="#i-chev"/></svg></a>
+        <a class="menu__l" href="/prestations/devoilage.html"><span class="pic"><svg class="ico ico--p" aria-hidden="true"><use href="#i-p-devoilage"/></svg></span><span class="menu__lt">Dévoilage<small>Vibrations, jante voilée</small></span><svg class="ico" aria-hidden="true"><use href="#i-chev"/></svg></a>
+        <a class="menu__l" href="/prestations/soudure.html"><span class="pic"><svg class="ico ico--p" aria-hidden="true"><use href="#i-p-soudure"/></svg></span><span class="menu__lt">Fissure et soudure<small>Après un diagnostic honnête</small></span><svg class="ico" aria-hidden="true"><use href="#i-chev"/></svg></a>
+        <a class="menu__l" href="/prestations/personnalisation.html"><span class="pic"><svg class="ico ico--p" aria-hidden="true"><use href="#i-p-perso"/></svg></span><span class="menu__lt">Personnalisation<small>Changer de couleur</small></span><svg class="ico" aria-hidden="true"><use href="#i-chev"/></svg></a>
+      </div>
+    </div>
+    <div class="menu__g">
+      <p class="menu__tt">REYNOV</p>
+      <div class="menu__liste">
+        <a class="menu__l" href="/#atelier"><span class="pic"><svg class="ico ico--p" aria-hidden="true"><use href="#i-p-atelier"/></svg></span><span class="menu__lt">Notre atelier à Lyon<small>Sur rendez-vous, 6 jours sur 7</small></span><svg class="ico" aria-hidden="true"><use href="#i-chev"/></svg></a>
+        <a class="menu__l" href="/service-mobile.html"><span class="pic"><svg class="ico ico--p" aria-hidden="true"><use href="#i-p-domicile"/></svg></span><span class="menu__lt">À domicile<small>Lyon et alentours, dès 3 jantes</small></span><svg class="ico" aria-hidden="true"><use href="#i-chev"/></svg></a>
+        <a class="menu__l" href="/professionnels.html"><span class="pic"><svg class="ico ico--p" aria-hidden="true"><use href="#i-pro"/></svg></span><span class="menu__lt">Professionnels<small>Garages, carrosseries, flottes</small></span><svg class="ico" aria-hidden="true"><use href="#i-chev"/></svg></a>
+        <a class="menu__l" href="/realisations.html"><span class="pic"><svg class="ico ico--p" aria-hidden="true"><use href="#i-p-realisations"/></svg></span><span class="menu__lt">Réalisations</span><svg class="ico" aria-hidden="true"><use href="#i-chev"/></svg></a>
+        <a class="menu__l" href="/avis-clients.html"><span class="pic"><svg class="ico ico--p" aria-hidden="true"><use href="#i-avis"/></svg></span><span class="menu__lt">Avis clients</span><svg class="ico" aria-hidden="true"><use href="#i-chev"/></svg></a>
+        <a class="menu__l" href="/blog/"><span class="pic"><svg class="ico ico--p" aria-hidden="true"><use href="#i-article"/></svg></span><span class="menu__lt">Conseils</span><svg class="ico" aria-hidden="true"><use href="#i-chev"/></svg></a>
+        <a class="menu__l" href="/contact.html"><span class="pic"><svg class="ico ico--p" aria-hidden="true"><use href="#i-courrier"/></svg></span><span class="menu__lt">Contact</span><svg class="ico" aria-hidden="true"><use href="#i-chev"/></svg></a>
+      </div>
+    </div>
+    <div class="menu__bas">
+      <a class="btn btn--bleu" href="/devis.html" data-cta>Devis gratuit<svg class="ico" aria-hidden="true"><use href="#i-fleche"/></svg></a>
+      <a class="btn btn--verre" href="tel:+33661453527"><svg class="ico" aria-hidden="true"><use href="#i-tel"/></svg>Appeler</a>
+      <a class="btn btn--verre" href="https://wa.me/33661453527" target="_blank" rel="noopener"><svg class="ico" aria-hidden="true"><use href="#i-wa"/></svg>WhatsApp</a>
+    </div>
+  </nav>
 </div>
+<!--/habillage:entete-->
+<main id="contenu">
+
 
 <!-- Hero -->
 <section style="background:var(--black);padding:calc(var(--nav-h,72px) + 5rem) 0 5rem;border-bottom:1px solid rgba(255,255,255,0.07);">
   <div style="max-width:var(--max-w,1400px);margin:0 auto;padding-inline:clamp(1.5rem,5vw,5rem);">
     <p style="font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.35);margin-bottom:1.5rem;">Isère · Villefontaine · 38090</p>
     <h1 class="display-xl" style="margin-bottom:1.5rem;">Rénovation jantes<br /><em>à Villefontaine</em></h1>
-    <p style="font-size:clamp(1rem,1.8vw,1.2rem);color:rgba(255,255,255,0.55);max-width:580px;line-height:1.7;margin-bottom:1.5rem;">Spécialiste de la rénovation de jantes à Villefontaine et dans toute la ville nouvelle de L'Isle d'Abeau. On se déplace directement dans votre allée ou votre parking — retour leasing LOA/LLD, frottement trottoir, rénovation complète. Garantie satisfaction 30 jours.</p>
+    <p style="font-size:clamp(1rem,1.8vw,1.2rem);color:rgba(255,255,255,0.55);max-width:580px;line-height:1.7;margin-bottom:1.5rem;">Spécialiste de la rénovation de jantes à Villefontaine et dans toute la ville nouvelle de L'Isle d'Abeau. On se déplace directement dans votre allée ou votre parking — retour leasing LOA/LLD, frottement trottoir, rénovation complète.</p>
     <div style="display:flex;gap:0.5rem 2rem;flex-wrap:wrap;margin-bottom:3rem;font-size:0.8rem;color:rgba(255,255,255,0.4);">
       <span>✓ Intervention à domicile</span>
       <span>✓ Réponse sous 24 à 48 h</span>
-      <span>✓ Garantie satisfaction 30 jours</span>
       <span>✓ Forfait kilométrique au devis</span>
     </div>
     <div style="display:flex;gap:1rem;flex-wrap:wrap;">
-      <a href="../devis.html" class="btn btn-primary btn-lg"><span>Envoyer mes photos — devis gratuit</span><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+      <a href="../devis.html" class="btn btn-primary btn-lg"><span>Devis gratuit</span><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
       <a href="tel:+33661453527" class="btn btn-outline btn-lg"><span>06 61 45 35 27</span></a>
     </div>
   </div>
@@ -234,7 +303,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <div style="background:#060606;padding:2.5rem 2rem;" data-reveal data-reveal-delay="1">
         <p style="font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.25);margin-bottom:1rem;">02</p>
         <h3 style="font-size:1.1rem;font-weight:500;color:var(--white);margin-bottom:0.75rem;">Retour leasing — remise à niveau</h3>
-        <p style="font-size:0.875rem;color:rgba(255,255,255,0.5);line-height:1.7;margin-bottom:1.5rem;">Avant votre restitution LOA ou LLD, on remet vos jantes à niveau pour limiter d'éventuels frais de remise en état. Garantie satisfaction 30 jours, délai maîtrisé.</p>
+        <p style="font-size:0.875rem;color:rgba(255,255,255,0.5);line-height:1.7;margin-bottom:1.5rem;">Avant votre restitution LOA ou LLD, on remet vos jantes à niveau pour limiter d'éventuels frais de remise en état. Délai maîtrisé.</p>
         <a href="../prestations/retour-leasing.html" style="font-size:0.8rem;color:rgba(255,255,255,0.45);text-decoration:none;display:flex;align-items:center;gap:0.5rem;">En savoir plus <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
       </div>
       <div style="background:#060606;padding:2.5rem 2rem;" data-reveal data-reveal-delay="2">
@@ -334,11 +403,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <h3 style="font-size:1rem;font-weight:500;color:var(--white);margin-bottom:0.75rem;">Votre véhicule ne bouge pas</h3>
         <p style="font-size:0.875rem;color:rgba(255,255,255,0.5);line-height:1.7;">On intervient dans votre allée, votre garage ou devant votre maison. Aucune logistique de votre côté — vous n'avez même pas à déplacer votre voiture.</p>
       </div>
-      <div style="background:#060606;padding:2.5rem;" data-reveal data-reveal-delay="1">
-        <div style="width:36px;height:1px;background:#f8f8f6;margin-bottom:1.5rem;"></div>
-        <h3 style="font-size:1rem;font-weight:500;color:var(--white);margin-bottom:0.75rem;">Garantie satisfaction 30 jours</h3>
-        <p style="font-size:0.875rem;color:rgba(255,255,255,0.5);line-height:1.7;">Chaque intervention est garantie. Si quelque chose ne vous convient pas, nous reprenons la jante intégralement, sans frais, pendant 30 jours.</p>
-      </div>
       <div style="background:#060606;padding:2.5rem;" data-reveal data-reveal-delay="2">
         <div style="width:36px;height:1px;background:#f8f8f6;margin-bottom:1.5rem;"></div>
         <h3 style="font-size:1rem;font-weight:500;color:var(--white);margin-bottom:0.75rem;">Finition professionnelle</h3>
@@ -390,8 +454,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <div class="container">
     <p class="label" style="margin-bottom:1.2rem;">Zones proches</p>
     <div style="display:flex;flex-wrap:wrap;gap:0.6rem;">
-      <a href="bourgoin-jallieu.html" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;border:1px solid rgba(255,255,255,0.1);font-size:0.78rem;color:rgba(255,255,255,0.6);text-decoration:none;font-family:'Inter',sans-serif;letter-spacing:0.04em;transition:border-color 0.2s,color 0.2s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.3)';this.style.color='rgba(255,255,255,0.9)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='rgba(255,255,255,0.6)'">Bourgoin-Jallieu</a>
-      <a href="isere-38.html" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;border:1px solid rgba(255,255,255,0.1);font-size:0.78rem;color:rgba(255,255,255,0.6);text-decoration:none;font-family:'Inter',sans-serif;letter-spacing:0.04em;transition:border-color 0.2s,color 0.2s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.3)';this.style.color='rgba(255,255,255,0.9)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='rgba(255,255,255,0.6)'">Isère (38)</a>
+      <a href="bourgoin-jallieu.html" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;border:1px solid rgba(255,255,255,0.1);font-size:0.78rem;color:rgba(255,255,255,0.6);text-decoration:none;font-family:'Inter',sans-serif;letter-spacing:0.04em;transition:border-color 0.2s,color 0.2s;">Bourgoin-Jallieu</a>
+      <a href="isere-38.html" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;border:1px solid rgba(255,255,255,0.1);font-size:0.78rem;color:rgba(255,255,255,0.6);text-decoration:none;font-family:'Inter',sans-serif;letter-spacing:0.04em;transition:border-color 0.2s,color 0.2s;">Isère (38)</a>
     </div>
   </div>
 </section>
@@ -402,77 +466,71 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <h2 class="cta-band__title">Rénovation jantes<br /><em>à Villefontaine</em></h2>
     <p class="cta-band__sub">Devis gratuit sous 24 à 48 h. On vient à vous dans toute la ville nouvelle de L'Isle d'Abeau — retour leasing, rénovation, sans déplacement de votre côté.</p>
     <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
-      <a href="../devis.html" class="btn btn-primary btn-lg"><span>Envoyer mes photos — devis gratuit</span><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+      <a href="../devis.html" class="btn btn-primary btn-lg"><span>Devis gratuit</span><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
       <a href="tel:+33661453527" class="btn btn-outline btn-lg"><span>06 61 45 35 27</span></a>
     </div>
   </div>
 </section>
 
 <!--maillage--><section class="section border-bottom"><div class="container-narrow"><p class="label">Autour de Villefontaine</p><div style="display:flex;flex-wrap:wrap;gap:.75rem;margin-top:1rem;"><a href="/zones/bourgoin-jallieu.html" style="display:inline-flex;align-items:center;padding:.5rem 1rem;border:1px solid rgba(255,255,255,.16);font-size:.78rem;letter-spacing:.04em;color:rgba(255,255,255,.75);text-decoration:none;">Rénovation de jantes à Bourgoin-Jallieu</a><a href="/zones/vienne.html" style="display:inline-flex;align-items:center;padding:.5rem 1rem;border:1px solid rgba(255,255,255,.16);font-size:.78rem;letter-spacing:.04em;color:rgba(255,255,255,.75);text-decoration:none;">Rénovation de jantes à Vienne</a><a href="/zones/isere-38.html" style="display:inline-flex;align-items:center;padding:.5rem 1rem;border:1px solid rgba(255,255,255,.16);font-size:.78rem;letter-spacing:.04em;color:rgba(255,255,255,.75);text-decoration:none;">Rénovation de jantes à Isère</a><a href="/zones/jonage.html" style="display:inline-flex;align-items:center;padding:.5rem 1rem;border:1px solid rgba(255,255,255,.16);font-size:.78rem;letter-spacing:.04em;color:rgba(255,255,255,.75);text-decoration:none;">Rénovation de jantes à Jonage</a><a href="/zones/amberieu-en-bugey.html" style="display:inline-flex;align-items:center;padding:.5rem 1rem;border:1px solid rgba(255,255,255,.16);font-size:.78rem;letter-spacing:.04em;color:rgba(255,255,255,.75);text-decoration:none;">Rénovation de jantes à Ambérieu-en-Bugey</a><a href="/zones/lyon.html" style="display:inline-flex;align-items:center;padding:.5rem 1rem;border:1px solid rgba(255,255,255,.16);font-size:.78rem;letter-spacing:.04em;color:rgba(255,255,255,.75);text-decoration:none;">Zones desservies à Lyon</a><a href="/prestations/renovation.html" style="display:inline-flex;align-items:center;padding:.5rem 1rem;border:1px solid rgba(255,255,255,.16);font-size:.78rem;letter-spacing:.04em;color:rgba(255,255,255,.75);text-decoration:none;">Rénovation de jantes à Lyon</a><a href="/service-mobile.html" style="display:inline-flex;align-items:center;padding:.5rem 1rem;border:1px solid rgba(255,255,255,.16);font-size:.78rem;letter-spacing:.04em;color:rgba(255,255,255,.75);text-decoration:none;">Service mobile à domicile</a><a href="/prestations/" style="display:inline-flex;align-items:center;padding:.5rem 1rem;border:1px solid rgba(255,255,255,.16);font-size:.78rem;letter-spacing:.04em;color:rgba(255,255,255,.75);text-decoration:none;">Nos prestations</a><a href="/professionnels.html" style="display:inline-flex;align-items:center;padding:.5rem 1rem;border:1px solid rgba(255,255,255,.16);font-size:.78rem;letter-spacing:.04em;color:rgba(255,255,255,.75);text-decoration:none;">Professionnels : sous-traitance de jantes</a><a href="/avis-clients.html" style="display:inline-flex;align-items:center;padding:.5rem 1rem;border:1px solid rgba(255,255,255,.16);font-size:.78rem;letter-spacing:.04em;color:rgba(255,255,255,.75);text-decoration:none;">Avis clients</a><a href="/faq.html" style="display:inline-flex;align-items:center;padding:.5rem 1rem;border:1px solid rgba(255,255,255,.16);font-size:.78rem;letter-spacing:.04em;color:rgba(255,255,255,.75);text-decoration:none;">Questions fréquentes</a></div><p style="margin-top:1.4rem;font-size:0.85rem;color:var(--grey-400);line-height:1.7;">Hors de notre zone de déplacement inclus : forfait kilométrique indiqué dans le devis, ou dépôt des jantes à notre atelier de Lyon (aucun minimum).</p></div></section><!--/maillage-->
-<footer class="footer">
-  <div class="container">
-    <div class="footer__top">
-      <div class="footer__brand">
-        <div class="footer__logo">
-          <img src="../assets/images/logo-160.webp" alt="REYNOV" />
-          <div class="footer__logo-text" style="display:none">REYNOV</div>
-        </div>
-        <p class="footer__tagline">Rénovation et réparation de jantes à Lyon : atelier fixe et véhicule atelier mobile. Service 6j/7, de 9h à 19h. Déplacement inclus à Lyon et dans un rayon de 10 à 15 km (à partir de 3 jantes).</p>
+</main>
+<!--habillage:pied-->
+<footer class="pied">
+  <div class="wrap">
+    <div class="pied__haut">
+      <div class="pied__marque">
+        <img src="/assets/images/logo-160.webp" width="160" height="160" alt="REYNOV" loading="lazy">
+        <p>Rénovation et réparation de jantes à Lyon, à l’atelier ou chez vous avec notre véhicule atelier.</p>
       </div>
       <div>
-        <p class="footer__col-title">Prestations</p>
-        <div class="footer__links">
-          <a href="../prestations/renovation.html" class="footer__link">Rénovation de jantes</a>
-          <a href="../prestations/soudure.html" class="footer__link">Soudure</a>
-          <a href="../prestations/devoilage.html" class="footer__link">Dévoilage</a>
-          <a href="../prestations/personnalisation.html" class="footer__link">Personnalisation</a>
-          <a href="../prestations/" class="footer__link">Toutes les prestations</a>
-        </div>
-      </div>
-      <div>
-        <p class="footer__col-title">Navigation</p>
-        <div class="footer__links">
-          <a href="../service-mobile.html" class="footer__link">Service mobile</a>
-          <a href="../professionnels.html" class="footer__link">Professionnels</a>
-          <a href="../realisations.html" class="footer__link">Réalisations</a>
-          <a href="../avis-clients.html" class="footer__link">Avis clients</a>
-          <a href="../marques/" class="footer__link">Marques</a>
-          <a href="../zones/" class="footer__link">Zones d'intervention</a>
-          <a href="../blog/" class="footer__link">Blog</a>
-          <a href="../devis.html" class="footer__link">Devis gratuit</a>
-          <a href="../faq.html" class="footer__link">FAQ</a>
+        <p class="pied__tt">Prestations</p>
+        <div class="pied__liens">
+          <a href="/prestations/renovation.html">Rénovation</a>
+          <a href="/prestations/jante-diamantee.html">Jante diamantée</a>
+          <a href="/prestations/devoilage.html">Dévoilage</a>
+          <a href="/prestations/soudure.html">Fissure et soudure</a>
+          <a href="/prestations/personnalisation.html">Personnalisation</a>
+          <a href="/prestations/retour-leasing.html">Retour de leasing</a>
+          <a href="/prestations/">Toutes les prestations</a>
         </div>
       </div>
       <div>
-        <p class="footer__col-title">Contact</p>
-        <div class="footer__links">
-          <span class="footer__link">Déplacement inclus : Lyon et 10 à 15 km autour (dès 3 jantes)</span>
-          <span class="footer__link">6 jours sur 7, de 9h à 19h</span>
-          <a href="tel:+33661453527" class="footer__link">06 61 45 35 27</a>
-          <a href="mailto:reynov.lyon@gmail.com" class="footer__link">reynov.lyon@gmail.com</a>
-          <span class="footer__link">47 chemin du Pras, 69350</span>
-          <a href="../contact.html" class="footer__link">Formulaire de contact</a>
+        <p class="pied__tt">REYNOV</p>
+        <div class="pied__liens">
+          <a href="/service-mobile.html">À domicile</a>
+          <a href="/professionnels.html">Professionnels</a>
+          <a href="/realisations.html">Réalisations</a>
+          <a href="/avis-clients.html">Avis clients</a>
+          <a href="/marques/">Marques</a>
+          <a href="/zones/">Zones d’intervention</a>
+          <a href="/blog/">Conseils</a>
+          <a href="/faq.html">Questions fréquentes</a>
+        </div>
+      </div>
+      <div>
+        <p class="pied__tt">Contact</p>
+        <div class="pied__liens">
+          <a href="tel:+33661453527">06 61 45 35 27</a>
+          <a href="mailto:reynov.lyon@gmail.com">reynov.lyon@gmail.com</a>
+          <span>47 chemin du Pras, 69350</span>
+          <span>Du lundi au samedi, de 9 h à 19 h</span>
+          <a href="/contact.html">Formulaire de contact</a>
+          <a href="https://www.instagram.com/reynov.jantes" target="_blank" rel="noopener">Instagram</a>
+          <a href="https://www.tiktok.com/@reynov.lyon" target="_blank" rel="noopener">TikTok</a>
         </div>
       </div>
     </div>
-    <div class="footer__social" style="text-align:center;padding:1.2rem 0 0.5rem;border-top:1px solid rgba(255,255,255,0.08);margin-top:1.5rem;">
-      <a href="https://www.instagram.com/reynov.jantes" target="_blank" rel="noopener noreferrer" class="footer__link" style="margin:0 1rem;font-size:0.95rem;display:inline-flex;align-items:center;gap:0.5rem;"><svg class="footer__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="0.9" fill="currentColor" stroke="none"/></svg>Instagram</a>
-      <a href="https://www.tiktok.com/@reynov.lyon" target="_blank" rel="noopener noreferrer" class="footer__link" style="margin:0 1rem;font-size:0.95rem;display:inline-flex;align-items:center;gap:0.5rem;"><svg class="footer__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v11.5a3.5 3.5 0 1 1-3.5-3.5"/><path d="M14 3c.4 2.6 2.2 4.4 5 4.6"/></svg>TikTok</a>
-    </div>
-    <div class="footer__bottom">
-      <p class="footer__copy">© 2026 REYNOV — Lyon &amp; Rhône-Alpes. Tous droits réservés.</p>
-      <div class="footer__legal">
-        <a href="../mentions-legales.html">Mentions légales</a>
-        <a href="../politique-de-confidentialite.html">Politique de confidentialité</a>
-        <a href="../cgv.html">CGV</a>
-      </div>
+    <div class="pied__bas footer__bottom">
+      <span>© 2026 REYNOV</span>
+      <a href="/mentions-legales.html">Mentions légales</a>
+      <a href="/politique-de-confidentialite.html">Confidentialité</a>
+      <a href="/cgv.html">CGV</a>
     </div>
   </div>
 </footer>
+<!--/habillage:pied-->
 <script src="../assets/js/main.js?v=12"></script>
-<a href="https://wa.me/33661453527" class="whatsapp-float" target="_blank" rel="noopener" aria-label="Contacter sur WhatsApp">
-  <span class="whatsapp-float__label">Envoyer un message</span>
-  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.12 1.531 5.849L.057 23.571a.75.75 0 0 0 .921.921l5.668-1.485A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.713 9.713 0 0 1-4.953-1.354l-.355-.213-3.664.961.977-3.572-.232-.368A9.712 9.712 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>
-</a>
+
+<script src="/assets/js/v4.js?v=3" defer></script>
 </body>
 </html>
