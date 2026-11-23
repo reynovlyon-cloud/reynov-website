@@ -577,18 +577,19 @@ const eur = (n) => Number(n || 0).toLocaleString('fr-FR', { minimumFractionDigit
 function quoteLinesFromLead(l) {
   const t = l.triage || {}, cats = t.categories || [], f = l.form || {};
   const n = Number(t.wheels) || Number(String(f.nb_jantes || '').replace(/\D/g, '')) || 0, qty = n >= 1 && n <= 8 ? n : 1;
+  const bf = /black friday/i.test(f.prestation || '') && qty === 4;   // 4 jantes dont la 4e offerte : 3 lignes facturées (à ajuster à la main si les prix diffèrent)
   const lines = [];
   if (cats.includes('fissure')) lines.push({ label: 'Soudure de jante fissurée (TIG) et reprise', qty, unit_ht: triage.PRIX.fissure });
   if (cats.includes('devoilage')) lines.push({ label: 'Dévoilage de jante', qty, unit_ht: triage.PRIX.devoilage });
   const perso = cats.filter(c => ['biton', 'diamantee', 'epoxy', 'perso'].includes(c));
-  if (cats.some(c => ['renovation', 'monochrome'].includes(c)) || perso.length || !lines.length) lines.push({ label: 'Rénovation de jante : décapage, préparation, peinture et vernis', qty, unit_ht: triage.PRIX.renovation });
+  if (cats.some(c => ['renovation', 'monochrome'].includes(c)) || perso.length || !lines.length) lines.push({ label: bf ? 'Rénovation de jante, face avant : décapage, préparation, peinture et vernis (Black Friday : 4 jantes, la 4e offerte, 3 facturées)' : 'Rénovation de jante : décapage, préparation, peinture et vernis', qty: bf ? 3 : qty, unit_ht: triage.PRIX.renovation });
   if (perso.length) lines.push({ label: 'Option finition personnalisée (' + perso.map(c => triage.CATEGORIES[c].label.toLowerCase()).join(', ') + ') : à chiffrer', qty: 1, unit_ht: 0 });
   return lines;
 }
 function quoteNotesFor(l) {
   const cats = ((l.triage || {}).categories) || [];
   const delai = cats.includes('epoxy') ? '3 jours' : (cats.some(c => ['biton', 'diamantee', 'perso'].includes(c)) ? '2 à 4 jours (jusqu\'à 5 pour une finition poli diamant ou bi-ton)' : '24 à 48 h par jante');
-  return 'Délai indicatif : ' + delai + ' en atelier à La Mulatière.\nGarantie satisfaction 30 jours : reprise intégrale de la jante si le résultat ne vous convient pas.\nDevis valable 30 jours. Règlement à la livraison.';
+  return 'Délai indicatif : ' + delai + ' en atelier à La Mulatière.\nGarantie satisfaction 30 jours : reprise intégrale de la jante si le résultat ne vous convient pas.\nDevis valable 30 jours. ' + (/black friday/i.test(((l.form || {}).prestation) || '') ? 'Offre Black Friday : acompte de 20 % du devis à régler pour bloquer le créneau (lien de paiement envoyé par WhatsApp), solde à la livraison.' : 'Règlement à la livraison.');
 }
 function cleanLines(raw) {
   if (!Array.isArray(raw)) return null;

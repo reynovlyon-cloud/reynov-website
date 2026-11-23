@@ -118,12 +118,22 @@
   <div class="dv__form merci">
     <span class="merci__ok" aria-hidden="true"><svg class="ico ico--24"><use href="#i-ok"/></svg></span>
     <h1 class="dvq__t">Demande reçue. Merci&nbsp;!</h1>
-    <p class="chapo">Nous regardons vos réponses et vos photos, puis nous vous envoyons votre devis par e-mail sous 24 à 48&nbsp;h.</p>
-    <ol class="guide merci__etapes">
-      <li><span>1</span>Nous étudions vos photos</li>
-      <li><span>2</span>Vous recevez le devis par e-mail</li>
-      <li><span>3</span>Vous choisissez le créneau, à l’atelier ou chez vous</li>
-    </ol>
+    <div data-merci-std>
+      <p class="chapo">Nous regardons vos réponses et vos photos, puis nous vous envoyons votre devis par e-mail sous 24 à 48&nbsp;h.</p>
+      <ol class="guide merci__etapes">
+        <li><span>1</span>Nous étudions vos photos</li>
+        <li><span>2</span>Vous recevez le devis par e-mail</li>
+        <li><span>3</span>Vous choisissez le créneau, à l’atelier ou chez vous</li>
+      </ol>
+    </div>
+    <div data-merci-bf hidden>
+      <p class="chapo">Nous regardons vos photos, puis nous vous envoyons votre devis par e-mail sous 24 à 48&nbsp;h.</p>
+      <ol class="guide merci__etapes">
+        <li><span>1</span>Vous recevez le devis par e-mail</li>
+        <li><span>2</span>Vous réglez l’acompte de 20&nbsp;% : le lien de paiement arrive sur WhatsApp</li>
+        <li><span>3</span>Votre créneau à l’atelier est confirmé</li>
+      </ol>
+    </div>
     <div class="dvq__suite">
       <a class="btn btn--verre btn--plein" href="https://wa.me/33661453527" target="_blank" rel="noopener"><svg class="ico" aria-hidden="true"><use href="#i-wa"/></svg>Ajouter une photo sur WhatsApp</a>
       <a class="btn btn--ligne btn--plein" href="/">Retour à l’accueil</a>
@@ -135,5 +145,11 @@
   <a href="/cgv.html">CGV</a>
   <button type="button" class="dvf__cookies" data-rc-manage>Gérer les cookies</button>
 </footer>
+<script>
+  if (/[?&]offre=black-friday\b/.test(location.search)) {
+    var s = document.querySelector('[data-merci-std]'), b = document.querySelector('[data-merci-bf]');
+    if (s && b) { s.hidden = true; b.hidden = false; }
+  }
+</script>
 </body>
 </html>

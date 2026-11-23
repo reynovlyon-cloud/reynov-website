@@ -1,6 +1,6 @@
 /* REYNOV — devis en 5 écrans, tout au clic : problème → véhicule (+ nombre de jantes) → atelier ou domicile + code postal → photos → coordonnées.
    Professionnels (?pro=1) : activité → quantité → échéance → photos → société + code postal → coordonnées.
-   Black Friday (?offre=black-friday, du 24 au 28 novembre 2026, heure de Paris) : véhicule → code postal (atelier) → photos → coordonnées.
+   Black Friday (?offre=black-friday, du 24 au 28 novembre 2026, heure de Paris) : véhicule → code postal (atelier) → semaine de passage → photos → coordonnées.
    Envoi vers /api/devis avec les mêmes champs qu'avant (serveur et tri du CRM inchangés). Retour arrière sans rien perdre. */
 (function () {
   'use strict';
@@ -21,7 +21,8 @@
     perso: { p: 'Personnalisation', pb: 'Changement de couleur', t: 'Personnalisation' }
   };
   var ATELIER_SEUL = ['fissure', 'devoilage'];
-  var S = { besoin: '', nombre: '', lieu: '', activite: '', echeance: '', plusTard: false, offre: '', pro: false, lieuDemande: '' };
+  var S = { besoin: '', nombre: '', lieu: '', activite: '', echeance: '', plusTard: false, offre: '', pro: false, lieuDemande: '', semaine: '' };
+  var SEMAINES = { cette: 'Cette semaine (jusqu’au sam. 28 nov.)', suivante: 'Semaine du 30 nov. au 5 déc.' };
   var photos = [], seq = 0, envoi = false, courant = '';
   var champ = { vehicule: $('#dv-vehicule'), cp: $('#dv-cp'), societe: $('#dv-societe'), cpPro: $('#dv-cp-pro') };
 
@@ -41,7 +42,7 @@
 
   function domicilePossible() { return !S.offre && ATELIER_SEUL.indexOf(S.besoin) < 0 && S.nombre !== '1' && S.nombre !== '2'; }
   function parcours() {
-    if (S.offre) return ['vehicule', 'lieu', 'photos', 'contact'];
+    if (S.offre) return ['vehicule', 'lieu', 'semaine', 'photos', 'contact'];
     if (S.pro) return ['activite', 'nombre', 'echeance', 'photos', 'societe', 'contact'];
     return ['besoin', 'vehicule', 'lieu', 'photos', 'contact'];
   }
@@ -261,6 +262,7 @@
       if (!S.offre) r.push(['Problème', S.besoin ? BESOINS[S.besoin].t : '—']);
       r.push(['Véhicule', (val(champ.vehicule) || '—') + (S.nombre ? ', ' + jantes(S.nombre) : '')]);
       r.push(['Lieu', (S.lieu === 'domicile' ? 'À domicile' : 'À l’atelier') + (val(champ.cp) ? ', ' + val(champ.cp) : '')]);
+      if (S.offre) r.push(['Passage', SEMAINES[S.semaine] || '—'], ['Acompte', '20 % du devis, lien envoyé sur WhatsApp']);
     }
     r.push(['Photos', photos.length ? photos.length + (photos.length > 1 ? ' photos' : ' photo') : 'Envoyées plus tard']);
     return r;
@@ -290,6 +292,8 @@
     fd.append('website', $('input[name="website"]').value);
     try { var a = window.reynovAttr ? window.reynovAttr() : {}; if (a && Object.keys(a).length) fd.append('attr', JSON.stringify(a)); } catch (x) { /* facultatif */ }
     if (bfo) desc.push('Offre Black Friday 2026 : 3 jantes rénovées, la 4e offerte (face avant, à l’atelier).');
+    if (bfo) desc.push('Passage souhaité : ' + SEMAINES[S.semaine]);
+    if (bfo) desc.push('Acompte de 20 % du devis obligatoire pour confirmer le créneau (lien de paiement à envoyer par WhatsApp).');
     if (val($('#dv-message'))) desc.push(val($('#dv-message')));
     if (pro && val(champ.societe)) desc.push('Société : ' + val(champ.societe));
     if (pro && S.nombre === 'Récurrent') desc.push('Besoin : lots réguliers');
@@ -301,7 +305,7 @@
     fd.append('marque', pro ? '' : mots[0] || '');
     fd.append('modele', pro ? '' : mots.slice(1).join(' '));
     fd.append('mode', pro ? '' : S.lieu === 'domicile' ? 'À domicile' : 'En atelier (REYNOV)');
-    fd.append('delai', pro ? S.echeance : '');
+    fd.append('delai', pro ? S.echeance : bfo ? SEMAINES[S.semaine] : '');
     fd.append('adresse', pro ? val(champ.cpPro) : val(champ.cp));
     fd.append('description', desc.join('\n'));
     fd.append('prenom', val(pr)); fd.append('nom', val(no));
@@ -319,7 +323,7 @@
       if (j && j.ok) {
         statut.textContent = 'Demande reçue.';
         try { if (window.reynovFbq) window.reynovFbq('Lead', { content_name: bfo ? 'black_friday' : pro ? 'lot_pro' : 'devis' }); } catch (x) { /* facultatif */ }
-        var parti = false, aller = function () { if (parti) return; parti = true; location.href = '/devis-confirmation.html'; };
+        var parti = false, aller = function () { if (parti) return; parti = true; location.href = '/devis-confirmation.html' + (bfo ? '?offre=black-friday' : ''); };
         if (typeof gtag === 'function' && window.google_tag_manager) { gtag('event', 'conversion', { send_to: 'AW-18189889040/7zKmCNbLnMwcEJDczuFD', event_callback: aller }); setTimeout(aller, 1200); } else aller();
       } else echec((j && j.error) || 'L’envoi n’a pas abouti. Vos réponses et vos photos sont conservées : réessayez, ou appelez le 06 61 45 35 27.');
     };
