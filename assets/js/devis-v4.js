@@ -89,7 +89,7 @@
     try { history.pushState({ dv: n, n: prof + 1 }, '', '#' + n); } catch (e) { /* facultatif */ }
     montrer(n, 1);
   }
-  function plusTard(fn) { setTimeout(fn, reduit ? 0 : 160); }
+  function plusTard(fn) { setTimeout(fn, reduit ? 0 : 260); }   // le temps de voir la tuile choisie s'illuminer
   function reculer() {
     if (history.state && history.state.n > 0) { history.back(); return; }
     var p = parcours(), i = p.indexOf(courant);
@@ -117,6 +117,7 @@
     var cle = b.closest('[data-nb]') ? 'nombre' : q;
     S[cle] = v;
     $$('.ch', groupe).forEach(function (x) { if (!x.closest('[data-nb]') === !b.closest('[data-nb]')) x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+    if (!reduit) { b.classList.remove('ch--flash'); void b.offsetWidth; b.classList.add('ch--flash'); }   // la tuile choisie s'illumine
     if (q === 'vehicule') {   // nombre choisi : on passe si le modèle est déjà écrit
       erreur('nb', null, true);
       if (val(champ.vehicule).length > 1) plusTard(avancer); else champ.vehicule.focus();

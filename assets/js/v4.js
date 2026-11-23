@@ -10,7 +10,12 @@
   /* ── En-tête : verre plus dense et capsule resserrée (logo, menu, devis) dès qu'on défile ── */
   var hd = $('#hd');
   if (hd) {
-    var onScroll = function () { var y = window.scrollY; hd.classList.toggle('is-bas', y > 40); hd.classList.toggle('is-compact', y > 120); };
+    var cta = $('.hd__cta', hd), halo = false;
+    var onScroll = function () {
+      var y = window.scrollY; hd.classList.toggle('is-bas', y > 40); hd.classList.toggle('is-compact', y > 120);
+      // une seule fois : un halo bleu léger derrière « Devis gratuit » quand la capsule se resserre
+      if (!halo && y > 120 && cta && !reduit) { halo = true; cta.classList.add('is-halo'); cta.addEventListener('animationend', function () { cta.classList.remove('is-halo'); }, { once: true }); }
+    };
     onScroll(); window.addEventListener('scroll', onScroll, { passive: true });
   }
 
@@ -111,6 +116,34 @@
     $('[data-ba-suiv]', ba).addEventListener('click', function () { aller(i + 1); });
     // la réalisation suivante se charge pendant qu'on regarde la première
     if ('IntersectionObserver' in window) new IntersectionObserver(function (es, o) { if (es[0].isIntersecting) { $$('img', slides[1] || ba).forEach(function (im) { im.loading = 'eager'; }); o.disconnect(); } }).observe(ba);
+  }
+
+  /* ── Avant/après : à la première apparition, le curseur glisse une fois tout seul (50 → 28 → 72 → 50 %)
+        pour montrer qu'on peut le tirer. S'arrête dès que le visiteur touche l'image. Mouvement réduit respecté. ── */
+  var demo = $('[data-ba] .ba__slide.is-on .cmp') || $('.cmp');
+  if (demo && !reduit && 'IntersectionObserver' in window && window.requestAnimationFrame) {
+    var touche = false, rDemo = $('.cmp__range', demo);
+    ['pointerdown', 'keydown', 'touchstart'].forEach(function (ev) { demo.addEventListener(ev, function () { touche = true; }, { passive: true }); });
+    var POINTS = [[0, 50], [600, 28], [1350, 72], [1950, 50]];
+    var adoucir = function (x) { return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2; };
+    new IntersectionObserver(function (es, o) {
+      if (!es[0].isIntersecting) return;
+      o.disconnect();
+      setTimeout(function () {
+        var t0 = null;
+        var pas = function (ts) {
+          if (touche) return;
+          if (t0 === null) t0 = ts;
+          var t = ts - t0, k = 1;
+          while (k < POINTS.length - 1 && t > POINTS[k][0]) k++;
+          var a = POINTS[k - 1], b = POINTS[k], u = Math.min(1, Math.max(0, (t - a[0]) / (b[0] - a[0])));
+          var p = a[1] + (b[1] - a[1]) * adoucir(u);
+          demo.style.setProperty('--pos', p + '%'); if (rDemo) rDemo.value = Math.round(p);
+          if (t < POINTS[POINTS.length - 1][0]) requestAnimationFrame(pas);
+        };
+        if (!touche) requestAnimationFrame(pas);
+      }, 400);
+    }, { threshold: 0.6 }).observe(demo);
   }
 
   /* ── Avis : la note monte jusqu'à 5,0, les étoiles s'allument une à une, les cartes arrivent (une seule fois) ── */
