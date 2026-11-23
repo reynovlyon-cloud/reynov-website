@@ -414,7 +414,7 @@
       <div class="card"><h4>Demande</h4>
         ${l.sujet ? `<div class="muted" style="margin-bottom:8px">${esc(l.sujet)}</div>` : ''}
         <div class="msg">${esc(l.message || '(aucun message — voir les informations ci-dessous)')}</div>
-        <dl class="kv">${kv('E-mail', l.email)}${kv('Téléphone', l.tel)}${kv('Ville / CP', l.ville)}${kv('Adresse', l.adresse)}${kv('Prestation', f.prestation)}${kv('Problèmes', f.problemes)}${kv('Nombre de jantes', f.nb_jantes)}${kv('Véhicule', [f.marque, f.modele].filter(Boolean).join(' '))}${kv('Taille', f.taille)}${kv('Finition', f.finition)}${kv('Intervention', f.mode)}${kv('Délai souhaité', f.delai)}${l.attr && (l.attr.utm_campaign || l.attr.gclid || l.attr.utm_source) ? kv('Origine publicitaire', [l.attr.utm_source, l.attr.utm_medium, l.attr.utm_campaign].filter(Boolean).join(' / ') + (l.attr.gclid ? ' · clic Google Ads (gclid)' : '') + (l.attr.fbclid ? ' · clic Meta (fbclid)' : '')) : ''}${f.photos ? kv('Photos jointes', f.photos + ' (galerie ci-dessous)') : ''}</dl>
+        <dl class="kv">${kv('E-mail', l.email)}${kv('Téléphone', l.tel)}${kv('Ville / CP', l.ville)}${kv('Adresse', l.adresse)}${kv('Prestation', f.prestation)}${kv('Problèmes', f.problemes)}${kv('Nombre de jantes', f.nb_jantes)}${kv('Véhicule', [f.marque, f.modele].filter(Boolean).join(' '))}${kv('Taille', f.taille)}${kv('Finition', f.finition)}${kv('Intervention', f.mode)}${kv('Délai souhaité', f.delai)}${kv('Première visite', l.attr && l.attr.first_canal ? [l.attr.first_canal, l.attr.first_detail].filter(Boolean).join(' — ') + (l.attr.first_landing ? ' · arrivée sur ' + l.attr.first_landing : '') + (l.attr.first_date ? ' · le ' + l.attr.first_date : '') : 'inconnue')}${kv('Visite qui a abouti', l.attr && l.attr.visit_canal ? [l.attr.visit_canal, l.attr.visit_detail].filter(Boolean).join(' — ') + (l.attr.visit_landing ? ' · arrivée sur ' + l.attr.visit_landing : '') : 'inconnue')}${kv('Moyen de contact', /^Rendez-vous atelier/.test(l.sujet || '') ? 'Demande de rendez-vous (atelier)' : (SRC[l.source] || l.source || 'inconnu'))}${l.attr && (l.attr.utm_campaign || l.attr.gclid || l.attr.utm_source) ? kv('Origine publicitaire', [l.attr.utm_source, l.attr.utm_medium, l.attr.utm_campaign].filter(Boolean).join(' / ') + (l.attr.gclid ? ' · clic Google Ads (gclid)' : '') + (l.attr.fbclid ? ' · clic Meta (fbclid)' : '')) : ''}${f.photos ? kv('Photos jointes', f.photos + ' (galerie ci-dessous)') : ''}</dl>
       </div>
       <div class="card ai-card"><h4>${ico('sparkle')} Analyse <span class="eng ${esc(t.engine || 'regles')}">${t.engine === 'ia' ? 'IA' : 'Automatique'}</span></h4>
         <div style="font-weight:650;margin-bottom:10px">${esc(t.summary || '—')}${t.urgency === 'haute' ? ' <span class="chip urgent">Urgent</span>' : ''}</div>
@@ -809,7 +809,12 @@
   async function renderRoi() {
     const body = $('#stats-roi'); if (!body) return;
     try {
-      const rows = (await api('GET', '/stats/sources')).data;
+      const resp = await api('GET', '/stats/sources'); const rows = resp.data;
+      // origine (canal de la première visite) : bloc ajouté sous le tableau, sans changer la page
+      let cz = document.getElementById('stats-canaux');
+      if (!cz) { cz = document.createElement('div'); cz.id = 'stats-canaux'; cz.className = 'muted'; cz.style.padding = '12px 14px'; const host = body.closest('.card') || body.parentNode; host.appendChild(cz); }
+      const cn = resp.canaux || [];
+      cz.innerHTML = cn.length ? '<strong>Origine (première visite)</strong>' + cn.map((r) => `<div>${esc(r.canal)} : ${r.leads} demande${r.leads > 1 ? 's' : ''} (${r.leads30} sur 30 j) · ${r.rdv} rendez-vous · ${r.acceptes} devis accepté${r.acceptes > 1 ? 's' : ''} · ${esc(r.ca_ttc.toLocaleString('fr-FR'))} € TTC</div>`).join('') : '';
       body.innerHTML = rows.map((r) => `<tr><td><strong>${esc(SRC[r.source] || r.source)}</strong></td><td>${r.leads}<span class="faint"> (${r.leads30} sur 30 j)</span></td><td>${r.gagnes}</td><td>${r.conversion} %</td><td>${r.devis}</td><td>${r.acceptes}</td><td><strong>${esc(r.ca_ttc.toLocaleString('fr-FR'))} €</strong></td></tr>`).join('') || '<tr><td colspan="7" class="empty">PAS ENCORE DE DONNÉES</td></tr>';
     } catch (e) { /* facultatif */ }
   }

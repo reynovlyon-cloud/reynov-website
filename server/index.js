@@ -48,7 +48,7 @@ app.use(helmet({
         'https://connect.facebook.net', 'https://www.facebook.com'],
       frameSrc:    ['https://googleads.g.doubleclick.net', 'https://td.doubleclick.net'],
       objectSrc:   ["'none'"],
-      upgradeInsecureRequests: [],
+      upgradeInsecureRequests: process.env.CRM_TEST_MODE === '1' ? null : [],   // aperçu local en HTTP (Safari force sinon le HTTPS sur localhost) ; jamais actif en production
     },
   },
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
@@ -797,7 +797,16 @@ app.get('/api/crm/stats/sources', (_req, res) => {
     for (const q of quotes.filter(x => x.lead_id === l.id)) { if (q.status !== 'brouillon') o.devis++; if (q.status === 'accepte') { o.acceptes++; o.ca_ttc += q.totals.ttc; } }
   }
   const rows = Object.values(out).map(o => ({ ...o, conversion: o.leads ? Math.round(o.gagnes / o.leads * 100) : 0, ca_ttc: Math.round(o.ca_ttc) })).sort((a, b) => b.leads - a.leads);
-  res.json({ ok: true, data: rows });
+  // par canal de la première visite (origine) : la source « formulaire » ci-dessus est le moyen de contact
+  const canalOf = (l) => (l.attr && (l.attr.first_canal || l.attr.visit_canal)) || (l.attr && (l.attr.gclid || l.attr.gbraid || l.attr.wbraid) ? 'Google Ads' : '') || 'Inconnue';
+  const byC = {};
+  for (const l of db.allLeads()) {
+    const k = canalOf(l); const o = byC[k] = byC[k] || { canal: k, leads: 0, leads30: 0, rdv: 0, gagnes: 0, acceptes: 0, ca_ttc: 0 };
+    o.leads++; if (Date.parse(l.created_at) > since) o.leads30++; if (l.status === 'rdv') o.rdv++; if (l.status === 'gagne') o.gagnes++;
+    for (const q of quotes.filter(x => x.lead_id === l.id)) if (q.status === 'accepte') { o.acceptes++; o.ca_ttc += q.totals.ttc; }
+  }
+  const canaux = Object.values(byC).map(o => ({ ...o, ca_ttc: Math.round(o.ca_ttc) })).sort((a, b) => b.leads - a.leads);
+  res.json({ ok: true, data: rows, canaux });
 });
 
 // ── CRM : suivi des objectifs (30 / 60 / 90 jours) : demandes par intention, devis, partenaires professionnels (administrateur) ──
@@ -1312,13 +1321,15 @@ function ensureClient(lead) {
 
 // Enregistre une demande, la trie tout de suite (règles) puis l'enrichit par IA en arrière-plan si disponible.
 // Origine publicitaire envoyée par le navigateur (uniquement si le visiteur a accepté la mesure) : champs connus seulement
-function parseAttr(raw) { try { const o = JSON.parse(String(raw || '{}')); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } }
+function parseAttr(raw) { try { if (raw && typeof raw === 'object') return raw; const o = JSON.parse(String(raw || '{}')); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } }
 function ingestLead(src) {
   const email = cleanLine(src.email, 200);
   const message = clean(src.message, 4000);
   const dup = db.findRecentDuplicate(email, message);
   if (dup) return { lead: dup, duplicate: true };
-  const attr = {}; ['gclid', 'gbraid', 'wbraid', 'fbclid', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'].forEach(k => { const v = src.attr && src.attr[k]; if (v) attr[k] = cleanLine(v, 120); });
+  const attr = {}; ['gclid', 'gbraid', 'wbraid', 'fbclid', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
+    // origine lisible : première visite connue et visite qui a abouti (canal, précision, page d'arrivée, date) — voir assets/js/track.js
+    'first_canal', 'first_detail', 'first_landing', 'first_date', 'visit_canal', 'visit_detail', 'visit_landing', 'visit_date'].forEach(k => { const v = src.attr && src.attr[k]; if (v) attr[k] = cleanLine(v, 120); });
   const f = src.form || {};
   const lead = db.createLead({
     source: cleanLine(src.source || 'devis', 40) || 'devis',
@@ -1435,7 +1446,7 @@ app.post('/api/contact', contactLimiter, express.json({ limit: '20kb' }), async 
     if (message.length < 5) return res.status(400).json({ ok: false, error: 'Merci de décrire votre demande.' });
     if (!emailBudgetOk(email)) return res.status(429).json({ ok: false, error: 'Un message a déjà été reçu pour cette adresse. Appelez-nous au 06 61 45 35 27.' });
 
-    const { lead, duplicate } = ingestLead({ source: 'contact', prenom: b.prenom, nom: b.nom, email, tel: b.tel, sujet: b.sujet, message, form: {} });
+    const { lead, duplicate } = ingestLead({ source: 'contact', attr: parseAttr(b.attr), prenom: b.prenom, nom: b.nom, email, tel: b.tel, sujet: b.sujet, message, form: {} });
     if (duplicate) return res.json({ ok: true });
     console.log('📩 Message de contact enregistré (lead #' + lead.id + ')');
     // Notifications : n'empêchent jamais l'enregistrement
