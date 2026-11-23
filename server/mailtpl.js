@@ -20,7 +20,7 @@ const para = (t, extra = '') => `<p style="margin:0 0 16px;font-family:${FONT};f
 function signature() {
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:30px;"><tr><td style="border-top:1px solid ${LINE};padding-top:22px;font-family:${FONT};">
     <p style="margin:0;font-size:15px;font-weight:700;color:${INK};">L'équipe REYNOV</p>
-    <p style="margin:3px 0 12px;font-size:13px;color:${MUTED};">Rénovation de jantes · Lyon et alentours · 7j/7</p>
+    <p style="margin:3px 0 12px;font-size:13px;color:${MUTED};">Rénovation de jantes · Lyon et alentours · 6j/7</p>
     <p style="margin:0;font-size:13.5px;color:${TEXT};line-height:1.9;">Téléphone / WhatsApp : <a href="${WA}" style="color:${INK};font-weight:600;text-decoration:none;">${PHONE}</a><br>Atelier : 47 chemin du Pras, 69350 La Mulatière</p>
   </td></tr></table>`;
 }

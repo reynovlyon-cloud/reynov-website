@@ -1,8 +1,7 @@
-/* REYNOV — devis en étapes courtes : une question par écran, passage automatique à la suivante dès le clic.
-   Parcours particulier : vous êtes → problème → nombre → lieu (si utile) → photos → ville → coordonnées.
-   Parcours professionnel : vous êtes → activité → nombre → échéance → photos → société et ville → coordonnées.
-   Envoi vers /api/devis avec les mêmes champs qu'avant (serveur inchangé, tri du CRM inchangé).
-   Retour arrière (bouton ou navigateur) sans rien perdre ; la confirmation ne s'affiche qu'après la réponse du serveur. */
+/* REYNOV — devis en 5 écrans, tout au clic : problème → véhicule (+ nombre de jantes) → atelier ou domicile + code postal → photos → coordonnées.
+   Professionnels (?pro=1) : activité → quantité → échéance → photos → société + code postal → coordonnées.
+   Black Friday (?offre=black-friday, du 24 au 28 novembre 2026, heure de Paris) : véhicule → code postal (atelier) → photos → coordonnées.
+   Envoi vers /api/devis avec les mêmes champs qu'avant (serveur et tri du CRM inchangés). Retour arrière sans rien perdre. */
 (function () {
   'use strict';
   var form = document.getElementById('dv');
@@ -12,53 +11,51 @@
   var $$ = function (s, r) { return Array.prototype.slice.call((r || d).querySelectorAll(s)); };
   var reduit = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var MAX_PHOTOS = 8, MAX_FILE = 8 * 1024 * 1024, MAX_TOTAL = 18 * 1024 * 1024, EDGE = 1600, QUALITE = 0.82;
-  var RE_MAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  var RE_MAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/, RE_CP = /^\d{5}$/;
 
+  // intitulés envoyés au CRM : les mêmes qu'avant (reconnus par le tri automatique)
   var BESOINS = {
-    renovation: { p: 'Rénovation', pb: 'Rayures / trottoir', t: 'Rayée ou frottée' },
-    diamantee: { p: 'Jante diamantée', pb: 'Jante diamantée abîmée', t: 'Diamantée abîmée' },
-    devoilage: { p: 'Dévoilage', pb: 'Jante voilée / vibrations', t: 'Voilée' },
-    fissure: { p: 'Soudure / fissure', pb: 'Fissure / cassure', t: 'Fissurée ou cassée' },
-    epoxy: { p: 'Peinture époxy et thermolaquage', pb: '', t: 'Époxy ou thermolaquage' },
-    perso: { p: 'Personnalisation', pb: 'Changement de couleur', t: 'Changer de couleur' },
-    inconnu: { p: 'À préciser', pb: 'Je ne sais pas', t: 'Je ne sais pas' }
+    renovation: { p: 'Rénovation', pb: 'Rayures / trottoir', t: 'Jante rayée' },
+    fissure: { p: 'Soudure / fissure', pb: 'Fissure / cassure', t: 'Fissure, soudure' },
+    devoilage: { p: 'Dévoilage', pb: 'Jante voilée / vibrations', t: 'Dévoilage' },
+    perso: { p: 'Personnalisation', pb: 'Changement de couleur', t: 'Personnalisation' }
   };
-  var ATELIER_SEUL = ['devoilage', 'fissure', 'epoxy'];
-  var S = { qui: '', besoin: '', activite: '', nombre: '', lieu: '', echeance: '', plusTard: false, offre: '' };
+  var ATELIER_SEUL = ['fissure', 'devoilage'];
+  var S = { besoin: '', nombre: '', lieu: '', activite: '', echeance: '', plusTard: false, offre: '', pro: false, lieuDemande: '' };
   var photos = [], seq = 0, envoi = false, courant = '';
+  var champ = { vehicule: $('#dv-vehicule'), cp: $('#dv-cp'), societe: $('#dv-societe'), cpPro: $('#dv-cp-pro') };
 
   function track(nom, p) { try { if (typeof gtag === 'function') gtag('event', nom, Object.assign({ transport_type: 'beacon' }, p || {})); } catch (e) { /* facultatif */ } }
 
-  /* ── Réponses déjà connues par le lien d'arrivée ── */
+  /* ── Réponses connues par le lien d'arrivée ── */
   (function () {
     var q = new URLSearchParams(location.search);
-    var alias = { personnalisation: 'perso', soudure: 'fissure', fissures: 'fissure', thermolaquage: 'epoxy', 'jante-diamantee': 'diamantee' };
+    var alias = { personnalisation: 'perso', soudure: 'fissure', fissures: 'fissure', rayure: 'renovation', rayures: 'renovation' };
     var b = q.get('besoin') || q.get('prestation'); b = b && (alias[b] || b);
-    // offre valable pour les réservations du 24 au 28 novembre 2026 inclus (heure de Paris) ; hors période : devis normal
     var bfOk = /[?&]bf=apercu\b/.test(location.search) || (Date.now() >= Date.parse('2026-11-24T00:00:00+01:00') && Date.now() < Date.parse('2026-11-29T00:00:00+01:00'));
-    if (q.get('offre') === 'black-friday' && bfOk) { S.offre = 'bf'; S.qui = 'part'; S.besoin = 'renovation'; S.nombre = '4'; S.lieu = 'atelier'; $('[data-offre]').hidden = false; }
-    else if (q.get('pro') === '1' || q.get('lot') === '1') S.qui = 'pro';
-    else if (b && BESOINS[b]) { S.qui = 'part'; S.besoin = b; }
-    var l = q.get('lieu'); if (l === 'atelier' || l === 'domicile') S.lieu = l;
+    if (q.get('offre') === 'black-friday' && bfOk) { S.offre = 'bf'; S.besoin = 'renovation'; S.nombre = '4'; S.lieu = 'atelier'; $('[data-offre]').hidden = false; $('[data-nb]').hidden = true; }
+    else if (q.get('pro') === '1' || q.get('lot') === '1') S.pro = true;
+    else if (b && BESOINS[b]) S.besoin = b;
+    var l = q.get('lieu'); if (!S.offre && (l === 'atelier' || l === 'domicile')) { S.lieu = l; S.lieuDemande = l; }
   })();
 
-  function lieuFinal() {
-    if (S.qui === 'pro') return '';
-    if (ATELIER_SEUL.indexOf(S.besoin) >= 0 || S.nombre === '1' || S.nombre === '2') return 'atelier';
-    return S.lieu;
-  }
+  function domicilePossible() { return !S.offre && ATELIER_SEUL.indexOf(S.besoin) < 0 && S.nombre !== '1' && S.nombre !== '2'; }
   function parcours() {
-    if (S.offre === 'bf') return ['photos', 'ville', 'contact'];
-    if (S.qui === 'pro') return ['qui', 'activite', 'nombre', 'echeance', 'photos', 'ville', 'contact'];
-    var p = ['qui', 'besoin', 'nombre'];
-    if (ATELIER_SEUL.indexOf(S.besoin) < 0 && S.nombre !== '1' && S.nombre !== '2') p.push('lieu');
-    return p.concat(['photos', 'ville', 'contact']);
+    if (S.offre) return ['vehicule', 'lieu', 'photos', 'contact'];
+    if (S.pro) return ['activite', 'nombre', 'echeance', 'photos', 'societe', 'contact'];
+    return ['besoin', 'vehicule', 'lieu', 'photos', 'contact'];
   }
+  function val(c) { return c ? c.value.trim() : ''; }
   function repondu(q) {
-    if (q === 'photos') return photos.length > 0 || S.plusTard;
-    if (q === 'ville') return $('#dv-ville').value.trim().length > 1;
-    if (q === 'contact') return false;
-    return !!S[q === 'qui' ? 'qui' : q];
+    switch (q) {
+      case 'besoin': return !!S.besoin;
+      case 'vehicule': return val(champ.vehicule).length > 1 && !!S.nombre;
+      case 'lieu': return !!S.lieu && RE_CP.test(val(champ.cp));
+      case 'photos': return photos.length > 0 || S.plusTard;
+      case 'societe': return RE_CP.test(val(champ.cpPro));
+      case 'contact': return false;
+      default: return !!S[q];
+    }
   }
 
   /* ── Affichage d'une question ── */
@@ -66,22 +63,19 @@
   function montrer(q, sens) {
     var p = parcours(), i = p.indexOf(q); if (i < 0) { q = p[0]; i = 0; }
     courant = q;
-    $$('.dvq').forEach(function (f) {
-      var on = f.getAttribute('data-q') === q; f.hidden = !on;
-      if (on) { f.classList.toggle('is-retour', sens < 0); }
-    });
-    $$('[data-only]').forEach(function (n) { n.hidden = n.getAttribute('data-only') !== (S.qui || 'part'); });
+    $$('.dvq').forEach(function (f) { var on = f.getAttribute('data-q') === q; f.hidden = !on; if (on) f.classList.toggle('is-retour', sens < 0); });
     $$('.dvq[data-q="' + q + '"] .ch').forEach(function (b) {
-      var k = q, v = b.getAttribute('data-v');
+      var k = b.closest('[data-nb]') ? 'nombre' : q, v = b.getAttribute('data-v');
       b.setAttribute('aria-pressed', S[k] && S[k] === v ? 'true' : 'false');
     });
-    barre.style.width = Math.max(6, Math.round((i + 1) / p.length * 100)) + '%';
-    compteur.textContent = 'Question ' + (i + 1) + ' sur ' + p.length;
-    retourBtn.hidden = i === 0;
-    if (q === 'contact') recap();
+    if (q === 'lieu') majLieu();
     if (q === 'photos') majPhotosUI();
-    var t = $('.dvq[data-q="' + q + '"] .dvq__t');
+    if (q === 'contact') recap();
+    barre.style.width = Math.max(8, Math.round((i + 1) / p.length * 100)) + '%';
+    compteur.textContent = 'Étape ' + (i + 1) + ' sur ' + p.length;
+    retourBtn.hidden = i === 0;
     window.scrollTo(0, 0);
+    var t = $('.dvq[data-q="' + q + '"] .dvq__t');
     if (t && sens !== 0) t.focus({ preventScroll: true });
     track('devis_step', { step: i + 1, step_name: q });
   }
@@ -93,6 +87,7 @@
     try { history.pushState({ dv: n, n: prof + 1 }, '', '#' + n); } catch (e) { /* facultatif */ }
     montrer(n, 1);
   }
+  function plusTard(fn) { setTimeout(fn, reduit ? 0 : 160); }
   function reculer() {
     if (history.state && history.state.n > 0) { history.back(); return; }
     var p = parcours(), i = p.indexOf(courant);
@@ -105,14 +100,69 @@
     montrer(q && p.indexOf(q) >= 0 ? q : p[0], -1);
   });
 
-  /* ── Choix : un clic = réponse enregistrée + question suivante ── */
+  function erreur(cle, champEl, ok) {
+    var e = $('[data-err="' + cle + '"]'); if (e) e.hidden = ok;
+    if (champEl) { if (ok) champEl.removeAttribute('aria-invalid'); else champEl.setAttribute('aria-invalid', 'true'); }
+    return ok;
+  }
+
+  /* ── Choix : un clic = réponse enregistrée (+ question suivante quand l'écran est complet) ── */
   form.addEventListener('click', function (e) {
     var b = e.target.closest ? e.target.closest('.ch') : null; if (!b || envoi) return;
-    var q = b.closest('.dvq').getAttribute('data-q'), v = b.getAttribute('data-v');
-    if (q === 'qui' && v !== S.qui) { S.nombre = ''; }
-    S[q] = v;
-    $$('.ch', b.closest('.dvq')).forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
-    setTimeout(avancer, reduit ? 0 : 160);
+    if (b.getAttribute('aria-disabled') === 'true') return;
+    var fs = b.closest('.dvq'), q = fs.getAttribute('data-q'), v = b.getAttribute('data-v');
+    var groupe = b.closest('[data-nb]') ? b.closest('[data-nb]') : fs;
+    var cle = b.closest('[data-nb]') ? 'nombre' : q;
+    S[cle] = v;
+    $$('.ch', groupe).forEach(function (x) { if (!x.closest('[data-nb]') === !b.closest('[data-nb]')) x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+    if (q === 'vehicule') {   // nombre choisi : on passe si le modèle est déjà écrit
+      erreur('nb', null, true);
+      if (val(champ.vehicule).length > 1) plusTard(avancer); else champ.vehicule.focus();
+      return;
+    }
+    if (q === 'lieu') {
+      if (RE_CP.test(val(champ.cp))) plusTard(avancer); else champ.cp.focus();
+      return;
+    }
+    plusTard(avancer);
+  });
+
+  /* ── Véhicule ── */
+  function vehiculeOk() {
+    var a = erreur('vehicule', champ.vehicule, val(champ.vehicule).length > 1);
+    var b = erreur('nb', null, !!S.nombre);
+    if (!a) champ.vehicule.focus();
+    return a && b;
+  }
+  $('[data-suite="vehicule"]').addEventListener('click', function () { if (vehiculeOk()) avancer(); });
+
+  /* ── Lieu + code postal ── */
+  function majLieu() {
+    var dom = $('.dvq[data-q="lieu"] .ch[data-v="domicile"]'), note = $('[data-dom-note]');
+    var ok = domicilePossible();
+    dom.setAttribute('aria-disabled', ok ? 'false' : 'true');
+    note.textContent = ok ? 'Lyon et alentours, dès 3 jantes' : S.offre ? 'L’offre se fait à l’atelier' : ATELIER_SEUL.indexOf(S.besoin) >= 0 ? 'Cette réparation se fait à l’atelier' : 'À partir de 3 jantes';
+    if (!ok && S.lieu !== 'atelier') S.lieu = 'atelier';
+    $$('.dvq[data-q="lieu"] .ch').forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-v') === S.lieu ? 'true' : 'false'); });
+  }
+  champ.cp.addEventListener('input', function () {
+    var v = champ.cp.value.replace(/\D/g, '').slice(0, 5); if (v !== champ.cp.value) champ.cp.value = v;
+    if (RE_CP.test(v)) { erreur('cp', champ.cp, true); if (S.lieu && courant === 'lieu') plusTard(avancer); }
+  });
+  function lieuOk() { var ok = erreur('cp', champ.cp, RE_CP.test(val(champ.cp))); if (!S.lieu) { S.lieu = 'atelier'; majLieu(); } if (!ok) champ.cp.focus(); return ok; }
+  $('[data-suite="lieu"]').addEventListener('click', function () { if (lieuOk()) avancer(); });
+
+  /* ── Société (pros) ── */
+  champ.cpPro.addEventListener('input', function () { var v = champ.cpPro.value.replace(/\D/g, '').slice(0, 5); if (v !== champ.cpPro.value) champ.cpPro.value = v; if (RE_CP.test(v)) erreur('cp-pro', champ.cpPro, true); });
+  function societeOk() { var ok = erreur('cp-pro', champ.cpPro, RE_CP.test(val(champ.cpPro))); if (!ok) champ.cpPro.focus(); return ok; }
+  $('[data-suite="societe"]').addEventListener('click', function () { if (societeOk()) avancer(); });
+
+  /* ── Entrée = suite sur les écrans à saisir ── */
+  form.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' || e.target.tagName === 'TEXTAREA' || e.target.type === 'submit') return;
+    if (courant === 'vehicule') { e.preventDefault(); if (vehiculeOk()) avancer(); }
+    else if (courant === 'lieu') { e.preventDefault(); if (lieuOk()) avancer(); }
+    else if (courant === 'societe') { e.preventDefault(); if (societeOk()) avancer(); }
   });
 
   /* ── Photos : réduites sur l'appareil (1600 px, qualité 0,82) pour un envoi rapide ── */
@@ -127,10 +177,7 @@
         var k = Math.min(1, EDGE / Math.max(w, h)), cw = Math.round(w * k), ch = Math.round(h * k);
         var c = d.createElement('canvas'); c.width = cw; c.height = ch;
         var x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, cw, ch); x.drawImage(src, 0, 0, cw, ch);
-        c.toBlob(function (b) {
-          if (!b) return ko(new Error('encodage'));
-          ok(file.type === 'image/jpeg' && file.size <= b.size && k === 1 ? file : b);
-        }, 'image/jpeg', QUALITE);
+        c.toBlob(function (b) { if (!b) return ko(new Error('encodage')); ok(file.type === 'image/jpeg' && file.size <= b.size && k === 1 ? file : b); }, 'image/jpeg', QUALITE);
       };
       var parImg = function () {
         var u = URL.createObjectURL(file), im = new Image();
@@ -200,31 +247,21 @@
   btnSuitePh.addEventListener('click', function () { if (!photos.some(function (p) { return p.prep; })) { S.plusTard = false; avancer(); } });
   btnPlusTard.addEventListener('click', function () { S.plusTard = true; avancer(); });
 
-  /* ── Ville : une puce = réponse + suite ; sinon saisie puis « Continuer » ou Entrée ── */
-  var ville = $('#dv-ville');
-  function villeOk() {
-    var ok = ville.value.trim().length > 1, e = $('[data-err="ville"]');
-    e.hidden = ok; if (ok) ville.removeAttribute('aria-invalid'); else ville.setAttribute('aria-invalid', 'true');
-    return ok;
-  }
-  $$('.puce').forEach(function (b) { b.addEventListener('click', function () { ville.value = b.getAttribute('data-ville'); villeOk(); setTimeout(avancer, reduit ? 0 : 120); }); });
-  $('[data-suite="ville"]').addEventListener('click', function () { if (villeOk()) avancer(); else ville.focus(); });
-  form.addEventListener('keydown', function (e) {
-    if (e.key !== 'Enter' || e.target.tagName === 'TEXTAREA') return;
-    if (courant === 'ville') { e.preventDefault(); if (villeOk()) avancer(); }
-  });
-
-  /* ── Récapitulatif avant envoi ── */
+  /* ── Récapitulatif ── */
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function jantes(n) { return !n ? '—' : /^\d+$/.test(n) ? n + (n === '1' ? ' jante' : ' jantes') : n === 'Récurrent' ? 'Lots réguliers' : n; }
   function lignes() {
     var r = [];
-    if (S.offre === 'bf') r.push(['Offre', 'Black Friday : 3 jantes, la 4e offerte']);
-    else if (S.qui === 'pro') { r.push(['Activité', S.activite || '—']); if ($('#dv-societe').value.trim()) r.push(['Société', $('#dv-societe').value.trim()]); }
-    else r.push(['Problème', S.besoin ? BESOINS[S.besoin].t : '—']);
-    var n = S.nombre; r.push(['Jantes', !n ? '—' : /^\d+$/.test(n) ? n + (n === '1' ? ' jante' : ' jantes') : n === 'Récurrent' ? 'Lots réguliers' : n]);
-    if (S.qui === 'pro') r.push(['Échéance', S.echeance || '—']);
-    var l = lieuFinal(); if (l) r.push(['Lieu', l === 'atelier' ? 'Atelier, La Mulatière' : 'À domicile']);
-    r.push(['Ville', $('#dv-ville').value.trim() || '—']);
+    if (S.offre) r.push(['Offre', 'Black Friday : la 4e jante offerte']);
+    if (S.pro) {
+      r.push(['Activité', S.activite || '—'], ['Quantité', jantes(S.nombre)], ['Échéance', S.echeance || '—']);
+      if (val(champ.societe)) r.push(['Société', val(champ.societe)]);
+      r.push(['Code postal', val(champ.cpPro) || '—']);
+    } else {
+      if (!S.offre) r.push(['Problème', S.besoin ? BESOINS[S.besoin].t : '—']);
+      r.push(['Véhicule', (val(champ.vehicule) || '—') + (S.nombre ? ', ' + jantes(S.nombre) : '')]);
+      r.push(['Lieu', (S.lieu === 'domicile' ? 'À domicile' : 'À l’atelier') + (val(champ.cp) ? ', ' + val(champ.cp) : '')]);
+    }
     r.push(['Photos', photos.length ? photos.length + (photos.length > 1 ? ' photos' : ' photo') : 'Envoyées plus tard']);
     return r;
   }
@@ -238,46 +275,42 @@
   /* ── Envoi ── */
   var bouton = $('#dv-envoyer'), libelle = bouton.querySelector('span'), errEnvoi = $('#dv-err-envoi'), statut = $('#dv-statut');
   function chiffres(s) { return String(s || '').replace(/\D/g, ''); }
-  function erreurChamp(cle, champ, ok) {
-    $('[data-err="' + cle + '"]').hidden = ok;
-    if (ok) champ.removeAttribute('aria-invalid'); else champ.setAttribute('aria-invalid', 'true');
-    return ok;
-  }
   form.addEventListener('submit', function (e) {
     e.preventDefault();
-    if (envoi) return;
-    if (courant !== 'contact') { if (courant === 'ville' && villeOk()) avancer(); return; }
-    var pr = $('#dv-prenom'), te = $('#dv-tel'), em = $('#dv-email');
-    var ok1 = erreurChamp('prenom', pr, pr.value.trim().length > 0), ok2 = erreurChamp('tel', te, chiffres(te.value).length >= 8), ok3 = erreurChamp('email', em, RE_MAIL.test(em.value.trim()));
+    if (envoi || courant !== 'contact') return;
+    var pr = $('#dv-prenom'), no = $('#dv-nom'), te = $('#dv-tel'), em = $('#dv-email');
+    var ok1 = erreur('prenom', pr, val(pr).length > 0), ok2 = erreur('tel', te, chiffres(te.value).length >= 8), ok3 = erreur('email', em, RE_MAIL.test(val(em)));
     if (!(ok1 && ok2 && ok3)) { (!ok1 ? pr : !ok2 ? te : em).focus(); return; }
     var manque = parcours().filter(function (q) { return q !== 'contact' && !repondu(q); })[0];
     if (manque) { montrer(manque, -1); return; }
 
-    var pro = S.qui === 'pro', bfo = S.offre === 'bf', l = lieuFinal(), desc = [];
+    var bfo = !!S.offre, pro = S.pro, desc = [], vehicule = val(champ.vehicule), mots = vehicule.split(/\s+/);
     var fd = new FormData();
     fd.append('_t', String(t0));
     fd.append('website', $('input[name="website"]').value);
     try { var a = window.reynovAttr ? window.reynovAttr() : {}; if (a && Object.keys(a).length) fd.append('attr', JSON.stringify(a)); } catch (x) { /* facultatif */ }
     if (bfo) desc.push('Offre Black Friday 2026 : 3 jantes rénovées, la 4e offerte (face avant, à l’atelier).');
-    if ($('#dv-message').value.trim()) desc.push($('#dv-message').value.trim());
-    if (pro && $('#dv-societe').value.trim()) desc.push('Société : ' + $('#dv-societe').value.trim());
+    if (val($('#dv-message'))) desc.push(val($('#dv-message')));
+    if (pro && val(champ.societe)) desc.push('Société : ' + val(champ.societe));
     if (pro && S.nombre === 'Récurrent') desc.push('Besoin : lots réguliers');
-    if (!pro && l === 'atelier' && S.lieu === 'domicile') desc.push('Demande à domicile, orientée vers l’atelier (moins de 3 jantes ou prestation d’atelier).');
+    if (!pro && S.lieuDemande === 'domicile' && S.lieu === 'atelier') desc.push('Demande à domicile, orientée vers l’atelier (moins de 3 jantes ou réparation d’atelier).');
     if (S.plusTard && !photos.length) desc.push('Photos : envoyées plus tard (WhatsApp ou e-mail).');
     fd.append('prestation', bfo ? 'Black Friday · rénovation face avant (4 jantes, la 4e offerte)' : pro ? 'Lot professionnel : ' + S.activite : BESOINS[S.besoin].p);
     fd.append('problemes', pro || bfo ? '' : BESOINS[S.besoin].pb);
     fd.append('nb_jantes', S.nombre);
-    fd.append('mode', l === 'atelier' ? 'En atelier (REYNOV)' : l === 'domicile' ? 'À domicile' : '');
+    fd.append('marque', pro ? '' : mots[0] || '');
+    fd.append('modele', pro ? '' : mots.slice(1).join(' '));
+    fd.append('mode', pro ? '' : S.lieu === 'domicile' ? 'À domicile' : 'En atelier (REYNOV)');
     fd.append('delai', pro ? S.echeance : '');
-    fd.append('adresse', $('#dv-ville').value.trim());
+    fd.append('adresse', pro ? val(champ.cpPro) : val(champ.cp));
     fd.append('description', desc.join('\n'));
-    fd.append('prenom', pr.value.trim()); fd.append('nom', $('#dv-nom').value.trim());
-    fd.append('email', em.value.trim()); fd.append('tel', te.value.trim());
+    fd.append('prenom', val(pr)); fd.append('nom', val(no));
+    fd.append('email', val(em)); fd.append('tel', val(te));
     photos.forEach(function (p, i) { var ext = /png/.test(p.blob.type) ? 'png' : /heic|heif/i.test(p.blob.type + p.nom) ? 'heic' : /webp/.test(p.blob.type) ? 'webp' : 'jpg'; fd.append('photos', p.blob, 'photo-' + (i + 1) + '.' + ext); });
 
     envoi = true; bouton.disabled = true; errEnvoi.hidden = true; libelle.textContent = 'Envoi en cours…'; statut.textContent = 'Envoi de votre demande…';
     var remettre = function () { envoi = false; bouton.disabled = false; libelle.textContent = 'Envoyer ma demande'; };
-    var erreur = function (m) { remettre(); errEnvoi.textContent = m; errEnvoi.hidden = false; statut.textContent = ''; };
+    var echec = function (m) { remettre(); errEnvoi.textContent = m; errEnvoi.hidden = false; statut.textContent = ''; };
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/devis'); xhr.timeout = 120000;
     xhr.upload.onprogress = function (ev) { if (ev.lengthComputable && photos.length) statut.textContent = 'Envoi de vos photos : ' + Math.round(ev.loaded / ev.total * 100) + ' %'; };
@@ -288,9 +321,9 @@
         try { if (window.reynovFbq) window.reynovFbq('Lead', { content_name: bfo ? 'black_friday' : pro ? 'lot_pro' : 'devis' }); } catch (x) { /* facultatif */ }
         var parti = false, aller = function () { if (parti) return; parti = true; location.href = '/devis-confirmation.html'; };
         if (typeof gtag === 'function' && window.google_tag_manager) { gtag('event', 'conversion', { send_to: 'AW-18189889040/7zKmCNbLnMwcEJDczuFD', event_callback: aller }); setTimeout(aller, 1200); } else aller();
-      } else erreur((j && j.error) || 'L’envoi n’a pas abouti. Vos réponses et vos photos sont conservées : réessayez, ou appelez le 06 61 45 35 27.');
+      } else echec((j && j.error) || 'L’envoi n’a pas abouti. Vos réponses et vos photos sont conservées : réessayez, ou appelez le 06 61 45 35 27.');
     };
-    xhr.onerror = xhr.ontimeout = function () { erreur('Connexion impossible. Vos réponses et vos photos sont conservées : réessayez, ou appelez le 06 61 45 35 27.'); };
+    xhr.onerror = xhr.ontimeout = function () { echec('Connexion impossible. Vos réponses et vos photos sont conservées : réessayez, ou appelez le 06 61 45 35 27.'); };
     xhr.send(fd);
   });
 

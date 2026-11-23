@@ -51,12 +51,12 @@ function draft(l, level, quote, now) {
   const subject = quote && quote.number ? 'Votre devis REYNOV n° ' + quote.number : 'Votre demande de devis REYNOV';
   const bodies = [
     'Bonjour {{prenom}},\n\nJe me permets de revenir vers vous au sujet de ' + ref + '. Avez-vous eu le temps d\'y jeter un œil ?\n\nSi vous avez une question, ou si vous souhaitez ajuster quelque chose (nombre de jantes, finition, date), répondez simplement à ce message ou appelez-moi au 06 61 45 35 27 : nous regardons cela ensemble.' + valid + '\n\n' + SIGN,
-    'Bonjour {{prenom}},\n\nJe reviens vers vous au cas où mon précédent message se serait perdu : ' + ref + ' est toujours à votre disposition.\n\nPour caler l\'intervention, l\'atelier est ouvert tous les jours de 9h à 19h : dites-moi la date qui vous arrange et je regarde la disponibilité. Si des photos supplémentaires peuvent aider à affiner le devis, vous pouvez me les envoyer sur WhatsApp au 06 61 45 35 27.' + valid + '\n\n' + SIGN,
+    'Bonjour {{prenom}},\n\nJe reviens vers vous au cas où mon précédent message se serait perdu : ' + ref + ' est toujours à votre disposition.\n\nPour caler l\'intervention, l\'atelier est ouvert 6 jours sur 7, de 9h à 19h : dites-moi la date qui vous arrange et je regarde la disponibilité. Si des photos supplémentaires peuvent aider à affiner le devis, vous pouvez me les envoyer sur WhatsApp au 06 61 45 35 27.' + valid + '\n\n' + SIGN,
     'Bonjour {{prenom}},\n\nJe n\'ai pas eu de retour concernant ' + ref + '. Je considère donc que votre projet n\'est plus d\'actualité et je ne vous relancerai pas davantage.\n\nSi vous changez d\'avis, il vous suffit de répondre à ce message : nous reprendrons votre dossier avec plaisir.\n\n' + SIGN,
   ];
   const wa = [
     'Bonjour {{prenom}}, c\'est REYNOV. Avez-vous eu le temps de regarder ' + ref + ' ? Je reste disponible pour toute question ou tout ajustement.',
-    'Bonjour {{prenom}}, je reviens vers vous au sujet de ' + ref + '. Dites-moi quelle date vous arrangerait et je regarde la disponibilité de l\'atelier (tous les jours, de 9h à 19h).',
+    'Bonjour {{prenom}}, je reviens vers vous au sujet de ' + ref + '. Dites-moi quelle date vous arrangerait et je regarde la disponibilité de l\'atelier (6 jours sur 7, de 9h à 19h).',
     'Bonjour {{prenom}}, sans retour de votre part, je considère que votre projet n\'est plus d\'actualité et je ne vous relancerai plus. N\'hésitez pas à m\'écrire si vous changez d\'avis.',
   ];
   return { level: lvl, subject, body: bodies[lvl - 1], whatsapp: wa[lvl - 1] };
