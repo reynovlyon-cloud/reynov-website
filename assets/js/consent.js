@@ -23,8 +23,8 @@
     '.rc-banner.is-open{opacity:1;transform:none;pointer-events:auto}' +
     '.rc-title{font-size:17px;font-weight:650;letter-spacing:-.01em;line-height:1.3;margin:0 0 6px}' +
     '.rc-text{margin:0 0 14px;color:#B4BAC2}.rc-text a{color:#fff;text-decoration:underline;text-underline-offset:3px}' +
-    '.rc-actions{display:flex;gap:8px}' +
-    '.rc-btn{flex:1;min-height:46px;padding:0 16px;font:600 15px/1 Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;letter-spacing:0;text-transform:none;' +
+    '.rc-actions{display:flex;flex-wrap:wrap;gap:8px}' +
+    '.rc-btn{flex:1 1 110px;min-height:46px;padding:0 16px;font:600 15px/1 Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;letter-spacing:0;text-transform:none;' +
     'border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#fff;border-radius:999px;cursor:pointer;transition:background-color .15s,border-color .15s}' +
     '.rc-btn:hover{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.45)}.rc-btn:focus-visible{outline:3px solid #F6F3EC;outline-offset:3px}' +
     '.rc-manage{background:none;border:0;padding:0;margin-left:1.25rem;min-height:44px;font:inherit;color:inherit;cursor:pointer;text-decoration:underline;text-underline-offset:3px}' +
