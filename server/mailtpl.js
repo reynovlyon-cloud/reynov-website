@@ -61,10 +61,10 @@ function quoteAck(d) {
     ${/black friday/i.test(d.prestation || '') ? para('<strong style="color:' + INK + ';">Offre Black Friday :</strong> un acompte de 20 % du devis, réglé par le lien de paiement que nous vous enverrons sur WhatsApp, bloque votre créneau (cette semaine ou la semaine suivante).') : ''}
     ${recap ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:22px 0 8px;background:${SOFT};border-radius:16px;"><tr><td style="padding:22px 24px 14px;"><p style="margin:0 0 6px;font-family:${FONT};font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:${MUTED};">Récapitulatif de votre demande</p><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${recap}</table></td></tr></table>` : ''}
     <p style="margin:30px 0 16px;font-family:${FONT};font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:${MUTED};">Et maintenant ?</p>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${step(1, 'Étude de votre demande', 'Nous analysons vos informations et vos photos.')}${step(2, 'Votre devis personnalisé', 'Envoyé sous 24 h, gratuit et sans engagement.')}${step(3, 'Intervention', 'À domicile ou à l\'atelier de La Mulatière, avec garantie satisfaction de 30 jours.')}</table>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${step(1, 'Étude de votre demande', 'Nous analysons vos informations et vos photos.')}${step(2, 'Votre devis personnalisé', 'Envoyé sous 24 h, gratuit et sans engagement.')}${step(3, 'Intervention', 'À domicile ou à l\'atelier de La Mulatière.')}</table>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 26px;background:${SOFT};border-radius:16px;"><tr>
       <td class="stack" align="center" style="padding:16px 8px;font-family:${FONT};font-size:12.5px;font-weight:600;color:${INK};">Devis gratuit</td>
-      <td class="stack" align="center" style="padding:16px 8px;font-family:${FONT};font-size:12.5px;font-weight:600;color:${INK};border-left:1px solid ${LINE};">Garantie satisfaction 30 jours</td>
+      <td class="stack" align="center" style="padding:16px 8px;font-family:${FONT};font-size:12.5px;font-weight:600;color:${INK};border-left:1px solid ${LINE};">Sans engagement</td>
       <td class="stack" align="center" style="padding:16px 8px;font-family:${FONT};font-size:12.5px;font-weight:600;color:${INK};border-left:1px solid ${LINE};">Qualité d'origine</td></tr></table>
     ${para('Pour accélérer votre devis, envoyez-nous deux ou trois photos de vos jantes :', 'margin-bottom:14px;')}
     ${button('Envoyer des photos sur WhatsApp', WA)}${button('Appeler ' + PHONE, 'tel:' + TEL, false)}
@@ -108,7 +108,7 @@ function prospectOffer(d) {
     </td></tr></table>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 26px;background:${SOFT};border-radius:16px;"><tr>
       <td class="stack" align="center" style="padding:16px 8px;font-family:${FONT};font-size:12.5px;font-weight:600;color:${INK};">Intervention en atelier ou sur site</td>
-      <td class="stack" align="center" style="padding:16px 8px;font-family:${FONT};font-size:12.5px;font-weight:600;color:${INK};border-left:1px solid ${LINE};">Garantie satisfaction 30 jours</td>
+      <td class="stack" align="center" style="padding:16px 8px;font-family:${FONT};font-size:12.5px;font-weight:600;color:${INK};border-left:1px solid ${LINE};">Sans engagement</td>
       <td class="stack" align="center" style="padding:16px 8px;font-family:${FONT};font-size:12.5px;font-weight:600;color:${INK};border-left:1px solid ${LINE};">Qualité d'origine</td></tr></table>
     ${para(esc(d.ask), 'margin-bottom:14px;')}
     ${button('Voir nos réalisations et conditions', esc(d.pageUrl))}${button('Écrire sur WhatsApp', WA, false)}${button('Appeler ' + PHONE, 'tel:' + TEL, false)}

@@ -589,7 +589,7 @@ function quoteLinesFromLead(l) {
 function quoteNotesFor(l) {
   const cats = ((l.triage || {}).categories) || [];
   const delai = cats.includes('epoxy') ? '3 jours' : (cats.some(c => ['biton', 'diamantee', 'perso'].includes(c)) ? '2 à 4 jours (jusqu\'à 5 pour une finition poli diamant ou bi-ton)' : '24 à 48 h par jante');
-  return 'Délai indicatif : ' + delai + ' en atelier à La Mulatière.\nGarantie satisfaction 30 jours : reprise intégrale de la jante si le résultat ne vous convient pas.\nDevis valable 30 jours. ' + (/black friday/i.test(((l.form || {}).prestation) || '') ? 'Offre Black Friday : acompte de 20 % du devis à régler pour bloquer le créneau (lien de paiement envoyé par WhatsApp), solde à la livraison.' : 'Règlement à la livraison.');
+  return 'Délai indicatif : ' + delai + ' en atelier à La Mulatière.\nDevis valable 30 jours. ' + (/black friday/i.test(((l.form || {}).prestation) || '') ? 'Offre Black Friday : acompte de 20 % du devis à régler pour bloquer le créneau (lien de paiement envoyé par WhatsApp), solde à la livraison.' : 'Règlement à la livraison.');
 }
 function cleanLines(raw) {
   if (!Array.isArray(raw)) return null;
@@ -625,7 +625,7 @@ app.post('/api/crm/quotes', (req, res) => {
   const b = req.body || {}; const l = b.lead_id ? db.leadById(b.lead_id) : null;
   if (b.lead_id && !l) return res.status(404).json({ ok: false, error: 'Lead introuvable' });
   const lines = cleanLines(b.lines) || (l ? quoteLinesFromLead(l) : []);
-  const q = db.createQuote({ lead_id: l ? l.id : null, client_id: l ? ensureClient(l) : null, lines, notes: l ? quoteNotesFor(l) : 'Devis valable 30 jours. Garantie satisfaction 30 jours (reprise intégrale de la jante).' });
+  const q = db.createQuote({ lead_id: l ? l.id : null, client_id: l ? ensureClient(l) : null, lines, notes: l ? quoteNotesFor(l) : 'Devis valable 30 jours.' });
   if (l) db.addLeadEvent(l.id, 'status', 'Devis ' + q.number + ' créé');
   res.json({ ok: true, data: fullQuote(q) });
 });

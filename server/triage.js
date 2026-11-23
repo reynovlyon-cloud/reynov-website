@@ -183,7 +183,7 @@ function buildReply(lead, tri, catOverride) {
   if (atelierOnly) lines.push('Dépôt à l\'atelier : 47 chemin du Pras, 69350 La Mulatière, 15 minutes avant l\'heure du rendez-vous.');
   else if (domicile && tri.wheels && tri.wheels < 3) lines.push('Le déplacement à domicile est inclus à partir de 3 jantes (Lyon et 10 à 15 km autour) : pour ' + (tri.wheels === 1 ? 'une jante' : tri.wheels + ' jantes') + ', nous vous accueillons à l\'atelier, 47 chemin du Pras, 69350 La Mulatière.');
   else if (domicile) lines.push('Intervention à domicile possible à partir de 3 jantes, déplacement inclus à Lyon (1er au 9e) et 10 à 15 km autour (terrain privé, sol plat, prise électrique à proximité). Au-delà, et jusqu\'à 20 à 30 km autour de Lyon, un forfait kilométrique est indiqué dans le devis.');
-  lines.push('Le devis est gratuit et sans engagement. Garantie satisfaction de 30 jours : si quelque chose ne vous convient pas, nous reprenons la jante intégralement.');
+  lines.push('Le devis est gratuit et sans engagement.');
   lines.push('');
   lines.push(tri.urgency === 'haute' ? 'Vous avez une échéance : dites-moi la date et je regarde le premier créneau possible.' : 'Je peux vous proposer un créneau dès cette semaine : quelle est votre disponibilité ?');
   lines.push('Vous pouvez aussi m\'appeler ou m\'écrire sur WhatsApp au 06 61 45 35 27.');
@@ -204,7 +204,7 @@ function buildWhatsapp(lead, tri) {
   let t = `Bonjour {{prenom}}, c'est REYNOV. Merci pour votre demande (${cats || 'jantes'}).`;
   if (tri.price_hint && tri.price_hint[0]) t += ` ${tri.price_hint[0]}.`;
   if (needs.length) t += ` Pour un tarif précis, pouvez-vous m'envoyer ${needs.join(', ')} ?`;
-  t += ' Devis gratuit, garantie satisfaction 30 jours. À très vite !';
+  t += ' Devis gratuit et sans engagement. À très vite !';
   return t;
 }
 
@@ -227,7 +227,7 @@ FAITS AUTORISÉS (n'en invente aucun autre) :
 - Personnalisation (couleur, bi-ton, brossé, poli diamant) : sur devis, 2 à 4 jours (jusqu'à 5 pour poli diamant et bi-ton).
 - Peinture époxy : finition d'exception, qualité d'origine comme sortie d'usine, 3 jours, teinte définie avec le client.
 - Devis gratuit et sans engagement sous 24 h à partir de photos.
-- Garantie satisfaction de 30 jours : si quelque chose ne plaît pas au client, REYNOV reprend la jante intégralement pendant 30 jours (ce n'est pas une limite de durabilité du produit).
+- N'annonce aucune garantie : REYNOV n'en propose pas dans ses messages.
 - Horaires : 6 jours sur 7, de 9h à 19h.
 - Déplacement inclus à Lyon (1er au 9e) et dans un rayon de 10 à 15 km autour de Lyon, à partir de 3 jantes. En dessous de 3 jantes : accueil à l'atelier. Au-delà de la zone : forfait kilométrique indiqué dans le devis.
 - Atelier : 47 chemin du Pras, 69350 La Mulatière (déposer le véhicule 15 minutes avant l'heure du rendez-vous). Téléphone / WhatsApp : 06 61 45 35 27.
@@ -318,8 +318,8 @@ function checkDraft(lead, subject, body, instruction) {
     if (isNaN(v) || seen.has(v)) continue; seen.add(v);
     if (!known.has(v)) out.push({ level: 'warn', text: 'Montant « ' + m[0].trim() + ' » : ce n\'est pas un tarif publié (130 € HT rénovation, 140 € HT dévoilage/soudure). Est-ce voulu ?' });
   }
-  const g = all.match(/garantie[^.\n]{0,60}?(\d+)\s*(jours?|mois|ans?)/i);
-  if (g && !(Number(g[1]) === 30 && /jour/i.test(g[2]))) out.push({ level: 'warn', text: 'Garantie annoncée : « ' + g[0].trim() + ' ». La garantie satisfaction REYNOV est de 30 jours (reprise intégrale de la jante).' });
+  const g = all.match(/garanti[^.\n]{0,60}/i);
+  if (g) out.push({ level: 'warn', text: 'Le message parle de garantie (« ' + g[0].trim() + ' ») : REYNOV n\'en annonce plus. Retirez-la avant l\'envoi.' });
   if (/\{\{|\[\s*(?:à compléter|xx|\.\.\.)\s*\]|\bXX+\b|\.\.\.\.|\?\?/i.test(all)) out.push({ level: 'warn', text: 'Le message contient un passage à compléter (« {{ }} », « XX » ou « [...] »).' });
   if (/\b(gratuit(?:e|es)?|offert(?:e|es)?|remise|promo(?:tion)?|-\s?\d+\s?%|\d+\s?%\s?de\s?réduction)\b/i.test(all) && !/devis gratuit|devis est gratuit/i.test(all)) out.push({ level: 'warn', text: 'Le message parle de gratuité ou de remise : vérifiez que c\'est bien un engagement que vous prenez.' });
   const pr = String(lead.prenom || '').trim();

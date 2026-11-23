@@ -63,8 +63,11 @@
   function touch() {
     var p = new URLSearchParams(location.search), q = {};
     IDS.concat(UTM).forEach(function (k) { var v = p.get(k); if (v) q[k] = clip(v); });
-    var c = classify(q, document.referrer);
-    return { canal: c[0], detail: clip(c[1]), landing: clip(location.pathname), date: new Date().toISOString().slice(0, 10), q: q };
+    var c = classify(q, document.referrer), landing = location.pathname;
+    // origine transmise par le lien cliqué sur la page précédente (visiteur sans cookies, voir plus bas) : canal|précision|page d'arrivée
+    var o = (p.get('origine') || '').split('|');
+    if (c[0] === 'Accès direct ou inconnu' && o[0]) { c = [o[0], o[1] || '']; landing = o[2] || landing; }
+    return { canal: c[0], detail: clip(c[1]), landing: clip(landing), date: new Date().toISOString().slice(0, 10), q: q };
   }
   function capture() {
     if (!consented()) return;
@@ -80,7 +83,18 @@
   // Données transmises avec une demande : identifiants publicitaires et paramètres de campagne de la visite qui aboutit,
   // plus le canal de la première visite et de la visite qui aboutit. Objet vide sans consentement (origine « inconnue »).
   window.reynovAttr = function () {
-    if (!consented()) return {};
+    // Sans cookies : rien n'est conservé sur l'appareil. On transmet seulement le canal de la visite en cours, lu dans l'adresse
+    // de la page (paramètres de campagne) et le site d'origine — sans identifiant publicitaire (gclid, fbclid…), donc rien
+    // n'est renvoyé à Google ni à Meta pour ces demandes.
+    if (!consented()) {
+      try {
+        var t = touch(), o0 = {};
+        if (t.canal === 'Accès direct ou inconnu') return {};
+        UTM.forEach(function (k) { if (t.q[k]) o0[k] = t.q[k]; });
+        o0.visit_canal = t.canal; o0.visit_detail = t.detail; o0.visit_landing = t.landing; o0.visit_date = t.date;
+        return o0;
+      } catch (e) { return {}; }
+    }
     try {
       var v = JSON.parse(sessionStorage.getItem(VISIT) || 'null'), fw = JSON.parse(localStorage.getItem(FIRST) || 'null'), f = fw && fw.v;
       var o = {};
@@ -112,5 +126,19 @@
     }
     else if (h.indexOf('mailto:') === 0) { send('email_click', { link_url: 'mailto' }); window.reynovFbq('Contact', { content_name: 'email' }); }
     else if (/devis\.html(\?|#|$)/.test(h)) send('cta_devis_click', { link_text: (a.textContent || '').trim().slice(0, 40) });
+    // Visiteur sans cookies : l'origine de sa visite suit le lien qu'il clique vers une autre page du site
+    // (paramètre « origine », sans identifiant publicitaire, rien n'est stocké sur l'appareil).
+    if (!consented() && h && h.charAt(0) !== '#' && !/^(tel:|mailto:|sms:|javascript:)/i.test(h)) {
+      try {
+        var u2 = new URL(a.href, location.href);
+        if (u2.origin === location.origin && !u2.searchParams.has('origine') && !/\.(pdf|jpe?g|png|webp|mp4)$/i.test(u2.pathname)) {
+          var t2 = touch();
+          if (t2.canal !== 'Accès direct ou inconnu') {
+            u2.searchParams.set('origine', [t2.canal, t2.detail, t2.landing].map(function (x) { return String(x || '').replace(/\|/g, ' ').slice(0, 60); }).join('|'));
+            a.setAttribute('href', u2.pathname + u2.search + u2.hash);
+          }
+        }
+      } catch (x) { /* lien laissé tel quel */ }
+    }
   }, true);
 })();

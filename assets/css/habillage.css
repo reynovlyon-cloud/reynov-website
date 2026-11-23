@@ -239,7 +239,23 @@ p, li, dd { text-wrap: pretty; }
 .reviews-google a { color: var(--txt); text-decoration: underline; text-decoration-color: rgba(255, 255, 255, .35); text-underline-offset: 4px; }
 .ba-card__tag { color: var(--txt) !important; background: rgba(0, 0, 0, .55) !important; }
 .lp-form__err { margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; font-size: 15px; font-weight: 600; color: var(--txt); background: rgba(255, 255, 255, .07); box-shadow: inset 0 0 0 1px var(--txt); }
-.urgency-bar { display: none !important; }   /* bandeau d'urgence : l'information est déjà dans l'ouverture */
+.urgency-bar { display: none !important; }
+/* réalisations sur le terrain (photo réelle + récit court) */
+.cas-terrain__grille { display: grid; gap: 28px; align-items: center; }
+@media (min-width: 900px) { .cas-terrain__grille { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 56px; } }
+.cas-terrain__photo { margin: 0; }
+.cas-terrain__photo img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 24px; }
+.cas-terrain__texte h2 { margin: 6px 0 14px; }
+.cas-terrain__texte > p:not(.label) { margin: 0 0 14px; max-width: 34em; color: var(--txt-2); }
+.cas-terrain__liste { margin: 0 0 22px; padding-left: 1.2em; list-style: disc; color: var(--txt-2); }
+.cas-terrain__liste li { margin: 4px 0; }
+.cas-terrain__liste li::marker { color: var(--bleu); }
+.cas-terrain__cartes { display: grid; gap: 16px; margin-top: 22px; }
+@media (min-width: 700px) { .cas-terrain__cartes { grid-template-columns: 1fr 1fr; } }
+.cas-carte { display: block; overflow: hidden; border-radius: 24px; color: var(--txt); text-decoration: none; background: var(--graphite-2); box-shadow: inset 0 0 0 1px var(--ligne); }
+.cas-carte img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; }
+.cas-carte span { display: block; padding: 14px 16px 16px; font-weight: 600; }
+.cas-carte small { display: block; margin-top: 4px; font-size: 14.5px; font-weight: 400; color: var(--txt-3); }   /* bandeau d'urgence : l'information est déjà dans l'ouverture */
 main > .hero:first-of-type .hero__content { padding-top: calc(100px + clamp(0.5rem, 3vw, 3rem)) !important; }
 .lp-form__input, .lp-form__select, .lp-form textarea { min-height: 52px; padding: 12px 16px !important; border-radius: 14px !important; font: 400 16px/1.3 var(--f) !important; background: var(--graphite-2) !important; border: 1px solid var(--ligne-2) !important; }
 .lp-form__input:focus, .lp-form__select:focus { outline: none; border-color: var(--bleu) !important; box-shadow: 0 0 0 1px var(--bleu); }
