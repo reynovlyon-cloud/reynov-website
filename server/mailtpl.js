@@ -57,11 +57,11 @@ function quoteAck(d) {
     row('Véhicule', d.marque ? d.marque + (d.modele ? ' ' + d.modele : '') : ''), row('Finition', d.finition), row('Intervention', d.mode), row('Délai souhaité', d.delai)].join('');
   const step = (n, t, s) => `<tr><td width="44" valign="top" style="padding:0 0 16px;"><div style="width:30px;height:30px;line-height:30px;border-radius:50%;background:${INK};color:#fff;text-align:center;font-family:${FONT};font-size:13px;font-weight:700;">${n}</div></td><td valign="top" style="padding:3px 0 16px;font-family:${FONT};"><div style="font-size:14.5px;font-weight:700;color:${INK};">${t}</div><div style="font-size:13.5px;color:${MUTED};line-height:1.6;margin-top:2px;">${s}</div></td></tr>`;
   const body = `${eyebrow('Demande de devis reçue')}${h1(`Bonjour ${d.prenom},`)}
-    ${para('Merci de votre confiance. Votre demande est bien arrivée : nous l\'étudions et revenons vers vous <strong style="color:' + INK + ';">sous 24 h</strong> avec une estimation personnalisée.')}
+    ${para('Merci de votre confiance. Votre demande est bien arrivée : nous l\'étudions et revenons vers vous <strong style="color:' + INK + ';">sous 24 à 48 h</strong> avec une estimation personnalisée.')}
     ${/black friday/i.test(d.prestation || '') ? para('<strong style="color:' + INK + ';">Offre Black Friday :</strong> un acompte de 20 % du devis, réglé par le lien de paiement que nous vous enverrons sur WhatsApp, bloque votre créneau (cette semaine ou la semaine suivante).') : ''}
     ${recap ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:22px 0 8px;background:${SOFT};border-radius:16px;"><tr><td style="padding:22px 24px 14px;"><p style="margin:0 0 6px;font-family:${FONT};font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:${MUTED};">Récapitulatif de votre demande</p><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${recap}</table></td></tr></table>` : ''}
     <p style="margin:30px 0 16px;font-family:${FONT};font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:${MUTED};">Et maintenant ?</p>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${step(1, 'Étude de votre demande', 'Nous analysons vos informations et vos photos.')}${step(2, 'Votre devis personnalisé', 'Envoyé sous 24 h, gratuit et sans engagement.')}${step(3, 'Intervention', 'À domicile ou à l\'atelier de La Mulatière.')}</table>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${step(1, 'Étude de votre demande', 'Nous analysons vos informations et vos photos.')}${step(2, 'Votre devis personnalisé', 'Envoyé sous 24 à 48 h, gratuit et sans engagement.')}${step(3, 'Intervention', 'À domicile ou à notre atelier de Lyon.')}</table>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 26px;background:${SOFT};border-radius:16px;"><tr>
       <td class="stack" align="center" style="padding:16px 8px;font-family:${FONT};font-size:12.5px;font-weight:600;color:${INK};">Devis gratuit</td>
       <td class="stack" align="center" style="padding:16px 8px;font-family:${FONT};font-size:12.5px;font-weight:600;color:${INK};border-left:1px solid ${LINE};">Sans engagement</td>
@@ -69,23 +69,23 @@ function quoteAck(d) {
     ${para('Pour accélérer votre devis, envoyez-nous deux ou trois photos de vos jantes :', 'margin-bottom:14px;')}
     ${button('Envoyer des photos sur WhatsApp', WA)}${button('Appeler ' + PHONE, 'tel:' + TEL, false)}
     ${signature()}`;
-  return shell({ title: 'Votre demande de devis REYNOV', preheader: 'Votre demande est bien reçue : devis personnalisé sous 24 h.', hero: false, body, note: 'Vous recevez cet e-mail car vous avez demandé un devis sur reynov-jantes.fr. Pour ne rien manquer, ajoutez reynov.lyon@gmail.com à vos contacts ; si ce message est arrivé dans vos courriers indésirables, marquez-le « Pas un spam ».' });
+  return shell({ title: 'Votre demande de devis REYNOV', preheader: 'Votre demande est bien reçue : devis personnalisé sous 24 à 48 h.', hero: false, body, note: 'Vous recevez cet e-mail car vous avez demandé un devis sur reynov-jantes.fr. Pour ne rien manquer, ajoutez reynov.lyon@gmail.com à vos contacts ; si ce message est arrivé dans vos courriers indésirables, marquez-le « Pas un spam ».' });
 }
 
 // ── Accusé de réception d'un message de la page Contact ──
 function contactAck(l) {
   const body = `${eyebrow('Message reçu')}${h1(`Bonjour ${esc(l.prenom)},`)}
-    ${para('Nous avons bien reçu votre message et vous répondons <strong style="color:' + INK + ';">sous 24 h</strong>.')}
+    ${para('Nous avons bien reçu votre message et vous répondons <strong style="color:' + INK + ';">sous 24 à 48 h</strong>.')}
     ${para('Pour un devis précis, vous pouvez aussi nous envoyer deux photos de vos jantes sur WhatsApp :', 'margin-bottom:14px;')}
     ${button('Écrire sur WhatsApp', WA)}${button('Appeler ' + PHONE, 'tel:' + TEL, false)}
     ${signature()}`;
-  return shell({ title: 'Votre message à REYNOV', preheader: 'Nous avons bien reçu votre message : réponse sous 24 h.', hero: false, body, note: 'Vous recevez cet e-mail car vous avez écrit à REYNOV depuis reynov-jantes.fr. Pour ne rien manquer, ajoutez reynov.lyon@gmail.com à vos contacts ; si ce message est arrivé dans vos courriers indésirables, marquez-le « Pas un spam ».' });
+  return shell({ title: 'Votre message à REYNOV', preheader: 'Nous avons bien reçu votre message : réponse sous 24 à 48 h.', hero: false, body, note: 'Vous recevez cet e-mail car vous avez écrit à REYNOV depuis reynov-jantes.fr. Pour ne rien manquer, ajoutez reynov.lyon@gmail.com à vos contacts ; si ce message est arrivé dans vos courriers indésirables, marquez-le « Pas un spam ».' });
 }
 
 // ── Accusé de réception d'une demande professionnelle ──
 function proAck(l, company) {
   const body = `${eyebrow('Demande professionnelle reçue')}${h1(`Bonjour ${esc(l.prenom)},`)}
-    ${para('Merci pour votre message' + (company ? ' au nom de <strong style="color:' + INK + ';">' + esc(company) + '</strong>' : '') + '. Nous l\'étudions et revenons vers vous en général <strong style="color:' + INK + ';">sous 24 h ouvrées</strong>.')}
+    ${para('Merci pour votre message' + (company ? ' au nom de <strong style="color:' + INK + ';">' + esc(company) + '</strong>' : '') + '. Nous l\'étudions et revenons vers vous <strong style="color:' + INK + ';">sous 24 à 48 h</strong>.')}
     ${para('Pour avancer plus vite, envoyez-nous quelques photos des jantes concernées (et le nombre de véhicules ou de jantes). Nous vous répondrons avec un diagnostic et un devis précisant les modalités avant tout accord : lieu d\'intervention, délais, conditions.', 'margin-bottom:14px;')}
     ${button('Envoyer des photos sur WhatsApp', WA)}${button('Appeler ' + PHONE, 'tel:' + TEL, false)}
     ${signature()}`;

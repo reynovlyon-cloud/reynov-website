@@ -17,22 +17,22 @@ const TAGS = {
 
 // ── Légendes : modèles écrits à la main, avec les prix et délais publiés sur le site ──
 const TIPS = [
-  ['Une jante rayée par un trottoir ?', 'Inutile de la remplacer : la rénovation démarre à 130 € HT par jante, avec un résultat qui retrouve la qualité d\'origine. Comptez 24 à 48 h par jante.', 'conseil'],
-  ['Volant qui vibre à 110 km/h ?', 'C\'est souvent une jante voilée. Le dévoilage démarre à 140 € HT par jante, réalisé à l\'atelier.', 'conseil'],
-  ['Une fissure sur une jante ?', 'On la répare par soudure TIG à partir de 140 € HT, et si elle n\'est pas réparable en sécurité, on vous le dit avant de commencer.', 'conseil'],
+  ['Une jante rayée par un trottoir ?', 'Inutile de la remplacer : la rénovation démarre à 156 € TTC par jante, avec un résultat qui retrouve la qualité d\'origine. Comptez 24 à 48 h par jante.', 'conseil'],
+  ['Volant qui vibre à 110 km/h ?', 'C\'est souvent une jante voilée. Le dévoilage démarre à 168 € TTC par jante, réalisé à l\'atelier.', 'conseil'],
+  ['Une fissure sur une jante ?', 'On la répare par soudure TIG à partir de 168 € TTC, et si elle n\'est pas réparable en sécurité, on vous le dit avant de commencer.', 'conseil'],
   ['Retour de leasing dans quelques semaines ?', 'Remettez vos jantes en état avant la restitution : vous évitez des pénalités souvent bien plus élevées que le coût de la rénovation.', 'leasing'],
   ['Envie d\'un autre style ?', 'Noir satiné, bi-ton, brossé, diamanté : la personnalisation de vos jantes se fait en 2 à 4 jours selon la finition.', 'conseil'],
-  ['On vient chez vous.', 'Notre véhicule atelier se déplace 6 jours sur 7, de 9h à 19h, à Lyon et 10 à 15 km autour (dès 3 jantes). Terrain privé, sol plat, prise électrique à proximité. Devis gratuit sous 24 h sur photos.', 'conseil'],
+  ['On vient chez vous.', 'Notre véhicule atelier se déplace 6 jours sur 7, de 9h à 19h, à Lyon et 10 à 15 km autour (dès 3 jantes). Terrain privé, sol plat, prise électrique à proximité. Devis gratuit sous 24 à 48 h sur photos.', 'conseil'],
   ['Peinture époxy.', 'Une finition d\'exception, qualité d\'origine comme sortie d\'usine, en 3 jours. La teinte se définit avec vous.', 'conseil'],
 ];
 function captionFor(kind, ctx = {}) {
   const veh = [ctx.marque, ctx.modele].filter(Boolean).join(' ');
-  const cta = 'Devis gratuit sous 24 h : 06 61 45 35 27 (lien en bio).';
+  const cta = 'Devis gratuit sous 24 à 48 h : 06 61 45 35 27 (lien en bio).';
   if (kind === 'avant_apres') {
-    return { caption: `Avant / Après${veh ? ' — ' + veh : ''}.\nRénovation de jantes à l'atelier REYNOV, à Lyon : qualité d'origine, garantie satisfaction 30 jours.\n${cta}`, tags: TAGS.base + ' ' + TAGS.avant_apres };
+    return { caption: `Avant / Après${veh ? ' — ' + veh : ''}.\nRénovation de jantes à l'atelier REYNOV, à Lyon : qualité d'origine.\n${cta}`, tags: TAGS.base + ' ' + TAGS.avant_apres };
   }
   if (kind === 'avis') {
-    return { caption: `5/5 sur 56 avis Google. Merci à vous tous pour votre confiance.\nVotre avis nous aide à faire connaître notre travail.\n${cta}`, tags: TAGS.base + ' ' + TAGS.avis };
+    return { caption: `5,0 sur Google. Merci à vous tous pour votre confiance.\nVotre avis nous aide à faire connaître notre travail.\n${cta}`, tags: TAGS.base + ' ' + TAGS.avis };
   }
   if (kind === 'coulisses') {
     return { caption: `Dans l'atelier REYNOV : décapage, préparation, peinture, vernis. Chaque jante est traitée avec le même soin.\n${cta}`, tags: TAGS.base + ' ' + TAGS.coulisses };

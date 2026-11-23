@@ -7,7 +7,9 @@
 // Aucun prix inventé : seuls les tarifs de départ publiés sur le site sont utilisés.
 // ─────────────────────────────────────────────────────────────
 
-const PRIX = { renovation: 130, devoilage: 140, fissure: 140 };   // € HT par jante, « à partir de »
+const PRIX = { renovation: 130, devoilage: 140, fissure: 140 };   // € HT par jante, « à partir de » (professionnels)
+const PRIX_TTC = { renovation: 156, devoilage: 168, fissure: 168 };   // € TTC par jante : prix annoncé aux particuliers (obligation légale)
+const tarif = (k, pro) => (pro ? PRIX[k] + ' € HT' : PRIX_TTC[k] + ' € TTC');
 
 const CATEGORIES = {
   monochrome: { label: 'Jante monocouleur' },
@@ -99,11 +101,11 @@ function analyzeRules(lead) {
 
   // Tarif indicatif (uniquement les prix de départ publiés)
   const priceLines = [];
-  const per = (label, p) => priceLines.push(n > 1 ? `${label} : dès ${p} € HT par jante, soit à partir de ${n * p} € HT pour ${n} jantes` : `${label} : dès ${p} € HT${n === 1 ? '' : ' par jante'}`);
-  if (cats.includes('fissure')) per('Soudure', PRIX.fissure);
-  if (cats.includes('devoilage')) per('Dévoilage', PRIX.devoilage);
+  const per = (label, k) => { const p = pro ? PRIX[k] : PRIX_TTC[k], u = pro ? '€ HT' : '€ TTC'; priceLines.push(n > 1 ? `${label} : dès ${p} ${u} par jante, soit à partir de ${n * p} ${u} pour ${n} jantes` : `${label} : dès ${p} ${u}${n === 1 ? '' : ' par jante'}`); };
+  if (cats.includes('fissure')) per('Soudure', 'fissure');
+  if (cats.includes('devoilage')) per('Dévoilage', 'devoilage');
   const other = cats.some(c => ['fissure', 'devoilage', 'biton', 'diamantee', 'epoxy', 'perso'].includes(c));
-  if (cats.some(c => ['renovation', 'monochrome'].includes(c)) || (cats.some(c => ['vente', 'leasing'].includes(c)) && !other)) per('Rénovation', PRIX.renovation);
+  if (cats.some(c => ['renovation', 'monochrome'].includes(c)) || (cats.some(c => ['vente', 'leasing'].includes(c)) && !other)) per('Rénovation', 'renovation');
   const quote = cats.filter(c => ['biton', 'diamantee', 'epoxy', 'perso', 'pro'].includes(c)).map(c => CATEGORIES[c].label);
   if (quote.length) priceLines.push(`${quote.join(', ')} : sur devis après photos`);
   if (!priceLines.length) priceLines.push('Tarif sur devis après photos');
@@ -144,17 +146,17 @@ const MISSING_TEXT = {
 };
 
 const BLOCKS = {
-  monochrome: () => 'Pour une jante monocouleur (noir mat, satiné, brillant ou la teinte de votre choix), la rénovation commence à 130 € HT par jante. Comptez 24 à 48 h par jante en atelier pour une rénovation, et 2 à 4 jours pour un changement de couleur.',
+  monochrome: (pro) => 'Pour une jante monocouleur (noir mat, satiné, brillant ou la teinte de votre choix), la rénovation commence à ' + tarif('renovation', pro) + ' par jante. Comptez 24 à 48 h par jante en atelier pour une rénovation, et 2 à 4 jours pour un changement de couleur.',
   biton: () => 'Pour un bi-ton, la finition se définit avec vous (teintes, face claire ou polie) et le tarif dépend du modèle et de la taille de la jante : je vous le confirme après vos photos. Comptez 2 à 4 jours, jusqu\'à 5 pour un bi-ton.',
-  devoilage: () => 'Le dévoilage (redressage à chaud, contrôle de planéité, équilibrage) se fait uniquement dans notre atelier de La Mulatière, à partir de 140 € HT par jante.',
-  fissure: () => 'Une fissure se répare par soudure TIG après diagnostic, uniquement en atelier à La Mulatière, à partir de 140 € HT par jante. Si une jante n\'est pas réparable en toute sécurité, nous vous le disons avant de commencer.',
+  devoilage: (pro) => 'Le dévoilage (redressage à chaud, contrôle de planéité, équilibrage) se fait uniquement dans notre atelier de Lyon, à partir de ' + tarif('devoilage', pro) + ' par jante.',
+  fissure: (pro) => 'Une fissure se répare par soudure TIG après diagnostic, uniquement dans notre atelier de Lyon, à partir de ' + tarif('fissure', pro) + ' par jante. Si une jante n\'est pas réparable en toute sécurité, nous vous le disons avant de commencer.',
   diamantee: () => 'Pour une jante diamantée qui blanchit ou pèle, nous procédons au ré-usinage ou à une reprise en peinture effet diamant, selon l\'état : devis précis sur photos.',
   epoxy: () => 'La peinture époxy est notre finition la plus aboutie : qualité d\'origine, comme sortie d\'usine, en 3 jours. La teinte se définit avec vous.',
-  renovation: () => 'La rénovation de jantes commence à 130 € HT par jante (décapage, primaire anticorrosion, peinture, vernis), avec 24 à 48 h par jante en atelier. Elle se fait à l\'atelier ou, sous conditions, à votre domicile.',
+  renovation: (pro) => 'La rénovation de jantes commence à ' + tarif('renovation', pro) + ' par jante (décapage, primaire anticorrosion, peinture, vernis), avec 24 à 48 h par jante en atelier. Elle se fait à l\'atelier ou, sous conditions, à votre domicile.',
   perso: () => 'Pour changer la couleur ou la finition (RAL, Pantone, teinte carrosserie), le tarif dépend de la finition et du nombre de jantes : je vous le confirme après vos photos. Comptez 2 à 4 jours.',
   leasing: () => 'Pour un retour de leasing, plus on anticipe, mieux c\'est : indiquez-moi la date de restitution et j\'organise le planning en conséquence.',
-  vente: () => 'Avant une vente, nous traitons uniquement ce qui se voit sur l\'annonce, avec une rénovation ciblée à partir de 130 € HT par jante.',
-  pro: () => 'Pour les professionnels (carrosseries, garages, concessions, centres de reconditionnement), nous travaillons à l\'atelier de La Mulatière ou sur site, avec un devis sous 24 h et un compte rendu photo par véhicule.',
+  vente: (pro) => 'Avant une vente, nous traitons uniquement ce qui se voit sur l\'annonce, avec une rénovation ciblée à partir de ' + tarif('renovation', pro) + ' par jante.',
+  pro: () => 'Pour les professionnels (carrosseries, garages, concessions, centres de reconditionnement), nous travaillons à notre atelier de Lyon ou sur site, avec un devis sous 24 à 48 h et un compte rendu photo par véhicule.',
   autre: () => 'Pour vous orienter précisément, j\'ai besoin de quelques informations sur vos jantes.',
 };
 
@@ -163,7 +165,8 @@ const ONLY_ATELIER = ['devoilage', 'fissure'];
 function buildReply(lead, tri, catOverride) {
   const f = lead.form || {};
   const cats = catOverride ? [catOverride] : (tri.categories || ['autre']).slice(0, 2);
-  const blocks = cats.map(c => (BLOCKS[c] || BLOCKS.autre)());
+  const pro = lead.source === 'pro' || cats.includes('pro') || /^Lot professionnel/i.test(String(f.prestation || ''));   // HT pour un pro, TTC pour un particulier
+  const blocks = cats.map(c => (BLOCKS[c] || BLOCKS.autre)(pro));
   const needs = (tri.missing || []).filter(m => MISSING_TEXT[m]).map(m => `• ${MISSING_TEXT[m]}`);
   const atelierOnly = cats.every(c => ONLY_ATELIER.includes(c));
   const domicile = /domicile/i.test(String(f.mode || '')) && !atelierOnly;
@@ -219,16 +222,18 @@ function withDrafts(lead, tri) {
 
 // ── Analyse par IA (optionnelle) ─────────────────────────────
 const ANTHROPIC_URL = process.env.ANTHROPIC_API_URL || 'https://api.anthropic.com/v1/messages';
-const AI_SYSTEM = `Tu es l'assistant commercial de REYNOV, atelier de rénovation de jantes à Lyon (La Mulatière). Tu analyses une demande client et proposes une réponse courte, chaleureuse et professionnelle, en français, sans emoji.
+const AI_SYSTEM = `Tu es l'assistant commercial de REYNOV, atelier de rénovation de jantes à Lyon. Tu analyses une demande client et proposes une réponse courte, chaleureuse et professionnelle, en français, sans emoji.
 FAITS AUTORISÉS (n'en invente aucun autre) :
-- Rénovation de jantes : à partir de 130 € HT par jante ; 24 à 48 h par jante en atelier ; possible à domicile à partir de 3 jantes (terrain privé, sol plat, prise électrique) ou en atelier quel que soit le nombre de jantes.
-- Dévoilage : à partir de 140 € HT par jante ; uniquement en atelier.
-- Soudure de jante fissurée (TIG) : à partir de 140 € HT par jante ; uniquement en atelier ; si la jante n'est pas réparable en sécurité, on le dit avant de commencer.
+- Prix : à un particulier, annonce toujours le prix TTC ; à un professionnel, le prix HT.
+- Rénovation de jantes : à partir de 156 € TTC par jante (130 € HT pour un professionnel) ; 24 à 48 h par jante en atelier ; possible à domicile à partir de 3 jantes (terrain privé, sol plat, prise électrique) ou en atelier quel que soit le nombre de jantes.
+- Dévoilage : à partir de 168 € TTC par jante (140 € HT pour un professionnel) ; uniquement en atelier.
+- Soudure de jante fissurée (TIG) : à partir de 168 € TTC par jante (140 € HT pour un professionnel) ; uniquement en atelier ; si la jante n'est pas réparable en sécurité, on le dit avant de commencer.
 - Personnalisation (couleur, bi-ton, brossé, poli diamant) : sur devis, 2 à 4 jours (jusqu'à 5 pour poli diamant et bi-ton).
 - Peinture époxy : finition d'exception, qualité d'origine comme sortie d'usine, 3 jours, teinte définie avec le client.
-- Devis gratuit et sans engagement sous 24 h à partir de photos.
+- Devis gratuit et sans engagement, réponse sous 24 à 48 h à partir de photos.
 - N'annonce aucune garantie : REYNOV n'en propose pas dans ses messages.
-- Horaires : 6 jours sur 7, de 9h à 19h.
+- Horaires : du lundi au samedi, de 9h à 19h (fermé le dimanche).
+- Écris « notre atelier de Lyon » ; donne l'adresse complète seulement pour un dépôt.
 - Déplacement inclus à Lyon (1er au 9e) et dans un rayon de 10 à 15 km autour de Lyon, à partir de 3 jantes. En dessous de 3 jantes : accueil à l'atelier. Au-delà de la zone : forfait kilométrique indiqué dans le devis.
 - Atelier : 47 chemin du Pras, 69350 La Mulatière (déposer le véhicule 15 minutes avant l'heure du rendez-vous). Téléphone / WhatsApp : 06 61 45 35 27.
 RÈGLES : vouvoyer toujours le client (jamais de tutoiement) ; ne jamais annoncer d'autre prix que ceux ci-dessus ; pour tout le reste, dire « sur devis après photos ». Si des informations manquent, les demander (photos, marque/modèle, taille des jantes, ville, nombre de jantes). Écrire « {{prenom}} » à la place du prénom. Réponse de 90 à 170 mots, signée « L'équipe REYNOV ».
@@ -309,14 +314,14 @@ function checkDraft(lead, subject, body, instruction) {
   const given = String(instruction || '') + ' ' + entitiesToText(lead.message || '');
   const nums = (t) => (String(t).match(/\d[\d\s.,]*/g) || []).map(x => Number(x.replace(/\s/g, '').replace(',', '.'))).filter(n => !isNaN(n));
   const known = new Set(nums(given));
-  const base = Object.values(PRIX);
+  const base = Object.values(PRIX).concat(Object.values(PRIX_TTC));   // prix publiés : HT (pros) et TTC (particuliers)
   for (const p of base) for (let n = 1; n <= 8; n++) known.add(p * n);
   const seen = new Set();
   const re = /(\d[\d\s.,]*)\s*(€|euros?)/gi; let m;
   while ((m = re.exec(all))) {
     const v = Number(m[1].replace(/\s/g, '').replace(',', '.'));
     if (isNaN(v) || seen.has(v)) continue; seen.add(v);
-    if (!known.has(v)) out.push({ level: 'warn', text: 'Montant « ' + m[0].trim() + ' » : ce n\'est pas un tarif publié (130 € HT rénovation, 140 € HT dévoilage/soudure). Est-ce voulu ?' });
+    if (!known.has(v)) out.push({ level: 'warn', text: 'Montant « ' + m[0].trim() + ' » : ce n\'est pas un tarif publié (156 € TTC rénovation, 168 € TTC dévoilage/soudure ; 130 et 140 € HT pour un professionnel). Est-ce voulu ?' });
   }
   const g = all.match(/garanti[^.\n]{0,60}/i);
   if (g) out.push({ level: 'warn', text: 'Le message parle de garantie (« ' + g[0].trim() + ' ») : REYNOV n\'en annonce plus. Retirez-la avant l\'envoi.' });

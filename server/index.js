@@ -589,7 +589,7 @@ function quoteLinesFromLead(l) {
 function quoteNotesFor(l) {
   const cats = ((l.triage || {}).categories) || [];
   const delai = cats.includes('epoxy') ? '3 jours' : (cats.some(c => ['biton', 'diamantee', 'perso'].includes(c)) ? '2 à 4 jours (jusqu\'à 5 pour une finition poli diamant ou bi-ton)' : '24 à 48 h par jante');
-  return 'Délai indicatif : ' + delai + ' en atelier à La Mulatière.\nDevis valable 30 jours. ' + (/black friday/i.test(((l.form || {}).prestation) || '') ? 'Offre Black Friday : acompte de 20 % du devis à régler pour bloquer le créneau (lien de paiement envoyé par WhatsApp), solde à la livraison.' : 'Règlement à la livraison.');
+  return 'Délai indicatif : ' + delai + ' dans notre atelier de Lyon.\nDevis valable 30 jours. ' + (/black friday/i.test(((l.form || {}).prestation) || '') ? 'Offre Black Friday : acompte de 20 % du devis à régler pour bloquer le créneau (lien de paiement envoyé par WhatsApp), solde à la livraison.' : 'Règlement à la livraison.');
 }
 function cleanLines(raw) {
   if (!Array.isArray(raw)) return null;

@@ -434,7 +434,7 @@
         <div class="field"><label>Objet</label><input class="input" id="reply-subject" value="${esc(fill(cur.subject, l))}" /></div>
         <div class="voice-box">
           <label for="ai-instr">${ico('mic')} Parlez, l'assistant rédige</label>
-          <p class="faint" style="font-size:12px;margin:0 0 8px">Cliquez sur « Dicter mon message », dites par exemple « propose un rendez-vous jeudi à 10 h, 130 € HT la jante », puis cliquez sur « Arrêter » : le message se rédige tout seul. Relisez-le avant d'envoyer.</p>
+          <p class="faint" style="font-size:12px;margin:0 0 8px">Cliquez sur « Dicter mon message », dites par exemple « propose un rendez-vous jeudi à 10 h, 156 € TTC la jante », puis cliquez sur « Arrêter » : le message se rédige tout seul. Relisez-le avant d'envoyer.</p>
           <textarea class="input" id="ai-instr" rows="2" placeholder="Ex. : propose-lui un rendez-vous jeudi à 10 h, précise que c'est 130 € la jante, ton plus chaleureux"></textarea>
           <div class="dr-actions">
             <button class="btn primary sm mic" data-action="mic" data-target="ai-instr" data-auto="1">${ico('mic')}<span class="lbl">Dicter mon message</span></button>
@@ -742,7 +742,7 @@
   }
   function chMessage(i, kind) {
     const pr = dec(i.prenom || '');
-    if (kind === 'ready') return 'Bonjour ' + pr + ', vos jantes sont prêtes ! Vous pouvez passer les récupérer à l\'atelier REYNOV (47 chemin du Pras, La Mulatière) tous les jours, de 9 h à 19 h. Merci de nous prévenir de votre heure de passage. L\'équipe REYNOV';
+    if (kind === 'ready') return 'Bonjour ' + pr + ', vos jantes sont prêtes ! Vous pouvez passer les récupérer à notre atelier de Lyon (47 chemin du Pras, 69350 La Mulatière), du lundi au samedi, de 9 h à 19 h. Merci de nous prévenir de votre heure de passage. L\'équipe REYNOV';
     return 'Bonjour ' + pr + ', merci pour votre confiance ! Si vous êtes satisfait du résultat, un avis Google nous aiderait beaucoup (30 secondes) : ' + (S.cfg.review_url || '') + ' — L\'équipe REYNOV';
   }
   async function photoUrl(iid, file) {
@@ -1044,7 +1044,7 @@
   }
   function showChecks(list, announce) {
     const box = $('#reply-checks'); if (!box) return;
-    box.innerHTML = list.length ? list.map((c) => `<div class="chk ${c.level === 'warn' ? 'warn' : 'info'}">${ico(c.level === 'warn' ? 'alert' : 'check')}<span>${esc(c.text)}</span></div>`).join('') : (announce ? `<div class="chk ok">${ico('check')}<span>Rien à signaler : prix, garantie et prénom sont cohérents.</span></div>` : '');
+    box.innerHTML = list.length ? list.map((c) => `<div class="chk ${c.level === 'warn' ? 'warn' : 'info'}">${ico(c.level === 'warn' ? 'alert' : 'check')}<span>${esc(c.text)}</span></div>`).join('') : (announce ? `<div class="chk ok">${ico('check')}<span>Rien à signaler : prix et prénom sont cohérents, aucune garantie annoncée.</span></div>` : '');
   }
 
   // ── Actions (délégation) ──────────────────────────────────
@@ -1281,7 +1281,7 @@
     else if (t.id === 'ch-file') { try { await uploadPhotos([...t.files], t.dataset.kind || 'autre'); } catch (er) { toast(er.message, true); } t.value = ''; }
     else if (t.id === 'post-file') { try { await uploadPostMedia([...t.files]); } catch (er) { toast(er.message, true); } t.value = ''; }
     else if (t.id === 'post-tpl' && t.value) {
-      const T = { avant_apres: ['Avant / Après.\nRénovation de jantes à l\'atelier REYNOV, à Lyon : qualité d\'origine, garantie satisfaction 30 jours.\nDevis gratuit sous 24 h : 06 61 45 35 27 (lien en bio).', '#reynov #lyon #renovationjantes #jantes #detailing #avantapres #wheelrestoration'], conseil: ['Une jante rayée par un trottoir ?\nInutile de la remplacer : la rénovation démarre à 130 € HT par jante, avec un résultat qui retrouve la qualité d\'origine. Comptez 24 à 48 h par jante.\nDevis gratuit sous 24 h : 06 61 45 35 27 (lien en bio).', '#reynov #lyon #renovationjantes #jantes #detailing #conseilauto #entretienauto'], avis: ['5/5 sur 56 avis Google. Merci à vous tous pour votre confiance.\nDevis gratuit sous 24 h : 06 61 45 35 27 (lien en bio).', '#reynov #lyon #renovationjantes #avisclients #artisan'], coulisses: ['Dans l\'atelier REYNOV : décapage, préparation, peinture, vernis. Chaque jante est traitée avec le même soin.\nDevis gratuit sous 24 h : 06 61 45 35 27 (lien en bio).', '#reynov #lyon #renovationjantes #atelier #behindthescenes #detailing'] }[t.value];
+      const T = { avant_apres: ['Avant / Après.\nRénovation de jantes à l\'atelier REYNOV, à Lyon : qualité d\'origine.\nDevis gratuit sous 24 à 48 h : 06 61 45 35 27 (lien en bio).', '#reynov #lyon #renovationjantes #jantes #detailing #avantapres #wheelrestoration'], conseil: ['Une jante rayée par un trottoir ?\nInutile de la remplacer : la rénovation démarre à 156 € TTC par jante, avec un résultat qui retrouve la qualité d\'origine. Comptez 24 à 48 h par jante.\nDevis gratuit sous 24 à 48 h : 06 61 45 35 27 (lien en bio).', '#reynov #lyon #renovationjantes #jantes #detailing #conseilauto #entretienauto'], avis: ['5,0 sur Google. Merci à vous tous pour votre confiance.\nDevis gratuit sous 24 à 48 h : 06 61 45 35 27 (lien en bio).', '#reynov #lyon #renovationjantes #avisclients #artisan'], coulisses: ['Dans l\'atelier REYNOV : décapage, préparation, peinture, vernis. Chaque jante est traitée avec le même soin.\nDevis gratuit sous 24 à 48 h : 06 61 45 35 27 (lien en bio).', '#reynov #lyon #renovationjantes #atelier #behindthescenes #detailing'] }[t.value];
       const f = $('#form-post').elements; if (!f.caption.value || confirm('Remplacer la légende actuelle par ce modèle ?')) { f.caption.value = T[0]; f.hashtags.value = T[1]; } t.value = '';
     }
     else if (t.id === 'post-from-ch' && t.value) { try { const j = await api('POST', '/posts/from-chantier/' + t.value, {}); t.value = ''; await renderPublications(); openPostDialog(j.data); toast('Brouillon créé avec les photos avant/après'); } catch (er) { toast(er.message, true); t.value = ''; } }
