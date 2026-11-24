@@ -351,15 +351,19 @@ ul, ol { padding: 0; list-style: none; }
 .pro__cibles a:hover { color: var(--txt); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .45); }
 
 /* ── Questions (Turismo : carte équipe à gauche, questions à droite) ── */
-.faq-grille { display: grid; gap: 30px; }
-@media (min-width: 960px) { .faq-grille { grid-template-columns: 360px minmax(0, 1fr); gap: 64px; align-items: start; } .equipe { position: sticky; top: 110px; } }
+.faq-grille { display: grid; gap: 40px; }
+.nw { white-space: nowrap; }
+@media (min-width: 960px) { .faq-grille { grid-template-columns: minmax(0, 1fr) 360px; gap: 64px; align-items: start; } .equipe { position: sticky; top: 110px; } }
 .equipe { display: grid; gap: 12px; padding: 26px; border-radius: 26px; background: var(--graphite-2); box-shadow: inset 0 0 0 1px var(--ligne); }
 .equipe p { color: var(--txt-2); }
-/* 24/11 : une vraie photo d'un technicien REYNOV au travail, à la place des quatre petites pastilles illisibles */
-.equipe__photo { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; border-radius: 16px; margin-bottom: 6px; background: var(--graphite-3); }
-.equipe__tel { display: flex; align-items: center; gap: 10px; margin-top: 4px; font-weight: 600; color: var(--txt) !important; font-variant-numeric: tabular-nums; }
+/* 24/11 : carte de contact après les questions — titre « Une autre question ? », vignette du technicien à côté du numéro, deux boutons */
+.equipe__contact { display: flex; align-items: center; gap: 14px; margin-top: 6px; padding-top: 18px; border-top: 1px solid var(--ligne); }
+.equipe__avatar { flex: none; width: 56px; height: 56px; border-radius: 16px; object-fit: cover; background: var(--graphite-3); }
+.equipe__tel { font-size: 18px; font-weight: 650; color: var(--txt) !important; font-variant-numeric: tabular-nums; }
 .point { width: 9px; height: 9px; border-radius: 50%; background: var(--bleu); box-shadow: 0 0 0 4px rgba(10, 102, 224, .28); }
-.equipe__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 18px; margin-top: 8px; }
+.equipe__actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: 10px; margin-top: 6px; }
+.equipe__actions .btn { padding: 0 14px; }
+@media (max-width: 559px) { .equipe { padding: 20px; } }
 .faq { margin-top: 24px; }
 .faq details { border-top: 1px solid var(--ligne); }
 .faq details:last-child { border-bottom: 1px solid var(--ligne); }
