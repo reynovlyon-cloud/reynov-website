@@ -317,7 +317,7 @@ function safeEqual(a, b) {
 // Sessions : jeton signé (HMAC) lié à un compte ; le mot de passe administrateur brut reste accepté (scripts, rétrocompatibilité).
 const MASTER = { id: 0, name: 'Administrateur', role: 'admin' };
 const SESSION_KEY = crypto.createHash('sha256').update('reynov-crm-session|' + (process.env.CRM_PASSWORD || '')).digest();
-const sessionSig = (body) => crypto.createHmac('sha256', SESSION_KEY).update(body).digest('hex').slice(0, 40);
+const sessionSig = (body) => { const g = db.sessionGen(); return crypto.createHmac('sha256', SESSION_KEY).update(g ? body + '|' + g : body).digest('hex').slice(0, 40); };
 function signSession(uid) { const body = 'u.' + uid + '.' + (Date.now() + 12 * 3600 * 1000); return body + '.' + sessionSig(body); }
 function userFromToken(tok) {
   if (!CRM_PASSWORD || !tok) return null;
@@ -328,6 +328,29 @@ function userFromToken(tok) {
   const u = db.userById(m[2]);
   return u && u.active !== false ? { id: u.id, name: u.name, role: u.role === 'admin' ? 'admin' : 'employe' } : null;
 }
+// « Rester connecté 30 jours » : jeton de longue durée dans un cookie HttpOnly (illisible par les scripts du site, envoyé
+// uniquement à /api/crm/session), échangé à chaque ouverture du CRM contre un jeton de 12 h, puis repoussé à 30 jours.
+// Il ne vaut plus rien si : le mot de passe de la personne change, son compte est désactivé ou supprimé, le mot de passe
+// administrateur change, ou « Déconnecter les autres appareils » est utilisé (compteur db.sessionGen).
+const SOUVENIR = { nom: 'reynov_crm_souvenir', path: '/api/crm/session', ms: 30 * 24 * 3600 * 1000 };
+const souvenirSig = (body, u) => crypto.createHmac('sha256', SESSION_KEY)
+  .update('souvenir|' + body + '|' + db.sessionGen() + '|' + (u ? String(u.pass || '').split('$')[0] : '')).digest('hex').slice(0, 40);
+function signSouvenir(uid) { const body = 's.' + uid + '.' + (Date.now() + SOUVENIR.ms); return body + '.' + souvenirSig(body, uid ? db.userById(uid) : null); }
+function userFromSouvenir(tok) {
+  const m = /^(s\.(\d+)\.(\d+))\.([0-9a-f]{40})$/.exec(String(tok || ''));
+  if (!CRM_PASSWORD || !m || Number(m[3]) < Date.now()) return null;
+  const u = Number(m[2]) === 0 ? null : db.userById(m[2]);
+  if (Number(m[2]) !== 0 && (!u || u.active === false)) return null;
+  if (!safeEqual(m[4], souvenirSig(m[1], u))) return null;
+  return u ? { id: u.id, name: u.name, role: u.role === 'admin' ? 'admin' : 'employe' } : MASTER;
+}
+function lireCookie(req, nom) {
+  for (const p of String(req.headers.cookie || '').split(';')) { const i = p.indexOf('='); if (i > 0 && p.slice(0, i).trim() === nom) return p.slice(i + 1).trim(); }
+  return '';
+}
+const souvenirOpts = (req) => ({ httpOnly: true, secure: req.secure, sameSite: 'strict', path: SOUVENIR.path });
+function poserSouvenir(req, res, uid) { res.cookie(SOUVENIR.nom, signSouvenir(uid), Object.assign(souvenirOpts(req), { maxAge: SOUVENIR.ms })); }
+function effacerSouvenir(req, res) { res.clearCookie(SOUVENIR.nom, souvenirOpts(req)); }
 function crmAuth(req, res, next) {
   const auth = req.headers['authorization'] || '';
   const key  = auth.startsWith('Bearer ') ? auth.slice(7) : req.headers['x-crm-key'] || '';
@@ -430,13 +453,40 @@ app.post('/api/crm/login', crmLimiter, express.json({ limit: '10kb' }), (req, re
   const b = req.body || {}; const name = String(b.username || '').trim().toLowerCase(); const pw = String(b.password || '');
   const fail = () => res.status(401).json({ ok: false, error: 'Identifiant ou mot de passe incorrect' });
   if (!pw) return fail();
+  // Case « Rester connecté 30 jours » cochée : cookie de 30 jours ; décochée : on efface celui d'une connexion précédente sur cet appareil.
+  const souvenir = (uid) => (b.remember === true ? poserSouvenir(req, res, uid) : effacerSouvenir(req, res));
   if (!name || name === 'admin') {
     if (!CRM_PASSWORD || !safeEqual(pw, CRM_PASSWORD)) return fail();
+    souvenir(0);
     return res.json({ ok: true, token: signSession(0), user: MASTER });
   }
   const u = db.userByUsername(name);
   if (!u || u.active === false || !checkPass(pw, u.pass)) return fail();
+  souvenir(u.id);
   res.json({ ok: true, token: signSession(u.id), user: { id: u.id, name: u.name, role: u.role === 'admin' ? 'admin' : 'employe' } });
+});
+// Ouverture du CRM : échange le cookie « Rester connecté » contre un jeton de 12 h et repousse son échéance à 30 jours.
+// En-tête X-CRM obligatoire (un autre site ne peut pas l'ajouter sans autorisation) ; sans cookie : réponse vide.
+app.post('/api/crm/session', crmLimiter, (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  if (req.headers['x-crm'] !== '1') return res.status(400).json({ ok: false, error: 'Requête invalide' });
+  const tok = lireCookie(req, SOUVENIR.nom);
+  if (!tok) return res.json({ ok: true, token: null });
+  const user = userFromSouvenir(tok);
+  if (!user) { effacerSouvenir(req, res); return res.status(401).json({ ok: false, error: 'Session expirée' }); }
+  poserSouvenir(req, res, user.id);
+  res.json({ ok: true, token: signSession(user.id), user });
+});
+// Déconnexion : cet appareil oublie la connexion de 30 jours.
+app.delete('/api/crm/session', (req, res) => { res.setHeader('Cache-Control', 'no-store'); effacerSouvenir(req, res); res.json({ ok: true }); });
+// Téléphone perdu, ordinateur partagé : toutes les connexions tombent (30 jours et 12 h, tous les comptes), sauf celle de cet appareil.
+app.post('/api/crm/session/autres', crmLimiter, crmAuth, (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  if (req.user.role !== 'admin') return res.status(403).json({ ok: false, error: 'Réservé à l\'administrateur.' });
+  const s = userFromSouvenir(lireCookie(req, SOUVENIR.nom));
+  db.sessionGenSuivant();
+  if (s && s.id === req.user.id) poserSouvenir(req, res, req.user.id);
+  res.json({ ok: true, token: signSession(req.user.id) });
 });
 
 // Médias des publications : adresse publique signée, uniquement pour qu'Instagram puisse les télécharger au moment de publier

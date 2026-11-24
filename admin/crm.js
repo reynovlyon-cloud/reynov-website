@@ -102,13 +102,17 @@
     setTimeout(() => t.remove(), err ? 6000 : 4200);
   }
 
-  async function api(method, path, body) {
+  async function api(method, path, body, encore) {
     const r = await fetch('/api/crm' + path, {
       method,
       headers: Object.assign({ Authorization: 'Bearer ' + S.token }, body ? { 'Content-Type': 'application/json' } : {}),
       body: body ? JSON.stringify(body) : undefined,
     });
-    if (r.status === 401) { logout(true); throw new Error('Session expirée'); }
+    if (r.status === 401) {
+      // Jeton de 12 h périmé : si « Rester connecté 30 jours » est actif sur cet appareil, on en reprend un sans mot de passe.
+      if (!encore && S.token && await renouveler()) return api(method, path, body, true);
+      logout(true); throw new Error('Session expirée');
+    }
     if (r.status === 429) throw new Error('Trop de requêtes, patientez un instant.');
     const j = await r.json().catch(() => ({ ok: false, error: 'Réponse invalide' }));
     if (!j.ok) throw new Error(j.error || 'Erreur');
@@ -123,9 +127,24 @@
   }
 
   // ── Connexion ─────────────────────────────────────────────
+  // « Rester connecté 30 jours » : le serveur garde la connexion dans un cookie que la page ne peut pas lire ;
+  // on lui demande un jeton de 12 h à l'ouverture du CRM et quand le jeton en cours expire (requêtes simultanées regroupées).
+  let renouv = null;
+  function renouveler() {
+    if (!renouv) {
+      renouv = fetch('/api/crm/session', { method: 'POST', headers: { 'X-CRM': '1' }, credentials: 'same-origin' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => { if (!j || !j.token) return false; S.token = j.token; try { sessionStorage.setItem('crm_token', j.token); } catch (e) { /* ignoré */ } return true; })
+        .catch(() => false)
+        .finally(() => { renouv = null; });
+    }
+    return renouv;
+  }
   function logout(silent) {
-    S.token = '';
+    S.token = ''; clearInterval(S.pollT);
     try { sessionStorage.removeItem('crm_token'); } catch (e) { /* ignoré */ }
+    // Bouton « Déconnexion » : cet appareil oublie aussi la connexion de 30 jours.
+    if (!silent) fetch('/api/crm/session', { method: 'DELETE', credentials: 'same-origin', keepalive: true }).catch(() => {});
     $('#app').hidden = true; $('#login').hidden = false;
     if (!silent) { $('#pwd').value = ''; $('#usr').value = ''; }
   }
@@ -136,7 +155,7 @@
     document.body.classList.toggle('role-employe', S.user.role !== 'admin');
     $('#who-me').textContent = S.user.name + (S.user.role === 'admin' ? ' · administrateur' : '');
     try { S.users = (await api('GET', '/users/basic')).data; } catch (e) { S.users = []; }
-    try { sessionStorage.setItem('crm_token', token); } catch (e) { /* ignoré */ }
+    try { sessionStorage.setItem('crm_token', S.token); } catch (e) { /* ignoré */ } // S.token : celui renouvelé si le jeton fourni avait expiré
     $('#login').hidden = true; $('#app').hidden = false;
     $$('[data-ico]').forEach((n) => { n.innerHTML = ico(n.getAttribute('data-ico')); });
     applyTheme(document.documentElement.getAttribute('data-theme') || 'light');
@@ -144,7 +163,7 @@
     S.polled = true;
     go((location.hash.replace(/^#\/?/, '') || 'dashboard'));
     hooks.ready.forEach((fn) => { try { fn(); } catch (e) { /* facultatif */ } });
-    setInterval(poll, 30000);
+    clearInterval(S.pollT); S.pollT = setInterval(poll, 30000);
   }
 
   // ── Données ───────────────────────────────────────────────
@@ -1065,6 +1084,10 @@
     menu: () => $('#sidebar').classList.toggle('on'),
     theme: () => applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'),
     logout: () => logout(),
+    'sessions-autres': async () => {
+      if (!confirm('Déconnecter tous les autres appareils ? Les téléphones et ordinateurs connectés au CRM (les vôtres et ceux de l\'équipe) devront remettre leur mot de passe. Cet appareil reste connecté.')) return;
+      try { const j = await api('POST', '/session/autres'); S.token = j.token; try { sessionStorage.setItem('crm_token', j.token); } catch (e) { /* ignoré */ } toast('Les autres appareils sont déconnectés'); } catch (e) { toast(e.message, true); }
+    },
     open: (el) => openLead(Number(el.dataset.id), el.dataset.focus),
     'close-drawer': () => closeDrawer(),
     'scroll-reply': () => { const e = $('#reply-body'); if (e) { e.scrollIntoView({ behavior: 'smooth', block: 'center' }); e.focus(); } },
@@ -1345,12 +1368,15 @@
   // Formulaires
   $('#login-form').addEventListener('submit', async (e) => {
     e.preventDefault(); $('#login-err').textContent = '';
+    const remember = $('#souvenir').checked;
+    try { localStorage.setItem('crm_souvenir', remember ? '1' : '0'); } catch (er) { /* ignoré */ }
     try {
-      const r = await fetch('/api/crm/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: $('#usr').value.trim(), password: $('#pwd').value }) });
+      const r = await fetch('/api/crm/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ username: $('#usr').value.trim(), password: $('#pwd').value, remember }) });
       if (r.status === 429) throw new Error('Trop de tentatives. Réessayez dans 15 minutes.');
       const j = await r.json().catch(() => ({}));
       if (!j.ok) throw new Error(j.error || 'Identifiant ou mot de passe incorrect');
       await start(j.token);
+      if (remember) toast('Vous restez connecté 30 jours sur cet appareil');
     } catch (er) { $('#login-err').textContent = er.message; S.token = ''; }
   });
   $('#dlg-quote').addEventListener('input', () => qTotals());
@@ -1420,6 +1446,11 @@
 
   // ── Démarrage ─────────────────────────────────────────────
   applyTheme(document.documentElement.getAttribute('data-theme') || 'light');
+  try { $('#souvenir').checked = localStorage.getItem('crm_souvenir') === '1'; } catch (e) { /* ignoré */ }
+  // Jeton de cet onglet, sinon connexion de 30 jours de cet appareil ; le formulaire n'apparaît qu'ensuite (pas de clignotement).
   let saved = ''; try { saved = sessionStorage.getItem('crm_token') || ''; } catch (e) { /* ignoré */ }
-  if (saved) start(saved).catch(() => logout(true));
+  (saved ? Promise.resolve(saved) : renouveler().then((ok) => (ok ? S.token : '')))
+    .then((t) => (t ? start(t) : null))
+    .catch(() => logout(true))
+    .finally(() => { $('#login').classList.remove('is-attente'); });
 })();

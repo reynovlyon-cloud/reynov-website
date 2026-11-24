@@ -14,12 +14,13 @@
 <div class="bg" aria-hidden="true"></div>
 
 <!-- Connexion -->
-<div id="login">
+<div id="login" class="is-attente">
   <form class="login-box" id="login-form" autocomplete="on">
     <div class="brand-mark">REYNOV</div>
     <div class="login-sub">Administration</div>
     <input type="text" id="usr" placeholder="Identifiant (vide pour l'administrateur)" autocomplete="username" autocapitalize="none" spellcheck="false" />
     <input type="password" id="pwd" placeholder="Mot de passe" autocomplete="current-password" required />
+    <label class="login-souvenir"><input type="checkbox" id="souvenir" /><span>Rester connecté 30 jours sur cet appareil</span></label>
     <button class="btn primary" style="width:100%;justify-content:center;" type="submit">Connexion</button>
     <p class="login-err" id="login-err" role="alert"></p>
   </form>
@@ -180,7 +181,8 @@
           <div class="card"><h3>Équipe</h3><p class="muted">Chaque personne a son identifiant. Un « employé » voit les demandes, le planning et les chantiers, mais ni les chiffres, ni les devis, ni les réglages.</p><div id="set-team"></div><button class="btn" data-action="new-user"><span data-ico="plus"></span>Ajouter une personne</button></div>
           <div class="card"><h3>Instagram (publication automatique)</h3><div id="set-ig"></div></div>
           <div class="card"><h3>Journal technique</h3><p class="muted">Démarrages, arrêts, plantages et mémoire du serveur : utile si Railway signale un « Deploy Crashed ».</p><div id="set-diag"></div></div>
-          <div class="card"><h3>Session</h3><p class="muted">Connecté à l'administration REYNOV.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="/" target="_blank" rel="noopener"><span data-ico="external"></span>Voir le site</a><button class="btn danger" data-action="logout"><span data-ico="logout"></span>Déconnexion</button></div></div>
+          <div class="card"><h3>Session</h3><p class="muted">Connecté à l'administration REYNOV. Avec la case « Rester connecté 30 jours », un appareil reste connecté tant que le CRM y est ouvert au moins une fois par mois.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="/" target="_blank" rel="noopener"><span data-ico="external"></span>Voir le site</a><button class="btn danger" data-action="logout"><span data-ico="logout"></span>Déconnexion</button></div>
+            <p class="muted" style="margin:16px 0 10px">Téléphone perdu ou ordinateur partagé ? Déconnectez tous les autres appareils, les vôtres comme ceux de l'équipe : ils devront remettre leur mot de passe. Celui-ci reste connecté.</p><button class="btn" data-action="sessions-autres"><span data-ico="logout"></span>Déconnecter les autres appareils</button></div>
           <div class="card"><h3>Notifications</h3><p class="muted">Un son discret et une notification du navigateur à chaque nouveau lead (onglet ouvert).</p><button class="btn" data-action="notif" id="notif-btn"><span data-ico="bell"></span>Activer les notifications</button></div>
         </div>
       </section>

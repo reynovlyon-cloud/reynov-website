@@ -650,13 +650,18 @@ function noterCampagne(email, text) {
   saveSoon();
 }
 
+// Connexions au CRM : ce compteur entre dans la signature des jetons (12 h et « Rester connecté 30 jours ») ;
+// l'augmenter (« Déconnecter les autres appareils ») déconnecte tous les appareils, tous comptes confondus.
+function sessionGen() { return Number(_db.session_gen) || 0; }
+function sessionGenSuivant() { _db.session_gen = sessionGen() + 1; save(); return _db.session_gen; }
+
 function exportAll() {
   return { clients: _db.clients, interventions: _db.interventions, leads: _db.leads, events: _db.events, quotes: _db.quotes, posts: _db.posts, prospects: _db.prospects, users: _db.users.map(({ pass, ...u }) => u), plus_offres: _db.plus_offres || {} };
 }
 
 module.exports = {
   prospectsAll, prospectById, createProspect, updateProspect, deleteProspect, addProspectInteraction, bulkUpdateProspects, importProspects, prospectBusiness,
-  campagneEtat, campagneSave, campagneSources, plusOffresDe, marquerPlusOffres, noterCampagne,
+  campagneEtat, campagneSave, campagneSources, plusOffresDe, marquerPlusOffres, noterCampagne, sessionGen, sessionGenSuivant,
   relanceFor, relanceSent, relanceSet, clientReplied, exportAll, LEAD_STATUS, DATA_DIR, POST_STATUS, postsList, postById, createPost, updatePost, deletePost, addPostMedia, removePostMedia, usersList, userById, userByUsername, createUser, updateUser, deleteUser, addInterventionPhoto, removeInterventionPhoto, interventionById, addLeadPhoto, removeLeadPhoto, findLeadNear, QUOTE_STATUS, quoteTotals, quotesList, quoteById, createQuote, updateQuote, deleteQuote, onEventChange, eventsList, eventById, eventByGid, allEvents, createEvent, updateEvent, setEventLink, deleteEvent, eventTombs, clearTomb, replyState, leadsByEmail, addMailEvent, allLeads: () => _db.leads,
   createLead, leadById, updateLead, onLeadStatusChange, logContact, addLeadEvent, deleteLead, leadsList, findRecentDuplicate, leadExists, leadStats,
   stats, visitsByDay, logVisit,
