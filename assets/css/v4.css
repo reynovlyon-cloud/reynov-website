@@ -355,12 +355,8 @@ ul, ol { padding: 0; list-style: none; }
 @media (min-width: 960px) { .faq-grille { grid-template-columns: 360px minmax(0, 1fr); gap: 64px; align-items: start; } .equipe { position: sticky; top: 110px; } }
 .equipe { display: grid; gap: 12px; padding: 26px; border-radius: 26px; background: var(--graphite-2); box-shadow: inset 0 0 0 1px var(--ligne); }
 .equipe p { color: var(--txt-2); }
-.equipe__ronds { display: flex; margin-bottom: 6px; }
-.equipe__rond { width: 50px; height: 50px; border-radius: 50%; overflow: hidden; background: var(--graphite-3); box-shadow: 0 0 0 3px var(--graphite-2); }
-.equipe__rond + .equipe__rond { margin-left: -12px; }
-.equipe__rond img { width: 100%; height: 100%; object-fit: cover; }
-.equipe__rond--logo { display: inline-flex; align-items: center; justify-content: center; background: #080808; }
-.equipe__rond--logo img { width: 28px; height: 28px; object-fit: contain; }
+/* 24/11 : une vraie photo d'un technicien REYNOV au travail, à la place des quatre petites pastilles illisibles */
+.equipe__photo { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; border-radius: 16px; margin-bottom: 6px; background: var(--graphite-3); }
 .equipe__tel { display: flex; align-items: center; gap: 10px; margin-top: 4px; font-weight: 600; color: var(--txt) !important; font-variant-numeric: tabular-nums; }
 .point { width: 9px; height: 9px; border-radius: 50%; background: var(--bleu); box-shadow: 0 0 0 4px rgba(10, 102, 224, .28); }
 .equipe__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 18px; margin-top: 8px; }
