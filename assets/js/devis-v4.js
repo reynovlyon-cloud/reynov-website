@@ -144,7 +144,7 @@
     var dom = $('.dvq[data-q="lieu"] .ch[data-v="domicile"]'), note = $('[data-dom-note]');
     var ok = domicilePossible();
     dom.setAttribute('aria-disabled', ok ? 'false' : 'true');
-    note.textContent = ok ? 'Lyon et alentours, dès 3 jantes' : S.offre ? 'L’offre se fait à l’atelier' : ATELIER_SEUL.indexOf(S.besoin) >= 0 ? 'Cette réparation se fait à l’atelier' : 'À partir de 3 jantes';
+    note.textContent = ok ? 'Dès 3 jantes à Lyon, 4 autour' : S.offre ? 'L’offre se fait à l’atelier' : ATELIER_SEUL.indexOf(S.besoin) >= 0 ? 'Cette réparation se fait à l’atelier' : 'À partir de 3 jantes à Lyon';
     if (!ok && S.lieu !== 'atelier') S.lieu = 'atelier';
     $$('.dvq[data-q="lieu"] .ch').forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-v') === S.lieu ? 'true' : 'false'); });
   }
@@ -300,6 +300,8 @@
     if (pro && val(champ.societe)) desc.push('Société : ' + val(champ.societe));
     if (pro && S.nombre === 'Récurrent') desc.push('Besoin : lots réguliers');
     if (!pro && S.lieuDemande === 'domicile' && S.lieu === 'atelier') desc.push('Demande à domicile, orientée vers l’atelier (moins de 3 jantes ou réparation d’atelier).');
+    // règle du 24/11 : déplacement inclus dès 3 jantes dans Lyon (69001 à 69009), dès 4 jantes autour
+    if (!pro && !bfo && S.lieu === 'domicile' && S.nombre === '3' && !/^6900[1-9]$/.test(val(champ.cp))) desc.push('3 jantes hors de Lyon (1er au 9e) : le déplacement est inclus dès 4 jantes. À préciser dans le devis (atelier ou forfait).');
     if (S.plusTard && !photos.length) desc.push('Photos : envoyées plus tard (WhatsApp ou e-mail).');
     fd.append('prestation', bfo ? 'Black Friday · rénovation face avant (4 jantes, la 4e offerte)' : pro ? 'Lot professionnel : ' + S.activite : BESOINS[S.besoin].p);
     fd.append('problemes', pro || bfo ? '' : BESOINS[S.besoin].pb);

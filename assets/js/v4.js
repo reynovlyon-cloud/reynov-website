@@ -112,11 +112,40 @@
       n.textContent = String(i + 1).padStart(2, '0'); tt.textContent = s.getAttribute('data-titre'); ss.textContent = s.getAttribute('data-sous');
       $$('img', s).forEach(function (im) { im.loading = 'eager'; });
     };
-    $('[data-ba-prec]', ba).addEventListener('click', function () { aller(i - 1); });
-    $('[data-ba-suiv]', ba).addEventListener('click', function () { aller(i + 1); });
+    var prec = $('[data-ba-prec]', ba), suiv = $('[data-ba-suiv]', ba);
+    if (slides.length < 2) {   // une seule réalisation : ni flèches ni compteur
+      var nav = $('.ba__nav', ba), cpt = $('.ba__compte', ba); if (nav) nav.hidden = true; if (cpt) cpt.hidden = true;
+    } else {
+      if (prec) prec.addEventListener('click', function () { aller(i - 1); });
+      if (suiv) suiv.addEventListener('click', function () { aller(i + 1); });
+    }
     // la réalisation suivante se charge pendant qu'on regarde la première
     if ('IntersectionObserver' in window) new IntersectionObserver(function (es, o) { if (es[0].isIntersecting) { $$('img', slides[1] || ba).forEach(function (im) { im.loading = 'eager'; }); o.disconnect(); } }).observe(ba);
   }
+
+  /* ── Bouton d'appel : « Appelez-nous » s'ouvre dès qu'on pose le doigt dessus, puis l'appel part.
+        Le premier bouton visible s'ouvre aussi une fois tout seul, pour montrer ce que fait l'icône. Mouvement réduit respecté. ── */
+  $$('.appel').forEach(function (a) {
+    var t = 0, bulle = $('.appel__t', a);
+    // la bulle reste dans l'écran : décalée si l'icône est tout près d'un bord
+    var placer = function () {   // mesure sans tenir compte de l'animation : largeur réelle de la bulle, centre de l'icône
+      if (!bulle) return;
+      var w = d.documentElement.clientWidth, ra = a.getBoundingClientRect(), bw = bulle.offsetWidth;
+      var cx = ra.left + ra.width / 2, gauche = cx - bw / 2, droite = cx + bw / 2, dx = 0;
+      if (gauche < 10) dx = 10 - gauche; else if (droite > w - 10) dx = w - 10 - droite;
+      a.style.setProperty('--decal', Math.round(dx) + 'px');
+    };
+    var ouvrir = function (ms) { placer(); a.classList.add('is-ouvert'); clearTimeout(t); t = setTimeout(function () { a.classList.remove('is-ouvert'); }, ms); };
+    a.addEventListener('pointerdown', function () { ouvrir(2600); }, { passive: true });
+    a.addEventListener('mouseenter', placer);
+    a.addEventListener('focus', placer);
+    a.addEventListener('blur', function () { a.classList.remove('is-ouvert'); });
+    a._ouvrir = ouvrir;
+  });
+  var appel1 = $$('.appel').filter(function (a) { return !a.closest('.menu'); })[0];   // pas celui du menu (caché)
+  if (appel1 && !reduit && 'IntersectionObserver' in window) new IntersectionObserver(function (es, o) {
+    es.forEach(function (e) { if (e.isIntersecting && e.target._ouvrir) { o.disconnect(); setTimeout(function () { e.target._ouvrir(1800); }, 500); } });
+  }, { threshold: 1 }).observe(appel1);
 
   /* ── Avant/après : à la première apparition, le curseur glisse une fois tout seul (50 → 28 → 72 → 50 %)
         pour montrer qu'on peut le tirer. S'arrête dès que le visiteur touche l'image. Mouvement réduit respecté. ── */

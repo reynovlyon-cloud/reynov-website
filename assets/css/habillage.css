@@ -13,9 +13,9 @@
 
 :root {
   --noir: #000;
-  --graphite: #0d0f12;
-  --graphite-2: #15181c;
-  --graphite-3: #1e2227;
+  --graphite: #000;          /* noir et blanc seulement (demande du 24/11) : fonds de section et pied en noir pur */
+  --graphite-2: #0a0a0a;     /* cartes et champs : quasi noir neutre, dessinés par leur fin trait blanc */
+  --graphite-3: #141414;
   --ligne: rgba(255, 255, 255, .12);
   --ligne-2: rgba(255, 255, 255, .22);
   --txt: #f4f5f7;
@@ -26,8 +26,8 @@
   --bleu-clair: #8ab8ff;
   --or: #fbbc04;
   --focus: #8ab8ff;
-  --verre: rgba(16, 18, 22, .42);
-  --verre-dense: rgba(12, 14, 17, .84);
+  --verre: rgba(10, 10, 10, .42);
+  --verre-dense: rgba(0, 0, 0, .86);
   --flou: blur(18px) saturate(1.6);
   --flou-dense: blur(28px) saturate(1.5);
   --g: 20px;
@@ -86,7 +86,21 @@
 .pic .ico { width: 22px; height: 22px; }
 .pic--grand { width: 48px; height: 48px; border-radius: 14px; }
 .pic--grand .ico { width: 24px; height: 24px; }
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .btn--verre { background: rgba(30, 34, 39, .94); } }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .btn--verre { background: rgba(28, 28, 28, .94); } }
+/* Bouton d'appel : une icône téléphone ronde ; quand on pose le doigt dessus (survol ou clavier sur ordinateur), une bulle bleue
+   « Appelez-nous » sort au-dessus, puis l'appel part. La bulle passe par-dessus : rien ne bouge autour. */
+.appel { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: none; width: 52px; height: 52px; padding: 0;
+  border-radius: 50%; border: 1px solid rgba(255, 255, 255, .22); background: rgba(255, 255, 255, .08); color: #fff; text-decoration: none;
+  -webkit-tap-highlight-color: transparent; -webkit-backdrop-filter: var(--flou); backdrop-filter: var(--flou); transition: background-color .2s, border-color .2s, transform .1s; }
+.appel .ico { width: 20px; height: 20px; }
+.appel:active { transform: scale(.95); }
+.appel__t { position: absolute; z-index: 5; left: 50%; bottom: calc(100% + 11px); padding: 10px 15px; border-radius: var(--pilule); background: var(--bleu); color: #fff;
+  font-size: 15px; font-weight: 650; line-height: 1; white-space: nowrap; pointer-events: none; opacity: 0; box-shadow: 0 10px 30px rgba(10, 102, 224, .5);
+  transform: translate(calc(-50% + var(--decal, 0px)), 6px) scale(.9); transform-origin: 50% 100%; transition: opacity .2s, transform .28s cubic-bezier(.2, .8, .2, 1); }
+.appel__t::after { content: ''; position: absolute; top: 100%; left: calc(50% - var(--decal, 0px)); margin-left: -6px; border: 6px solid transparent; border-top-color: var(--bleu); }
+.appel:hover, .appel:focus-visible, .appel.is-ouvert { background: var(--bleu); border-color: var(--bleu); }
+.appel:hover .appel__t, .appel:focus-visible .appel__t, .appel.is-ouvert .appel__t { opacity: 1; transform: translate(calc(-50% + var(--decal, 0px)), 0) scale(1); }
+.film__actions .appel, .actions .appel { justify-self: start; }
 
 /* ── En-tête : capsule de verre centrée (Blackbox), resserrée au défilement ; le verre est sur ::before pour ne pas emprisonner le sous-menu ── */
 .hd { position: fixed; z-index: 50; top: 0; left: 0; right: 0; display: flex; justify-content: center; pointer-events: none;
@@ -94,8 +108,8 @@
 .hd__bar { pointer-events: auto; position: relative; isolation: isolate; display: flex; align-items: center; gap: 6px; height: 60px; padding: 6px; max-width: 100%; border-radius: var(--pilule); }
 .hd__bar::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--verre); -webkit-backdrop-filter: var(--flou); backdrop-filter: var(--flou);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14), inset 0 1px 0 rgba(255, 255, 255, .10), 0 12px 36px rgba(0, 0, 0, .32); transition: background-color .3s; }
-.hd.is-bas .hd__bar::before { background: rgba(14, 16, 19, .7); }
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .hd__bar::before { background: rgba(21, 24, 28, .97); } }
+.hd.is-bas .hd__bar::before { background: rgba(8, 8, 8, .7); }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .hd__bar::before { background: rgba(16, 16, 16, .97); } }
 .hd__logo { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 48px; height: 48px; border-radius: 50%; }
 .hd__logo img { width: 30px; height: 30px; }
 .hd__nav { display: none; }
@@ -138,13 +152,13 @@
     font-weight: 600; background: rgba(10, 102, 224, .16); box-shadow: inset 0 0 0 1px rgba(10, 102, 224, .45); }
   .dd__pied:hover { background: rgba(10, 102, 224, .26); }
 }
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .dd { background: rgba(21, 24, 28, .98); } }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .dd { background: rgba(16, 16, 16, .98); } }
 
 /* ── Menu : verre plus dense, titres et icônes (sans photos). Plein écran sur téléphone, panneau sous la capsule sur ordinateur ── */
 .menu { position: fixed; z-index: 45; inset: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
   padding: calc(96px + env(safe-area-inset-top, 0px)) max(var(--g), env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(var(--g), env(safe-area-inset-left, 0px));
   background: var(--verre-dense); -webkit-backdrop-filter: var(--flou-dense); backdrop-filter: var(--flou-dense); }
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .menu { background: #111316; } }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .menu { background: #050505; } }
 @media (min-width: 1024px) {
   .menu { inset: auto; top: 96px; left: 50%; transform: translateX(-50%); width: 460px; max-height: calc(100vh - 120px); padding: 18px; border-radius: 26px;
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12), 0 30px 80px rgba(0, 0, 0, .55); }
@@ -158,7 +172,7 @@
 .menu__lt { flex: 1; min-width: 0; font-size: 16.5px; font-weight: 550; }
 .menu__lt small { display: block; font-size: 13.5px; font-weight: 400; color: var(--txt-3); margin-top: 1px; }
 .menu__l > .ico { width: 18px; height: 18px; color: var(--txt-3); }
-.menu__bas { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 22px; }
+.menu__bas { display: grid; grid-template-columns: auto 1fr; gap: 10px; margin-top: 22px; }
 .menu__bas .btn--bleu { grid-column: 1 / -1; }
 
 
