@@ -37,6 +37,7 @@
     <button class="nav-item" data-nav="planning"><span data-ico="calendar"></span>Planning</button>
     <button class="nav-item" data-nav="chantiers"><span data-ico="wrench"></span>Chantiers</button>
     <button class="nav-item" data-nav="publications"><span data-ico="share"></span>Publications</button>
+    <button class="nav-item admin-only" data-nav="campagne"><span data-ico="mail"></span>Campagne Black Friday</button>
     <button class="nav-item admin-only" data-nav="devis"><span data-ico="doc"></span>Devis</button>
     <button class="nav-item admin-only" data-nav="interventions"><span data-ico="bag"></span>Interventions</button>
     <div class="side-label">Business</div>
@@ -97,6 +98,7 @@
 
       <!-- Prospection (contenu construit par prospects.js) -->
       <section class="view" id="view-prospection" hidden></section>
+      <section class="view" id="view-campagne" hidden></section>
 
       <!-- Clients -->
       <section class="view" id="view-clients" hidden>
@@ -300,6 +302,7 @@
 <div id="toasts" aria-live="polite"></div>
 <script src="crm.js"></script>
 <script src="prospects.js"></script>
+<script src="campagne.js"></script>
 <script src="mobile.js"></script>
 </body>
 </html>

@@ -161,7 +161,7 @@ const ONE_YEAR = 365 * 24 * 60 * 60;
 app.use(express.static(path.join(__dirname, '..'), {
   setHeaders: (res, filePath) => {
     // Images des e-mails (logo, bandeau) : lisibles depuis une messagerie web qui les charge directement (sinon la protection « même origine » les bloque)
-    if (/[\\/]assets[\\/]images[\\/]email-[a-z-]+\.(png|jpe?g)$/i.test(filePath)) res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    if (/[\\/]assets[\\/]images[\\/](email-[a-z-]+|email[\\/][a-z0-9-]+)\.(png|jpe?g)$/i.test(filePath)) res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     if (filePath.includes(`${path.sep}admin${path.sep}`)) {
       res.setHeader('Cache-Control', 'no-store');
     } else if (filePath.endsWith('.html')) {
@@ -450,7 +450,61 @@ app.get('/api/pub/media/:id/:file', (req, res) => {
 });
 const social = require('./social').create({ db, publicUrl: (id, file) => 'https://' + CANONICAL_HOST + '/api/pub/media/' + id + '/' + file + '?s=' + mediaSig(id, file) });
 
+// ── Campagne e-mail Black Friday aux clients (règles et rythme d'envoi : server/campagne.js) ──
+const campagne = require('./campagne').create({
+  db, mailtpl, sendEmail, gmailUser: GMAIL_USER, host: CANONICAL_HOST, testMode: process.env.CRM_TEST_MODE === '1', dataDir: db.DATA_DIR,
+  intervalMs: Math.max(50, Number(process.env.CAMPAIGN_INTERVAL_MS) || 5000), dailyMax: Math.max(1, Number(process.env.CAMPAIGN_DAILY_MAX) || 150),
+});
+// Désinscription des offres : lien signé de l'e-mail (sans l'adresse dans l'URL) et bouton « Se désinscrire » des messageries (POST en un clic).
+const desinscriptionLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 40, standardHeaders: true, legacyHeaders: false });
+function desinscription(req, res) {
+  const r = campagne.desinscrire(String(req.query.t || ''));
+  res.setHeader('X-Robots-Tag', 'noindex, nofollow'); res.setHeader('Cache-Control', 'no-store');
+  if (r.apercu) return res.status(200).type('html').send(campagne.page(200, 'Lien d’aperçu', 'Ceci est l’aperçu de l’e-mail dans le CRM : aucune désinscription n’a été enregistrée.'));
+  if (r.invalide) return res.status(400).type('html').send(campagne.page(400, 'Lien non reconnu', 'Ce lien de désinscription n’est pas valide. Pour ne plus recevoir nos offres, répondez simplement « STOP » à notre e-mail.'));
+  return res.status(200).type('html').send(campagne.page(200, 'C’est noté', 'Vous ne recevrez plus nos offres par e-mail. Les messages liés à vos demandes (devis, rendez-vous) continueront de vous parvenir.'));
+}
+app.get('/desinscription', desinscriptionLimiter, desinscription);
+app.post('/desinscription', desinscriptionLimiter, desinscription);
+
 app.use('/api/crm', crmLimiter, express.json({ limit: '100kb' }), crmAuth, roleGuard);
+
+// ── CRM : campagne Black Friday (administrateur) : aperçu, destinataires, test vers reynov.lyon@gmail.com, envoi après confirmation ──
+const adminSeul = (req, res, next) => (req.user && req.user.role === 'admin' ? next() : res.status(403).json({ ok: false, error: 'Réservé à l\'administrateur.' }));
+const campagneTestLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 10, standardHeaders: true, legacyHeaders: false, message: { ok: false, error: 'Trop d\'e-mails de test : réessayez dans une heure.' } });
+app.get('/api/crm/campagne/bf2026', adminSeul, (_req, res) => res.json({ ok: true, data: campagne.etat() }));
+app.post('/api/crm/campagne/bf2026/choix', adminSeul, (req, res) => {
+  const b = req.body || {}; const r = campagne.choix(b.email, b.inclure === true ? true : b.inclure === false ? false : null);
+  if (r.error) return res.status(400).json({ ok: false, error: r.error });
+  res.json({ ok: true, data: campagne.etat() });
+});
+app.post('/api/crm/campagne/bf2026/stop', adminSeul, (req, res) => {
+  const r = campagne.stop(String((req.body || {}).email || ''));
+  if (r.error) return res.status(400).json({ ok: false, error: r.error });
+  res.json({ ok: true, data: campagne.etat() });
+});
+app.post('/api/crm/campagne/bf2026/image', adminSeul, (req, res) => {
+  const r = campagne.image(String((req.body || {}).image || ''));
+  if (r.error) return res.status(400).json({ ok: false, error: r.error });
+  res.json({ ok: true, data: campagne.etat() });
+});
+app.post('/api/crm/campagne/bf2026/test', adminSeul, campagneTestLimiter, async (req, res) => {
+  try {
+    const prenom = /^(administrateur|admin)$/i.test(String(req.user.name || '')) ? '' : String(req.user.name || '').split(/\s+/)[0];
+    const r = await campagne.test(prenom);
+    if (r.error) return res.status(409).json({ ok: false, error: r.error });
+    res.json({ ok: true, data: r });
+  } catch (e) { console.error('❌ Test campagne :', e.message); res.status(502).json({ ok: false, error: 'Envoi du test impossible : ' + e.message }); }
+});
+app.post('/api/crm/campagne/bf2026/envoyer', adminSeul, (req, res) => {
+  const r = campagne.lancer(req.user.name, (req.body || {}).attendu);
+  if (r.error) return res.status(409).json({ ok: false, error: r.error });
+  res.json({ ok: true, data: r });
+});
+app.post('/api/crm/campagne/bf2026/arreter', adminSeul, (_req, res) => {
+  const r = campagne.arreter(); if (r.error) return res.status(409).json({ ok: false, error: r.error });
+  res.json({ ok: true });
+});
 
 // ── CRM : prospection (administrateur uniquement pour l'instant : voir roleGuard) ──
 const PROSPECT_MAIL_PER_DAY = 60;

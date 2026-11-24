@@ -26,12 +26,16 @@ function signature() {
 }
 
 // opts : { title, preheader, hero, body, note }
-function shell({ title, preheader, hero = false, body, note = '' }) {
+// Options ajoutées pour les campagnes (aucun effet sur les autres e-mails) : showPreheader (texte d'aperçu caché, montré par la messagerie
+// dans la liste des messages), intro (bloc au-dessus d'une grande image), banner (image pleine largeur), noteHtml (mentions du bas avec liens),
+// siteUrl (lien « reynov-jantes.fr » du pied de page, avec les paramètres de suivi).
+function shell({ title, preheader, hero = false, body, note = '', noteHtml = '', intro = '', banner = '', showPreheader = false, siteUrl = BASE }) {
   return `<!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light">
 <title>${esc(title || 'REYNOV')}</title>
 <style>@media only screen and (max-width:620px){.px{padding-left:24px!important;padding-right:24px!important}.h1{font-size:24px!important}.stack{display:block!important;width:100%!important}}</style></head>
 <body style="margin:0;padding:0;background:#ecebe7;">
+${showPreheader && preheader ? `<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;color:#ecebe7;">${esc(preheader)}${'&#847;&zwnj;&nbsp;'.repeat(40)}</div>` : ''}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ecebe7"><tr><td align="center" style="padding:28px 12px;">
   <table role="presentation" width="640" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:640px;background:#ffffff;border-radius:20px;overflow:hidden;">
     <tr><td bgcolor="${INK}" align="center" style="padding:36px 24px 30px;">
@@ -40,11 +44,13 @@ function shell({ title, preheader, hero = false, body, note = '' }) {
       <div style="font-family:${FONT};font-size:10px;font-weight:600;letter-spacing:3.5px;color:#9a9aa2;margin-top:10px;text-transform:uppercase;">Rénovation de jantes · Lyon</div>
     </td></tr>
     ${hero ? `<tr><td style="font-size:0;line-height:0;background:${INK};"><img src="${HERO}" width="640" alt="Jante rénovée par REYNOV" style="display:block;width:100%;height:auto;border:0;"></td></tr>` : `<tr><td style="height:3px;line-height:3px;font-size:0;background:linear-gradient(90deg,#1b1b1e,#8d8d94,#1b1b1e);" bgcolor="#3a3a40">&nbsp;</td></tr>`}
-    <tr><td class="px" style="padding:42px 46px 38px;">${body}</td></tr>
+    ${intro ? `<tr><td class="px" style="padding:42px 46px 4px;">${intro}</td></tr>` : ''}
+    ${banner ? `<tr><td align="center" style="padding:${intro ? '12px' : '0'} 20px 0;font-size:0;line-height:0;">${banner}</td></tr>` : ''}
+    <tr><td class="px" style="padding:${intro || banner ? '30px' : '42px'} 46px 38px;">${body}</td></tr>
     <tr><td bgcolor="${INK}" class="px" style="padding:30px 46px;font-family:${FONT};">
       <p style="margin:0 0 10px;font-size:12px;line-height:1.8;color:#b9b9c0;">REYNOV · 47 chemin du Pras, 69350 La Mulatière · <a href="tel:${TEL}" style="color:#ffffff;text-decoration:none;">${PHONE}</a></p>
-      <p style="margin:0 0 14px;font-size:12px;line-height:1.8;"><a href="${BASE}" style="color:#ffffff;text-decoration:underline;">reynov-jantes.fr</a></p>
-      <p style="margin:0;font-size:11px;line-height:1.7;color:#7c7c85;">REYNOV SAS · SIRET 105 819 098 00016. ${esc(note) || 'Vous recevez cet e-mail suite à votre échange avec REYNOV.'}</p>
+      <p style="margin:0 0 14px;font-size:12px;line-height:1.8;"><a href="${siteUrl}" style="color:#ffffff;text-decoration:underline;">reynov-jantes.fr</a></p>
+      <p style="margin:0;font-size:11px;line-height:1.7;color:#7c7c85;">REYNOV SAS · SIRET 105 819 098 00016. ${noteHtml || esc(note) || 'Vous recevez cet e-mail suite à votre échange avec REYNOV.'}</p>
     </td></tr>
   </table>
 </td></tr></table></body></html>`;
@@ -116,6 +122,39 @@ function prospectOffer(d) {
   return shell({ title: 'REYNOV — rénovation de jantes pour les professionnels', body, hero: false, note: 'Vous recevez ce message car votre entreprise exerce une activité liée à l\'automobile près de Lyon. Pour ne plus recevoir de proposition de REYNOV, répondez simplement « STOP » : nous ne vous écrirons plus.' });
 }
 
+// ── Offre Black Friday 2026 envoyée aux clients (campagne du CRM, envoi groupé après accord) ──
+// d : { prenom (texte brut), unsubscribeUrl, image: 'avec-texte' | 'sans-texte' } ; les liens vers le site portent les paramètres de suivi de la campagne.
+const BF_UTM = 'utm_source=crm&utm_medium=email&utm_campaign=bf2026';
+const BF_PAGE = BASE + '/black-friday.html?' + BF_UTM;
+// Image du haut, au choix dans le CRM : celle du brief (titre, dates et logo écrits dessus) ou la même avant/après sans aucun texte.
+const BF_IMAGES = {
+  'avec-texte': { src: BASE + '/assets/images/email/bf-2026-entete.jpg', alt: 'Black Friday REYNOV : 3 jantes rénovées, la 4e offerte. Avant et après sur une jante Mercedes.' },
+  'sans-texte': { src: BASE + '/assets/images/email/bf-2026-entete-sans-texte.jpg', alt: 'Avant et après sur une jante Mercedes : le bord arraché par un trottoir, puis le noir brillant et le liseré poli.' },
+};
+const BF_SUJET = 'Black Friday : la 4e jante offerte, jusqu’au 5 décembre';
+const BF_PREHEADER = 'Dans notre atelier de Lyon, jusqu’au samedi 5 décembre à 19 h. 20 véhicules seulement.';
+function bfOffer({ prenom, unsubscribeUrl, image }) {
+  const img = BF_IMAGES[image] || BF_IMAGES['avec-texte'];
+  const step = (n, t, s) => `<tr><td width="44" valign="top" style="padding:0 0 16px;"><div style="width:30px;height:30px;line-height:30px;border-radius:50%;background:${INK};color:#fff;text-align:center;font-family:${FONT};font-size:13px;font-weight:700;">${n}</div></td><td valign="top" style="padding:3px 0 16px;font-family:${FONT};"><div style="font-size:14.5px;font-weight:700;color:${INK};">${t}</div><div style="font-size:13.5px;color:${MUTED};line-height:1.6;margin-top:2px;">${s}</div></td></tr>`;
+  const intro = `${eyebrow('Black Friday REYNOV')}${h1('3 jantes rénovées, la 4e offerte.')}`;
+  const banner = `<a href="${BF_PAGE}" style="display:block;text-decoration:none;border:0;"><img src="${img.src}" width="600" alt="${esc(img.alt)}" style="display:block;width:100%;max-width:600px;height:auto;border:0;border-radius:14px;"></a>`;
+  const p = String(prenom || '').trim();
+  const body = `${para(p ? 'Bonjour ' + esc(p) + ',' : 'Bonjour,')}
+    ${para('Merci de nous avoir confié vos jantes. Jusqu’au samedi 5 décembre, nous remettons à neuf la face avant de 4 jantes, et la moins chère des quatre est offerte.')}
+    ${para('Rayures, impacts de trottoir : comme cette jante Mercedes, au bord arraché par un trottoir, qui a retrouvé à l’atelier son noir brillant et son liseré poli.')}
+    <p style="margin:28px 0 16px;font-family:${FONT};font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:${MUTED};">Comment en profiter :</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${step(1, 'Votre devis gratuit sur photos.', 'Réponse sous 24 à 48 h.')}${step(2, 'L’acompte de 20&nbsp;% du devis.', 'Il bloque votre créneau ; le lien de paiement arrive sur WhatsApp.')}${step(3, 'Le dépôt de vos jantes à l’atelier.', 'Au plus tard le samedi 5 décembre à 19 h, à La Mulatière.')}</table>
+    ${para('Exemple au tarif d’entrée : 4 jantes pour <strong style="color:' + INK + ';">468&nbsp;€ TTC</strong> au lieu de 624&nbsp;€.', 'margin-top:6px;')}
+    <div style="margin:4px 0 18px;">${button('Profiter de l’offre', BF_PAGE)}${button('Une question ? WhatsApp', WA, false)}</div>
+    ${para('Un proche a les jantes marquées ? Transférez-lui ce message : l’offre vaut aussi pour lui.')}
+    ${para('20 véhicules seulement, exclusivement dans notre atelier de La Mulatière, à Lyon.', 'margin-bottom:0;')}
+    ${signature()}`;
+  const noteHtml = 'Offre valable jusqu’au 5 décembre 2026 à 19 h, dans la limite de 20 lots de 4 jantes d’un même véhicule, rénovation de la face avant à l’atelier ; la jante offerte est la moins chère des quatre. Finitions spéciales et réparations en supplément. Conditions sur '
+    + `<a href="${BF_PAGE}" style="color:#b9b9c0;text-decoration:underline;">reynov-jantes.fr</a>. Vous recevez cet e-mail parce que vous êtes client de REYNOV. Pour ne plus recevoir nos offres : `
+    + `<a href="${esc(unsubscribeUrl || '#')}" style="color:#ffffff;text-decoration:underline;">se désinscrire</a>.`;
+  return shell({ title: 'Black Friday REYNOV', preheader: BF_PREHEADER, showPreheader: true, intro, banner, body, noteHtml, siteUrl: BASE + '/?' + BF_UTM });
+}
+
 // ── Réponse rédigée depuis le CRM (texte libre de l'équipe) ──
 function reply(text) {
   const paras = String(text).split(/\n{2,}/).map((p) => para(esc(p).replace(/\n/g, '<br>'))).join('');
@@ -125,4 +164,4 @@ function reply(text) {
   return shell({ title: 'REYNOV', preheader: String(text).replace(/\s+/g, ' ').slice(0, 110), body, note: 'Vous recevez cet e-mail en réponse à votre demande auprès de REYNOV.' });
 }
 
-module.exports = { shell, button, eyebrow, h1, para, signature, quoteAck, contactAck, proAck, prospectOffer, reply, esc, BASE, LOGO, FONT, INK, MUTED, LINE, SOFT };
+module.exports = { shell, button, eyebrow, h1, para, signature, quoteAck, contactAck, proAck, prospectOffer, bfOffer, reply, esc, BASE, LOGO, FONT, INK, MUTED, LINE, SOFT, BF_SUJET, BF_PREHEADER, BF_PAGE, BF_IMAGES };

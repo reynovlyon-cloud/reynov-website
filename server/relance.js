@@ -16,7 +16,7 @@ function compute(l, quotes, rs, now) {
   const out = {
     eligible: false, due: false, stale: false, exhausted: false, closeable: false, level: 0, count: 0, wait_days: 0,
     due_at: null, last_at: st.last_at || null, stop: !!st.stop, snooze_until: st.snooze_until || null,
-    quote: open ? { id: open.id, number: open.number, valid_until: open.valid_until || null } : null,
+    quote: open ? { id: open.id, number: open.number, valid_until: open.valid_until || null, sent_at: open.sent_at || null } : null,
   };
   const lastOut = rs && rs.last_out ? Date.parse(rs.last_out) : 0, lastIn = rs && rs.last_in ? Date.parse(rs.last_in) : 0;
   const reminded = st.last_at ? Date.parse(st.last_at) : 0;
@@ -42,6 +42,20 @@ function compute(l, quotes, rs, now) {
 const fmtDate = (iso) => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris', day: '2-digit', month: '2-digit', year: 'numeric' }); };
 const SIGN = 'Cordialement,\nL\'équipe REYNOV\n06 61 45 35 27 · www.reynov-jantes.fr';
 
+// Offre Black Friday 2026 (jusqu'au samedi 5 décembre, 19 h, heure de Paris) : une phrase de plus dans les 1re et 2e relances d'un devis
+// envoyé il y a moins de 30 jours. Jamais dans la dernière relance (« je ne vous relancerai pas »), ni pour qui ne veut plus d'offres.
+const BF_FIN = Date.parse('2026-12-05T19:00:00+01:00');
+const BF_URL = 'https://www.reynov-jantes.fr/black-friday.html?utm_source=crm&utm_medium=relance&utm_campaign=bf2026';
+function bfPhrase(l, quote, lvl, now) {
+  if (now >= BF_FIN || lvl >= MAX || !quote || (l && l.plus_offres_at)) return null;
+  const sent = Date.parse(quote.sent_at || '');
+  if (!sent || now - sent > STALE_DAYS * DAY) return null;
+  return {
+    mail: '\n\nBon à savoir : jusqu\'au samedi 5 décembre à 19 h, pour 4 jantes rénovées (face avant) à notre atelier de Lyon, la 4e est offerte. Les conditions : ' + BF_URL,
+    wa: ' Bon à savoir : jusqu\'au samedi 5 décembre, 19 h, la 4e jante est offerte pour 4 jantes rénovées à notre atelier (face avant) : ' + BF_URL,
+  };
+}
+
 // Textes de relance : courts, sans pression, sans prix ni promesse, toujours au vouvoiement. {{prenom}} est remplacé à l'affichage et à l'envoi.
 function draft(l, level, quote, now) {
   now = now || Date.now();
@@ -49,14 +63,15 @@ function draft(l, level, quote, now) {
   const ref = quote && quote.number ? 'notre devis n° ' + quote.number : 'votre demande de devis';
   const valid = quote && quote.valid_until && Date.parse(quote.valid_until) > now ? '\n\nLe devis reste valable jusqu\'au ' + fmtDate(quote.valid_until) + '.' : '';
   const subject = quote && quote.number ? 'Votre devis REYNOV n° ' + quote.number : 'Votre demande de devis REYNOV';
+  const bf = bfPhrase(l, quote, lvl, now), bfMail = bf ? bf.mail : '', bfWa = bf ? bf.wa : '';
   const bodies = [
-    'Bonjour {{prenom}},\n\nJe me permets de revenir vers vous au sujet de ' + ref + '. Avez-vous eu le temps d\'y jeter un œil ?\n\nSi vous avez une question, ou si vous souhaitez ajuster quelque chose (nombre de jantes, finition, date), répondez simplement à ce message ou appelez-moi au 06 61 45 35 27 : nous regardons cela ensemble.' + valid + '\n\n' + SIGN,
-    'Bonjour {{prenom}},\n\nJe reviens vers vous au cas où mon précédent message se serait perdu : ' + ref + ' est toujours à votre disposition.\n\nPour caler l\'intervention, l\'atelier est ouvert 6 jours sur 7, de 9h à 19h : dites-moi la date qui vous arrange et je regarde la disponibilité. Si des photos supplémentaires peuvent aider à affiner le devis, vous pouvez me les envoyer sur WhatsApp au 06 61 45 35 27.' + valid + '\n\n' + SIGN,
+    'Bonjour {{prenom}},\n\nJe me permets de revenir vers vous au sujet de ' + ref + '. Avez-vous eu le temps d\'y jeter un œil ?\n\nSi vous avez une question, ou si vous souhaitez ajuster quelque chose (nombre de jantes, finition, date), répondez simplement à ce message ou appelez-moi au 06 61 45 35 27 : nous regardons cela ensemble.' + bfMail + valid + '\n\n' + SIGN,
+    'Bonjour {{prenom}},\n\nJe reviens vers vous au cas où mon précédent message se serait perdu : ' + ref + ' est toujours à votre disposition.\n\nPour caler l\'intervention, l\'atelier est ouvert 6 jours sur 7, de 9h à 19h : dites-moi la date qui vous arrange et je regarde la disponibilité. Si des photos supplémentaires peuvent aider à affiner le devis, vous pouvez me les envoyer sur WhatsApp au 06 61 45 35 27.' + bfMail + valid + '\n\n' + SIGN,
     'Bonjour {{prenom}},\n\nJe n\'ai pas eu de retour concernant ' + ref + '. Je considère donc que votre projet n\'est plus d\'actualité et je ne vous relancerai pas davantage.\n\nSi vous changez d\'avis, il vous suffit de répondre à ce message : nous reprendrons votre dossier avec plaisir.\n\n' + SIGN,
   ];
   const wa = [
-    'Bonjour {{prenom}}, c\'est REYNOV. Avez-vous eu le temps de regarder ' + ref + ' ? Je reste disponible pour toute question ou tout ajustement.',
-    'Bonjour {{prenom}}, je reviens vers vous au sujet de ' + ref + '. Dites-moi quelle date vous arrangerait et je regarde la disponibilité de l\'atelier (6 jours sur 7, de 9h à 19h).',
+    'Bonjour {{prenom}}, c\'est REYNOV. Avez-vous eu le temps de regarder ' + ref + ' ? Je reste disponible pour toute question ou tout ajustement.' + bfWa,
+    'Bonjour {{prenom}}, je reviens vers vous au sujet de ' + ref + '. Dites-moi quelle date vous arrangerait et je regarde la disponibilité de l\'atelier (6 jours sur 7, de 9h à 19h).' + bfWa,
     'Bonjour {{prenom}}, sans retour de votre part, je considère que votre projet n\'est plus d\'actualité et je ne vous relancerai plus. N\'hésitez pas à m\'écrire si vous changez d\'avis.',
   ];
   return { level: lvl, subject, body: bodies[lvl - 1], whatsapp: wa[lvl - 1] };

@@ -1,6 +1,8 @@
 server/data/*.db
 server/data/*.db-*
 server/data/*.json
+# Secret de signature des liens de désinscription (campagnes e-mail) : jamais dans ce dépôt public
+server/data/*.key
 # Fichiers de prospection (CSV, Excel…) : données d'entreprises, jamais dans ce dépôt public
 server/data/*.csv
 server/data/*.tsv

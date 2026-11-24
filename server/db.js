@@ -608,12 +608,55 @@ function prospectBusiness(p) {
   return { jantes_confiees: jantes, ca_ttc: Math.round(qs.reduce((t, q) => t + quoteTotals(q).ttc, 0)), devis_acceptes: qs.length, interventions: _db.interventions.filter(i => i.client_id === p.client_id).length };
 }
 
+// ── Campagnes e-mail aux clients (offres) et désinscriptions ──
+// _db.campagnes[id] : { sent: { e-mail: { at, simule } }, failed: { e-mail: { at, error, n } }, inclure: [e-mail], exclure: [e-mail] }
+// _db.plus_offres : { e-mail: date } — personnes qui ne veulent plus recevoir d'offres (lien « se désinscrire » de l'e-mail).
+// La liste est gardée même si une fiche est supprimée : c'est elle qui empêche un nouvel envoi.
+const normEmail = (e) => String(e || '').trim().toLowerCase();
+function campagneEtat(id) {
+  if (!_db.campagnes || typeof _db.campagnes !== 'object') _db.campagnes = {};
+  const c = _db.campagnes[id] = _db.campagnes[id] || {};
+  if (!c.sent || typeof c.sent !== 'object') c.sent = {};
+  if (!c.failed || typeof c.failed !== 'object') c.failed = {};
+  if (!Array.isArray(c.inclure)) c.inclure = [];
+  if (!Array.isArray(c.exclure)) c.exclure = [];
+  return c;
+}
+function campagneSave() { save(); }
+// Lecture seule : les données dont la campagne a besoin pour choisir ses destinataires (jamais les prospects professionnels).
+function campagneSources() { return { leads: _db.leads, clients: _db.clients, quotes: _db.quotes, interventions: _db.interventions }; }
+function plusOffresDe(email) { const e = normEmail(email); return (e && _db.plus_offres && _db.plus_offres[e]) || null; }
+function marquerPlusOffres(email, source) {
+  const e = normEmail(email); if (!e) return 0;
+  if (!_db.plus_offres || typeof _db.plus_offres !== 'object') _db.plus_offres = {};
+  const t = now();
+  if (!_db.plus_offres[e]) _db.plus_offres[e] = t;
+  let n = 0;
+  _db.leads.forEach(l => { if (normEmail(l.email) === e) { n++; if (!l.plus_offres_at) { l.plus_offres_at = t; addEventRaw(l, 'campagne', 'Ne veut plus recevoir d\'offres par e-mail (' + (source || 'désinscription') + ')'); } } });
+  _db.clients.forEach(c => { if (normEmail(c.email) === e) { n++; if (!c.plus_offres_at) c.plus_offres_at = t; } });
+  save();
+  return n;
+}
+// Une ligne dans l'historique de chaque fiche liée à cette adresse (type « campagne » : ne compte pas comme une réponse, ne touche pas aux relances).
+function noterCampagne(email, text) {
+  const e = normEmail(email); if (!e) return;
+  _db.leads.forEach(l => { if (normEmail(l.email) === e) addEventRaw(l, 'campagne', text); });
+  _db.clients.forEach(c => {
+    if (normEmail(c.email) !== e) return;
+    c.events = Array.isArray(c.events) ? c.events : [];
+    c.events.push({ ts: now(), type: 'campagne', text: String(text || '').slice(0, 300) });
+    if (c.events.length > 50) c.events = c.events.slice(-50);
+  });
+  saveSoon();
+}
+
 function exportAll() {
-  return { clients: _db.clients, interventions: _db.interventions, leads: _db.leads, events: _db.events, quotes: _db.quotes, posts: _db.posts, prospects: _db.prospects, users: _db.users.map(({ pass, ...u }) => u) };
+  return { clients: _db.clients, interventions: _db.interventions, leads: _db.leads, events: _db.events, quotes: _db.quotes, posts: _db.posts, prospects: _db.prospects, users: _db.users.map(({ pass, ...u }) => u), plus_offres: _db.plus_offres || {} };
 }
 
 module.exports = {
   prospectsAll, prospectById, createProspect, updateProspect, deleteProspect, addProspectInteraction, bulkUpdateProspects, importProspects, prospectBusiness,
+  campagneEtat, campagneSave, campagneSources, plusOffresDe, marquerPlusOffres, noterCampagne,
   relanceFor, relanceSent, relanceSet, clientReplied, exportAll, LEAD_STATUS, DATA_DIR, POST_STATUS, postsList, postById, createPost, updatePost, deletePost, addPostMedia, removePostMedia, usersList, userById, userByUsername, createUser, updateUser, deleteUser, addInterventionPhoto, removeInterventionPhoto, interventionById, addLeadPhoto, removeLeadPhoto, findLeadNear, QUOTE_STATUS, quoteTotals, quotesList, quoteById, createQuote, updateQuote, deleteQuote, onEventChange, eventsList, eventById, eventByGid, allEvents, createEvent, updateEvent, setEventLink, deleteEvent, eventTombs, clearTomb, replyState, leadsByEmail, addMailEvent, allLeads: () => _db.leads,
   createLead, leadById, updateLead, onLeadStatusChange, logContact, addLeadEvent, deleteLead, leadsList, findRecentDuplicate, leadExists, leadStats,
   stats, visitsByDay, logVisit,
