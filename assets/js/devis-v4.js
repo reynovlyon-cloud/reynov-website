@@ -1,6 +1,6 @@
 /* REYNOV — devis en 5 écrans, tout au clic : problème → véhicule (+ nombre de jantes) → atelier ou domicile + code postal → photos → coordonnées.
    Professionnels (?pro=1) : activité → quantité → échéance → photos → société + code postal → coordonnées.
-   Black Friday (?offre=black-friday, du 24 au 28 novembre 2026, heure de Paris) : véhicule → code postal (atelier) → semaine de passage → photos → coordonnées.
+   Black Friday (?offre=black-friday, du 24 novembre au samedi 5 décembre 2026, 19 h, heure de Paris) : véhicule → code postal (atelier) → semaine de passage (jusqu’au samedi 28 novembre, 19 h ; ensuite une seule semaine, l’étape disparaît) → photos → coordonnées. Aperçu de la 2e semaine : ?bf=semaine2.
    Envoi vers /api/devis avec les mêmes champs qu'avant (serveur et tri du CRM inchangés). Retour arrière sans rien perdre. */
 (function () {
   'use strict';
@@ -21,8 +21,8 @@
     perso: { p: 'Personnalisation', pb: 'Changement de couleur', t: 'Personnalisation' }
   };
   var ATELIER_SEUL = ['fissure', 'devoilage'];
-  var S = { besoin: '', nombre: '', lieu: '', activite: '', echeance: '', plusTard: false, offre: '', pro: false, lieuDemande: '', semaine: '' };
-  var SEMAINES = { cette: 'Cette semaine (jusqu’au sam. 28 nov.)', suivante: 'Semaine du 30 nov. au 5 déc.' };
+  var S = { besoin: '', nombre: '', lieu: '', activite: '', echeance: '', plusTard: false, offre: '', pro: false, lieuDemande: '', semaine: '', uneSemaine: false };
+  var SEMAINES = { cette: 'Cette semaine (jusqu’au sam. 28 nov.)', suivante: 'Du 30 nov. au sam. 5 déc. (19 h)' };
   var photos = [], seq = 0, envoi = false, courant = '';
   var champ = { vehicule: $('#dv-vehicule'), cp: $('#dv-cp'), societe: $('#dv-societe'), cpPro: $('#dv-cp-pro') };
 
@@ -33,8 +33,9 @@
     var q = new URLSearchParams(location.search);
     var alias = { personnalisation: 'perso', soudure: 'fissure', fissures: 'fissure', rayure: 'renovation', rayures: 'renovation' };
     var b = q.get('besoin') || q.get('prestation'); b = b && (alias[b] || b);
-    var bfOk = /[?&]bf=apercu\b/.test(location.search) || (Date.now() >= Date.parse('2026-11-24T00:00:00+01:00') && Date.now() < Date.parse('2026-11-29T00:00:00+01:00'));
-    if (q.get('offre') === 'black-friday' && bfOk) { S.offre = 'bf'; S.besoin = 'renovation'; S.nombre = '4'; S.lieu = 'atelier'; $('[data-offre]').hidden = false; $('[data-nb]').hidden = true; }
+    var bfS2 = /[?&]bf=semaine2\b/.test(location.search) || Date.now() >= Date.parse('2026-11-28T19:00:00+01:00');   // après le samedi 28, 19 h : une seule semaine de passage
+    var bfOk = /[?&]bf=(apercu|semaine2)\b/.test(location.search) || (Date.now() >= Date.parse('2026-11-24T00:00:00+01:00') && Date.now() < Date.parse('2026-12-05T19:00:00+01:00'));
+    if (q.get('offre') === 'black-friday' && bfOk) { S.offre = 'bf'; S.besoin = 'renovation'; S.nombre = '4'; S.lieu = 'atelier'; if (bfS2) { S.uneSemaine = true; S.semaine = 'suivante'; } $('[data-offre]').hidden = false; $('[data-nb]').hidden = true; }
     else if (q.get('pro') === '1' || q.get('lot') === '1') S.pro = true;
     else if (b && BESOINS[b]) S.besoin = b;
     var l = q.get('lieu'); if (!S.offre && (l === 'atelier' || l === 'domicile')) { S.lieu = l; S.lieuDemande = l; }
@@ -42,7 +43,7 @@
 
   function domicilePossible() { return !S.offre && ATELIER_SEUL.indexOf(S.besoin) < 0 && S.nombre !== '1' && S.nombre !== '2'; }
   function parcours() {
-    if (S.offre) return ['vehicule', 'lieu', 'semaine', 'photos', 'contact'];
+    if (S.offre) return S.uneSemaine ? ['vehicule', 'lieu', 'photos', 'contact'] : ['vehicule', 'lieu', 'semaine', 'photos', 'contact'];
     if (S.pro) return ['activite', 'nombre', 'echeance', 'photos', 'societe', 'contact'];
     return ['besoin', 'vehicule', 'lieu', 'photos', 'contact'];
   }

@@ -74,9 +74,9 @@
     }, { threshold: 0.05 }).observe(film);
   }
 
-  /* ── Black Friday : réservations du 24 au 28 novembre 2026 inclus, heure de Paris (UTC+1 en novembre).
+  /* ── Black Friday : réservation et dépôt des jantes du 24 novembre au samedi 5 décembre 2026, 19 h, heure de Paris (UTC+1).
         Aperçu : ?bf=apercu (lien d'accueil visible), ?bf=avant | ouvert | fin (états de la page d'offre). ── */
-  var BF_DEBUT = Date.parse('2026-11-24T00:00:00+01:00'), BF_FIN = Date.parse('2026-11-29T00:00:00+01:00');
+  var BF_DEBUT = Date.parse('2026-11-24T00:00:00+01:00'), BF_FIN = Date.parse('2026-12-05T19:00:00+01:00');
   var bfForce = (location.search.match(/[?&]bf=(apercu|avant|ouvert|fin)\b/) || [])[1];
   var bfEtat = bfForce === 'apercu' ? 'ouvert' : bfForce || (Date.now() < BF_DEBUT ? 'avant' : Date.now() < BF_FIN ? 'ouvert' : 'fin');
   var bf = $('[data-bf]');
