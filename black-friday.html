@@ -58,7 +58,7 @@
   <meta name="twitter:image" content="https://www.reynov-jantes.fr/assets/images/og-image.jpg">
   <link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" as="image" href="/assets/images/bf-jante-bleue-900.webp" type="image/webp" fetchpriority="high" media="(max-width: 899px)">
-  <link rel="preload" as="image" href="/assets/images/bf-jante-bleue-1080.webp" type="image/webp" fetchpriority="high" media="(min-width: 900px)">
+  <link rel="preload" as="image" href="/assets/images/bf-jante-bleue-sans-logo-1080.webp" type="image/webp" fetchpriority="high" media="(min-width: 900px)">
   <link rel="stylesheet" href="/assets/css/v4.css?v=9">
   
   <script src="/assets/js/consent.js?v=4" defer></script>
@@ -221,12 +221,65 @@
 .bfn-final .bfn-h2 { margin-top: 18px; }
 .bfn-final .actions { margin-top: 26px; }
 @media (max-width: 359px) { .bfn-details { letter-spacing: .1em; } }
+
+/* « Réservez en 3 étapes » (24/11) : pendant le défilement, la scène reste en place et les étapes 1, 2, 3 se succèdent au même endroit :
+   l'anneau se remplit comme une jante, le chiffre roule, le texte change. Script : /assets/js/bf-etapes.js.
+   Sans script, ou si l'appareil demande moins d'animations : les 3 cartes ci-dessus, inchangées. */
+.bfx__anneau, .bfx__rail, .bfx__ico { display: none; }
+.bfn-etapes-sec.is-anime { padding-top: 0; }
+.bfx.is-anime { height: calc(100vh + 3 * 70vh); height: calc(100svh + 3 * 70svh); }
+.bfx.is-anime .bfx__scene { position: sticky; top: 0; display: flex; align-items: center; height: 100vh; height: 100svh;
+  padding: calc(88px + env(safe-area-inset-top, 0px)) 0 calc(24px + env(safe-area-inset-bottom, 0px)); }
+.bfx.is-anime .bfx__grille { --anneau: min(56vw, 28svh, 340px); display: grid; gap: 22px; width: 100%; }
+.bfx.is-anime .bfx__anneau { position: relative; display: grid; place-items: center; width: var(--anneau); aspect-ratio: 1; }
+.bfx.is-anime .bfx__anneau::before { content: ''; position: absolute; inset: -28%; z-index: -1; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(10, 102, 224, .34), transparent 72%); opacity: calc(.4 + var(--p, 0) * .6); }
+.bfx__svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 9px rgba(10, 102, 224, .6)); }
+.bfx__piste { fill: none; stroke: rgba(255, 255, 255, .1); stroke-width: 1.2; }
+.bfx__arc { fill: none; stroke: url(#bfx-degrade); stroke-width: 2.6; stroke-linecap: round; stroke-dasharray: 100 100; stroke-dashoffset: 100; }
+.bfx__tic { fill: #2a2f38; transition: fill .4s ease; }
+.bfx[data-etape] .bfx__tic--1, .bfx[data-etape="2"] .bfx__tic--2, .bfx[data-etape="3"] .bfx__tic--2, .bfx[data-etape="3"] .bfx__tic--3 { fill: #8ab8ff; }
+.bfx__chiffre { position: relative; display: block; height: 1em; overflow: hidden; font-size: calc(var(--anneau) * .5); font-weight: 800; line-height: 1;
+  letter-spacing: -0.05em; font-variant-numeric: tabular-nums; }
+.bfx__rouleau { display: block; transition: transform .8s cubic-bezier(.2, .8, .2, 1); }
+.bfx__rouleau > span { display: block; height: 1em; text-align: center;
+  background: linear-gradient(180deg, #fff 15%, #dbe8ff 55%, var(--bleu-clair) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.bfx[data-etape="2"] .bfx__rouleau { transform: translateY(-1em); }
+.bfx[data-etape="3"] .bfx__rouleau { transform: translateY(-2em); }
+.bfx.is-anime .bfx__liste { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; margin-top: 0; }
+.bfx.is-anime .bfx__liste li { grid-area: 1 / 1; display: block; padding: 0; background: none; box-shadow: none; opacity: 0; transform: translateY(20px);
+  transition: opacity .4s ease, transform .7s cubic-bezier(.2, .8, .2, 1); }
+.bfx.is-anime .bfx__liste li.is-on { opacity: 1; transform: none; transition-delay: .12s; }
+.bfx.is-anime .bfx__liste li.is-passe { transform: translateY(-20px); }
+.bfx.is-anime .bfx__liste .bfn-num { display: none; }
+.bfx.is-anime .bfx__ico { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; margin-bottom: 14px; border-radius: 12px;
+  color: #8ab8ff; background: rgba(10, 102, 224, .14); box-shadow: inset 0 0 0 1px rgba(138, 184, 255, .28); }
+.bfx__ico .ico { width: 20px; height: 20px; }
+.bfx.is-anime .bfx__liste h3 { font-size: clamp(21px, 5.6vw, 32px); line-height: 1.18; letter-spacing: -0.012em; text-wrap: balance; }
+.bfx.is-anime .bfx__liste p { margin-top: 10px; font-size: clamp(15.5px, 4.1vw, 19px); line-height: 1.5; max-width: 30em; }
+.bfx.is-anime .bfx__rail { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: min(100%, 420px); }
+.bfx__rail span { position: relative; height: 3px; border-radius: 3px; overflow: hidden; background: rgba(255, 255, 255, .12); }
+.bfx__rail i { position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(90deg, var(--bleu), #8ab8ff); transform: scaleX(0); transform-origin: left center; }
+@media (max-height: 700px) and (max-width: 899px) {
+  .bfx.is-anime .bfx__grille { gap: 16px; --anneau: min(52vw, 25svh, 300px); }
+  .bfx.is-anime .bfx__ico { display: none; }
+}
+@media (min-width: 900px) {
+  .bfx.is-anime { height: calc(100vh + 3 * 80vh); }
+  .bfx.is-anime .bfx__scene { padding-top: 110px; padding-bottom: 40px; }
+  .bfx.is-anime .bfx__grille { --anneau: min(30vw, 50vh, 380px); grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "titre titre" "anneau texte" "anneau rail";
+    column-gap: clamp(48px, 7vw, 110px); row-gap: 28px; align-items: center; }
+  .bfx.is-anime .bfx__titre { grid-area: titre; }
+  .bfx.is-anime .bfx__anneau { grid-area: anneau; }
+  .bfx.is-anime .bfx__liste { grid-area: texte; align-self: end; }
+  .bfx.is-anime .bfx__rail { grid-area: rail; align-self: start; }
+}
 </style>
 <main id="contenu" class="bf bfn" data-bf-page>
 
 <section class="bf__haut bfn-haut">
   <picture class="bfn-haut__fond">
-    <source media="(min-width: 900px)" type="image/webp" srcset="/assets/images/bf-jante-bleue-1080.webp" width="1080" height="570">
+    <source media="(min-width: 900px)" type="image/webp" srcset="/assets/images/bf-jante-bleue-sans-logo-1080.webp" width="1080" height="570">
     <img src="/assets/images/bf-jante-bleue-900.webp" width="900" height="690" alt="" fetchpriority="high" decoding="async">
   </picture>
   <div class="wrap bfn-haut__texte">
@@ -271,14 +324,32 @@
   </div>
 </section>
 
-<section class="sec bfn-sec bfn-sec--halo" aria-labelledby="t-bf-etapes">
-  <div class="wrap">
-    <h2 class="bfn-h2" id="t-bf-etapes">Réservez <span>en 3 étapes.</span></h2>
-    <ol class="bfn-etapes">
-      <li><span class="bfn-num">1</span><div><h3>Vous réservez</h3><p>Votre véhicule, votre code postal et vos photos, en deux minutes.</p></div></li>
-      <li><span class="bfn-num">2</span><div><h3>Vous recevez le devis, puis versez l’acompte</h3><p>20&nbsp;% du devis, par lien de paiement envoyé sur WhatsApp. Il bloque votre créneau.</p></div></li>
-      <li><span class="bfn-num">3</span><div><h3>Vous déposez vos jantes</h3><p>À notre atelier de Lyon, au créneau convenu, au plus tard le samedi 5 décembre à 19&nbsp;h.</p></div></li>
-    </ol>
+<section class="sec bfn-sec bfn-sec--halo bfn-etapes-sec" aria-labelledby="t-bf-etapes">
+  <div class="bfx" data-bfx>
+    <div class="bfx__scene">
+      <div class="wrap bfx__grille">
+        <h2 class="bfn-h2 bfx__titre" id="t-bf-etapes">Réservez <span>en 3 étapes.</span></h2>
+        <div class="bfx__anneau" aria-hidden="true">
+          <svg class="bfx__svg" viewBox="0 0 120 120" focusable="false">
+            <defs><linearGradient id="bfx-degrade" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8ab8ff"/><stop offset="1" stop-color="#0a66e0"/></linearGradient></defs>
+            <circle class="bfx__piste" cx="60" cy="60" r="54"/>
+            <circle class="bfx__arc" cx="60" cy="60" r="54" pathLength="100" transform="rotate(-90 60 60)" data-bfx-arc/>
+            <circle class="bfx__tic bfx__tic--1" cx="60" cy="6" r="2.6"/>
+            <circle class="bfx__tic bfx__tic--2" cx="106.77" cy="87" r="2.6"/>
+            <circle class="bfx__tic bfx__tic--3" cx="13.23" cy="87" r="2.6"/>
+          </svg>
+          <span class="bfx__chiffre"><span class="bfx__rouleau"><span>1</span><span>2</span><span>3</span></span></span>
+        </div>
+        <ol class="bfn-etapes bfx__liste">
+          <li data-bfx-etape><span class="bfn-num">1</span><div><span class="bfx__ico" aria-hidden="true"><svg class="ico"><use href="#i-photo"/></svg></span><h3>Vous réservez</h3><p>Votre véhicule, votre code postal et vos photos, en deux minutes.</p></div></li>
+          <li data-bfx-etape><span class="bfn-num">2</span><div><span class="bfx__ico" aria-hidden="true"><svg class="ico"><use href="#i-wa"/></svg></span><h3>Vous recevez le devis, puis versez l’acompte</h3><p>20&nbsp;% du devis, par lien de paiement envoyé sur WhatsApp. Il bloque votre créneau.</p></div></li>
+          <li data-bfx-etape><span class="bfn-num">3</span><div><span class="bfx__ico" aria-hidden="true"><svg class="ico"><use href="#i-atelier"/></svg></span><h3>Vous déposez vos jantes</h3><p>À notre atelier de Lyon, au créneau convenu, au plus tard le samedi 5 décembre à 19&nbsp;h.</p></div></li>
+        </ol>
+        <div class="bfx__rail" aria-hidden="true"><span><i></i></span><span><i></i></span><span><i></i></span></div>
+      </div>
+    </div>
+  </div>
+  <div class="wrap bfx__suite">
     <p class="bfn-lots" data-bf-ouvert>Offre limitée à 20 lots</p>
     <div class="actions" data-bf-ouvert>
       <a class="btn btn--bleu bfn-cta" href="/devis.html?offre=black-friday" data-cta>Profiter de l’offre<svg class="ico" aria-hidden="true"><use href="#i-fleche"/></svg></a>
@@ -376,5 +447,6 @@
   </div>
 </footer>
 <script src="/assets/js/v4.js?v=6" defer></script>
+<script src="/assets/js/bf-etapes.js?v=1" defer></script>
 </body>
 </html>
