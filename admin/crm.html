@@ -1,13 +1,14 @@
 <!DOCTYPE html>
-<html lang="fr" data-theme="light">
+<html lang="fr" data-theme="dark">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
-<meta name="theme-color" content="#111113" />
+<meta name="theme-color" content="#000000" />
 <meta name="robots" content="noindex, nofollow, noarchive" />
 <title>REYNOV — CRM</title>
 <link rel="icon" type="image/webp" href="/assets/images/logo-160.webp" />
-<script>try{var t=localStorage.getItem('crm_theme')||(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+<!-- Thème : noir comme le site par défaut ; le bouton lune/soleil garde le choix (clé crm_theme2 : tout le monde redémarre en noir une fois) -->
+<script>try{var t=localStorage.getItem('crm_theme2')||'dark';document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 <link rel="stylesheet" href="crm.css" />
 </head>
 <body>
@@ -16,6 +17,7 @@
 <!-- Connexion -->
 <div id="login" class="is-attente">
   <form class="login-box" id="login-form" autocomplete="on">
+    <img class="brand-logo" src="/assets/images/logo-160.webp" width="64" height="64" alt="" />
     <div class="brand-mark">REYNOV</div>
     <div class="login-sub">Administration</div>
     <input type="text" id="usr" placeholder="Identifiant (vide pour l'administrateur)" autocomplete="username" autocapitalize="none" spellcheck="false" />
@@ -29,7 +31,7 @@
 <!-- Application -->
 <div id="app" hidden>
   <aside class="sidebar" id="sidebar">
-    <div class="side-brand"><div class="brand-mark">REYNOV</div><small>Administration</small></div>
+    <div class="side-brand"><img class="brand-logo" src="/assets/images/logo-160.webp" width="34" height="34" alt="" /><div><div class="brand-mark">REYNOV</div><small>Administration</small></div></div>
     <div class="side-label">Activité</div>
     <button class="nav-item" data-nav="dashboard"><span data-ico="grid"></span>Tableau de bord</button>
     <button class="nav-item" data-nav="leads"><span data-ico="funnel"></span>Leads<span class="badge" id="nav-badge" hidden>0</span></button>
@@ -54,6 +56,7 @@
   <div class="main">
     <header class="topbar">
       <button class="icon-btn burger" data-action="menu" aria-label="Menu"><span data-ico="menu"></span></button>
+      <img class="brand-logo top-logo" src="/assets/images/logo-160.webp" width="26" height="26" alt="" />
       <h1 id="view-title">Tableau de bord</h1>
       <div class="search"><span data-ico="search"></span><input id="global-search" type="search" placeholder="Rechercher un client, un lead…" autocomplete="off" /></div>
       <div class="top-right">

@@ -122,7 +122,7 @@
   // ── Thème ─────────────────────────────────────────────────
   function applyTheme(t) {
     document.documentElement.setAttribute('data-theme', t);
-    try { localStorage.setItem('crm_theme', t); } catch (e) { /* ignoré */ }
+    try { localStorage.setItem('crm_theme2', t); } catch (e) { /* ignoré */ }
     const i = $('#theme-ico'); if (i) i.innerHTML = ico(t === 'dark' ? 'sun' : 'moon');
   }
 
