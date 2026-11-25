@@ -393,6 +393,8 @@ ul, ol { padding: 0; list-style: none; }
 .pied__bas { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 20px; margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--ligne); font-size: 14px; color: var(--txt-3); }
 .pied__bas a { display: inline-flex; align-items: center; min-height: 44px; color: var(--txt-3); text-decoration: none; }
 .pied__bas a:hover { color: var(--txt); }
+.pied__zones { margin-top: 32px; }
+.pied__zones .pied__liens { display: flex; flex-wrap: wrap; gap: 0 18px; }
 .rc-manage { margin-left: 0 !important; color: var(--txt-3) !important; }
 
 /* ══ Devis : une question par écran, passage automatique au clic ══ */
@@ -668,3 +670,6 @@ ul, ol { padding: 0; list-style: none; }
 .srv-note { margin-top: 18px; max-width: 46em; color: var(--txt-2); }
 .srv-note a, .duo a:not(.btn), .sec__tete + .chapo a { color: var(--txt); text-decoration: underline; text-decoration-color: rgba(255, 255, 255, .35); text-underline-offset: 3px; }
 div.ligne { cursor: default; }
+.ba--large .ba__cadres { aspect-ratio: 4 / 3; }
+@media (min-width: 1100px) { .galerie--5 { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+@media (min-width: 900px) { .etapes-n--6 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

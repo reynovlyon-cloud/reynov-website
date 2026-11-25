@@ -9,6 +9,7 @@
 - Téléphone et WhatsApp : 06 61 45 35 27
 - E-mail : reynov.lyon@gmail.com
 - Horaires : du lundi au samedi, de 9 h à 19 h, sur rendez-vous ; fermé le dimanche
+- Zone : Lyon et ses alentours jusqu'à 50 km (accueil à l'atelier) ; à domicile, Lyon et 15 à 20 km autour
 - Note Google : 5,0 sur 5
 - Devis : gratuit et sans engagement, sur photos, réponse sous 24 à 48 h — formulaire : https://www.reynov-jantes.fr/devis.html
 - Tarifs pour les particuliers (TTC) : rénovation et réparation de jante à partir de 156 € par jante ; dévoilage et soudure à partir de 168 € par jante ; personnalisation et peinture époxy sur devis. Le prix exact dépend de l'état, de la taille et de la finition, et figure dans le devis.
@@ -19,8 +20,8 @@
 
 ## Prestations
 
-- [Rénovation de jantes](https://www.reynov-jantes.fr/prestations/renovation.html) : remise en état complète (décapage, traitement, peinture bi-composant, vernis)
-- [Réparation de jantes](https://www.reynov-jantes.fr/prestations/reparation.html) : rayures, frottements de trottoir, chocs de stationnement
+- [Rénovation de jantes alu à Lyon](https://www.reynov-jantes.fr/prestations/renovation.html) : remise en état complète (décapage, primaire anticorrosion, peinture et vernis bi-composant), teinte d'origine, noir, bi-ton ou couleur au choix ; à partir de 156 € TTC par jante
+- [Réparation de jantes alu à Lyon](https://www.reynov-jantes.fr/prestations/reparation.html) : frottements de trottoir, rayures, bord arraché, perte de matière, corrosion ; à partir de 156 € TTC par jante (168 € pour le dévoilage et la soudure, à l'atelier)
 - [Soudure de jantes fissurées](https://www.reynov-jantes.fr/prestations/soudure.html) : réparation TIG de l'aluminium, après diagnostic
 - [Dévoilage](https://www.reynov-jantes.fr/prestations/devoilage.html) : redressage des jantes voilées (vibrations, faux-rond)
 - [Personnalisation](https://www.reynov-jantes.fr/prestations/personnalisation.html) : changement de couleur, bi-ton, diamanté, mat
@@ -51,4 +52,4 @@ Toutes marques. Pages dédiées : [Audi](https://www.reynov-jantes.fr/marques/re
 
 ## Notes
 
-Ce fichier suit la convention llms.txt (https://llmstxt.org/). Mis à jour le 24 novembre 2026 ; en cas d'écart, le site fait foi. Plan du site : https://www.reynov-jantes.fr/sitemap.xml
+Ce fichier suit la convention llms.txt (https://llmstxt.org/). Mis à jour le 25 novembre 2026 ; en cas d'écart, le site fait foi. Plan du site : https://www.reynov-jantes.fr/sitemap.xml

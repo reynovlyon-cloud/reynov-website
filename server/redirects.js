@@ -16,6 +16,14 @@ const MOVED = {
   '/blog/epoxy-ou-peinture-pistolet-jante-difference-lyon.html': '/blog/peinture-epoxy-jantes-haut-de-gamme-collection.html',
   '/blog/reconditionnement-jante-mercedes-lyon.html': '/blog/renovation-jante-mercedes-lyon.html',
   '/a-propos.html': '/',   // page « à propos » retirée en avril 2026 : la présentation de l'entreprise est sur l'accueil
+  // 25/11/2026 : le guide visait la même recherche que la page service (« rénovation jantes Lyon ») ; son contenu y est repris
+  '/blog/renovation-jantes-lyon.html': '/prestations/renovation.html',
+  // 25/11/2026 : zone ciblée = Lyon et 50 km autour (choix de REYNOV) ; pages au-delà retirées
+  '/zones/geneve.html': '/zones/',
+  '/zones/annecy.html': '/zones/',
+  '/zones/haute-savoie-74.html': '/zones/',
+  '/blog/renovation-jantes-annecy.html': '/blog/sel-deneigement-jantes-corrosion-hiver.html',
+  '/blog/renovation-jantes-grenoble.html': '/blog/',
 };
 // Rubriques : une ancienne page introuvable renvoie vers sa rubrique (jamais vers l'accueil)
 const SECTIONS = { blog: '/blog/', marques: '/marques/', prestations: '/prestations/', zones: '/zones/', professionnels: '/professionnels.html' };

@@ -189,6 +189,8 @@
 .pied__bas { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 20px; margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--ligne); font-size: 14px; color: var(--txt-3); }
 .pied__bas a { display: inline-flex; align-items: center; min-height: 44px; color: var(--txt-3); text-decoration: none; }
 .pied__bas a:hover { color: var(--txt); }
+.pied__zones { margin-top: 32px; }
+.pied__zones .pied__liens { display: flex; flex-wrap: wrap; gap: 0 18px; }
 .rc-manage { margin-left: 0 !important; color: var(--txt-3) !important; }
 
 
