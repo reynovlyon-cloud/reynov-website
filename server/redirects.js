@@ -24,6 +24,8 @@ const MOVED = {
   '/zones/haute-savoie-74.html': '/zones/',
   '/blog/renovation-jantes-annecy.html': '/blog/sel-deneigement-jantes-corrosion-hiver.html',
   '/blog/renovation-jantes-grenoble.html': '/blog/',
+  // 25/11/2026 : vidéo recoupée (plaque d'un client et ancien numéro retirés) ; l'ancienne adresse renvoie vers la nouvelle
+  '/assets/images/intervention-mobile-jantes.mp4': '/assets/images/intervention-jantes-camion-atelier.mp4',
 };
 // Rubriques : une ancienne page introuvable renvoie vers sa rubrique (jamais vers l'accueil)
 const SECTIONS = { blog: '/blog/', marques: '/marques/', prestations: '/prestations/', zones: '/zones/', professionnels: '/professionnels.html' };
